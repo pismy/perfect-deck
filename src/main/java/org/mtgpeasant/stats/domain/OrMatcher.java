@@ -28,6 +28,13 @@ public class OrMatcher extends Matcher {
     }
 
     @Override
+    public void validate(Validation validation, MatcherContext context) {
+        for(Matcher matcher : matchers) {
+            matcher.validate(validation, context);
+        }
+    }
+
+    @Override
     public List<Match> matches(Match upstream, MatcherContext context) {
         return matchers.stream().map(m -> m.matches(upstream, context)).flatMap(List::stream).collect(Collectors.toList());
     }

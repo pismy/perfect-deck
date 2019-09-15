@@ -20,6 +20,11 @@ public class TimesMatcher extends Matcher {
     }
 
     @Override
+    public void validate(Validation validation, MatcherContext context) {
+        matcher.validate(validation, context);
+    }
+
+    @Override
     public List<Match> matches(Match upstream, MatcherContext context) {
         if (times == 0) {
             return Collections.singletonList(upstream);

@@ -29,6 +29,13 @@ public class AndMatcher extends Matcher {
     }
 
     @Override
+    public void validate(Validation validation, MatcherContext context) {
+        for(Matcher matcher : matchers) {
+            matcher.validate(validation, context);
+        }
+    }
+
+    @Override
     public List<Match> matches(Match upstream, MatcherContext context) {
         if (matchers.isEmpty()) {
             return Collections.singletonList(upstream);

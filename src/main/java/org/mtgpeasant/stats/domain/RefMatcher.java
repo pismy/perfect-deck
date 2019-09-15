@@ -15,6 +15,13 @@ public class RefMatcher extends Matcher {
         return "<" + name + ">";
     }
 
+    @Override
+    public void validate(Validation validation, MatcherContext context) {
+        if (context.findByName(name) == null) {
+            validation.warning("Matcher <" + name + "> not found");
+        }
+    }
+
     public List<Match> matches(Match upstream, MatcherContext context) {
         return context.findByName(name).matches(upstream, context);
     }

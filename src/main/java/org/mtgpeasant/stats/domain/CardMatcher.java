@@ -16,6 +16,13 @@ public class CardMatcher extends Matcher {
         return "[" + card + "]";
     }
 
+    @Override
+    public void validate(Validation validation, MatcherContext context) {
+        if(!context.getDeck().has(card)) {
+            validation.warning("Card [" + card + "] not found in deck");
+        }
+    }
+
     public List<Match> matches(Match upstream, MatcherContext context) {
         if (upstream.has(card)) {
             return Collections.singletonList(upstream.select(card));

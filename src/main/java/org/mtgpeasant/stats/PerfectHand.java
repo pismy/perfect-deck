@@ -1,9 +1,6 @@
 package org.mtgpeasant.stats;
 
-import org.mtgpeasant.stats.domain.Cards;
-import org.mtgpeasant.stats.domain.Match;
-import org.mtgpeasant.stats.domain.Matcher;
-import org.mtgpeasant.stats.domain.MatcherContext;
+import org.mtgpeasant.stats.domain.*;
 import org.mtgpeasant.stats.parser.DeckParser;
 import org.mtgpeasant.stats.parser.MatcherParser;
 import org.mtgpeasant.stats.parser.ParseError;
@@ -19,7 +16,7 @@ import java.util.Map;
 
 public class PerfectHand {
 
-    private static final int DRAWS = 5000;
+    private static final int DRAWS = 1000;
     private static final boolean DEBUG = true;
     private static final DecimalFormat PERCENT = new DecimalFormat("#.##");
 
@@ -55,6 +52,18 @@ public class PerfectHand {
                 .deck(deck)
                 .matchers(matchers)
                 .build();
+
+        // validation
+        Validation validation = new Validation();
+        for(Matcher matcher : matchers.values()) {
+            matcher.validate(validation, ctx);
+        }
+        for(String msg : validation.getWarnings()) {
+            System.out.println("WARN: " + msg);
+        }
+        for(String msg : validation.getErrors()) {
+            System.out.println("ERROR: " + msg);
+        }
 
         // start stats
         for (int i = 0; i < DRAWS; i++) {
