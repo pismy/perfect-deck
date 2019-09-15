@@ -1,0 +1,35 @@
+# ============
+# === Matchers
+# ============
+<B>: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
+<R>: [Mountain] | [Lotus Petal] | [Crumbling Vestige]
+<X>: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige]
+<+1>: [Lotus Petal] | [Dark Ritual]
+<steak>: [Hand of Emrakul] | [Greater Sandwurm] | [Pathrazer of Ulamog] | [Ulamog's Crusher]
+<rea>: [Exhume] | [Animate Dead]
+<rea or tutor>: <rea> | ( [Shred Memory] & [Dark Ritual] )
+<cantrip>: [Gitaxian Probe]
+
+# =================================
+# === Critères pour garder une main
+# =================================
+# je réanime tour 1
+<<turn 1>>: <B> & [Dark Ritual] & [Putrid Imp] & <steak> & <rea>
+
+# je réanime tour 2
+<<turn 2>>: <B> & <X> & [Putrid Imp] & <steak> & <rea>
+
+# je réanime tour 2 en défaussant un steak le 1er tour
+<<turn 2 OTD>>: <B> & <+1> & <steak> & <rea>
+
+# je réanime tour 3 en défaussant un steak le 1er tour
+<<turn 3 OTD>>: <B> & <X> & <steak> & <rea>
+
+# il me manque 1 source B mais j'ai un faithless que je peux jouer T1
+<<looting OTD>>: <R> & [Faithless Looting] & <steak> & <rea>
+
+# il me manque 1 source X mais j'ai une gitaxian probe
+#<<probe OTD>>: <B> & [Putrid Imp] & [Gitaxian Probe] & <steak> & <rea>
+
+# T1: probe, défausse steak; j'ai 4 pioches pour trouver une 2eme source de mana
+<<probe OTD>>: <B> & <cantrip> & <steak> & <rea>

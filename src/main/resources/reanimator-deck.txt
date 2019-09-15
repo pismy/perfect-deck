@@ -1,0 +1,32 @@
+3 Dragon Breath
+4 Gitaxian Probe
+2 Shred Memory
+
+# discard
+4 Faithless Looting
+4 Putrid Imp
+
+# reanimation
+4 Animate Dead
+4 Exhume
+
+# steaks
+4 Hand of Emrakul
+1 Greater Sandwurm
+1 Pathrazer of Ulamog
+4 Ulamog's Crusher
+
+# mana
+3 Dark Ritual
+4 Lotus Petal
+4 Crumbling Vestige
+8 Swamp
+6 Mountain
+
+# Sideboard:
+# 3 Apostle's Blessing
+# 4 Duress
+# 2 Electrickery
+# 2 Mind Rake
+# 2 Pyroblast
+# 2 Shenanigans
