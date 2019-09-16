@@ -37,6 +37,19 @@ public class MatcherParserTest {
     }
 
     @Test
+    public void fn_any_should_parse() throws ParseError {
+        // WHEN
+        MatcherParser.MatcherDeclaration declaration = MatcherParser.parse("<R>: @any([mountain] [lotus petal] [crumbling vestige])");
+
+        System.out.println(declaration);
+
+        // THEN
+        Assertions.assertThat(declaration.isCriteria()).isFalse();
+        Assertions.assertThat(declaration.getMatcher()).isInstanceOf(OrMatcher.class);
+        Assertions.assertThat(((OrMatcher)declaration.getMatcher()).getMatchers()).hasSize(3);
+    }
+
+    @Test
     public void and_matchers_should_parse() throws ParseError {
         // WHEN
         MatcherParser.MatcherDeclaration declaration = MatcherParser.parse("<<turn 1>>: <B> &    [putrid imp] && <rea> && [dark ritual] && <steak>");
@@ -47,6 +60,32 @@ public class MatcherParserTest {
         Assertions.assertThat(declaration.isCriteria()).isTrue();
         Assertions.assertThat(declaration.getMatcher()).isInstanceOf(AndMatcher.class);
         Assertions.assertThat(((AndMatcher)declaration.getMatcher()).getMatchers()).hasSize(5);
+    }
+
+    @Test
+    public void fn_all_should_parse() throws ParseError {
+        // WHEN
+        MatcherParser.MatcherDeclaration declaration = MatcherParser.parse("<<turn 1>>: @all(<B> [putrid imp] <rea> [dark ritual] <steak>)");
+
+        System.out.println(declaration);
+
+        // THEN
+        Assertions.assertThat(declaration.isCriteria()).isTrue();
+        Assertions.assertThat(declaration.getMatcher()).isInstanceOf(AndMatcher.class);
+        Assertions.assertThat(((AndMatcher)declaration.getMatcher()).getMatchers()).hasSize(5);
+    }
+
+    @Test
+    public void fn_xof_should_parse() throws ParseError {
+        // WHEN
+        MatcherParser.MatcherDeclaration declaration = MatcherParser.parse("<<turn 1>>: @xof(2)(<B> <rea> <steak>)");
+
+        System.out.println(declaration);
+
+        // THEN
+        Assertions.assertThat(declaration.isCriteria()).isTrue();
+        Assertions.assertThat(declaration.getMatcher()).isInstanceOf(OrMatcher.class);
+        Assertions.assertThat(((OrMatcher)declaration.getMatcher()).getMatchers()).hasSize(3);
     }
 
     @Test

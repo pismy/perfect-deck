@@ -13,10 +13,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class PerfectHand {
 
-    private static final int DRAWS = 1000;
+    private static final int DRAWS = 5000;
     private static final boolean DEBUG = true;
     private static final DecimalFormat PERCENT = new DecimalFormat("#.##");
 
@@ -35,7 +36,7 @@ public class PerfectHand {
         BufferedReader reader = new BufferedReader(new FileReader("src/main/resources/reanimator-matchers.txt"));
         String line = null;
         while ((line = reader.readLine()) != null) {
-            line = line.trim().toLowerCase();
+            line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) {
                 // empty or commented line
             } else {
@@ -55,23 +56,28 @@ public class PerfectHand {
 
         // validation
         Validation validation = new Validation();
-        for(Matcher matcher : matchers.values()) {
+        for (Matcher matcher : matchers.values()) {
             matcher.validate(validation, ctx);
         }
-        for(String msg : validation.getWarnings()) {
+        for (String msg : validation.getWarnings()) {
             System.out.println("WARN: " + msg);
         }
-        for(String msg : validation.getErrors()) {
+        for (String msg : validation.getErrors()) {
             System.out.println("ERROR: " + msg);
         }
 
-        // start stats
+        // compute stats
+        long startTime = System.currentTimeMillis();
         for (int i = 0; i < DRAWS; i++) {
             Cards hand = deck.copy().shuffle().draw(7);
             Match match = Match.from(hand);
             MatcherParser.MatcherDeclaration matching = null;
             for (MatcherParser.MatcherDeclaration decl : criterias) {
-                if (!decl.getMatcher().matches(match, ctx).isEmpty()) {
+//                if (!decl.getMatcher().matches(match, ctx).isEmpty()) {
+//                    matching = decl;
+//                    break;
+//                }
+                if (decl.getMatcher().matches(Stream.of(match), ctx).findFirst().isPresent()) {
                     matching = decl;
                     break;
                 }
@@ -92,7 +98,8 @@ public class PerfectHand {
         }
 
         // dump stats
-        System.out.println("=== STATS ===");
+        long endTime = System.currentTimeMillis();
+        System.out.println("=== STATS (elapsed " + (endTime - startTime) + "ms) ===");
         for (MatcherParser.MatcherDeclaration decl : criterias) {
             int matchesCount = matchCount.getOrDefault(decl.getName(), 0);
             System.out.println(decl.getName() + ": " + matchesCount + "/" + DRAWS + " (" + PERCENT.format(100f * (float) matchesCount / (float) DRAWS) + "%)");

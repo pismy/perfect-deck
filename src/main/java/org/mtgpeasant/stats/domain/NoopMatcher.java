@@ -3,32 +3,30 @@ package org.mtgpeasant.stats.domain;
 import lombok.Builder;
 import lombok.Value;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
 @Builder
 @Value
-public class RefMatcher extends Matcher {
-    final String name;
+public class NoopMatcher extends Matcher {
+    final String card;
 
     @Override
     public String toString() {
-        return "<" + name + ">";
+        return "$noop";
     }
 
     @Override
     public void validate(Validation validation, MatcherContext context) {
-        if (context.findByName(name) == null) {
-            validation.warning("Matcher <" + name + "> not found");
-        }
     }
 
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return context.findByName(name).matches(stream, context);
+        return stream;
     }
 
     public List<Match> matches(Match upstream, MatcherContext context) {
-        return context.findByName(name).matches(upstream, context);
+        return Collections.singletonList(upstream.select(card));
     }
 }

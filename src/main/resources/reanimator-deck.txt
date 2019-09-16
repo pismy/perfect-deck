@@ -1,6 +1,6 @@
 3 Dragon Breath
-4 Gitaxian Probe
-2 Shred Memory
+3 Gitaxian Probe
+#1 Shred Memory
 
 # discard
 4 Faithless Looting
@@ -9,19 +9,24 @@
 # reanimation
 4 Animate Dead
 4 Exhume
+1 Reanimate
 
 # steaks
 4 Hand of Emrakul
-1 Greater Sandwurm
-1 Pathrazer of Ulamog
+2 Greater Sandwurm
+#1 Pathrazer of Ulamog
 4 Ulamog's Crusher
 
 # mana
-3 Dark Ritual
+1 Dark Ritual
 4 Lotus Petal
 4 Crumbling Vestige
-8 Swamp
-6 Mountain
+9 Swamp
+5 Mountain
+4 Simian Spirit Guide
+# 1 Crumbling Vestige
+# 7 Mountain
+# 10 Swamp
 
 # Sideboard:
 # 3 Apostle's Blessing
