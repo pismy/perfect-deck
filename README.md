@@ -128,19 +128,19 @@ This files defines matchers (pretty similar to [Regular expressions](https://en.
 
 * an empty line is ignored
 * a line starting with `#` is ignored (_comment_)
-* a line starting with `<{name}>:` declares an atomic matcher (that can be reused in other matchers or hand keeping rules)
-* a line starting with `<<{name}>>:` is considered to declare a hand keeping rule
+* a line starting with `<{name}>: {matcher}` declares a **named** matcher (that can be reused in other matchers or hand keeping rules)
+* a line starting with `<<{name}>>: {matcher}` is considered to declare a hand keeping rule
 
 Syntactically, a matcher and a rule are exactly the same. The only difference is that the tool will perform simulations
 against **hand keeping rules only**. Atomic matchers are just useful internally to simplify complex rules writing.
 
-A matcher (or rule) can be of several types:
+A `{matcher}` can be of the following types:
 
-* `[{name}]`: basic card matcher; matches if the referenced card is available in hand
-* `<{name}>`: references another declared matcher or rule
-* `({matcher 1} & {matcher 2} & ...)`: matches a hand if all matchers match
-* `({matcher 1} | {matcher 2} | ...)`: matches a hand if at least one matcher matches
-* `@atleast({nb})({matcher 1} | {matcher 2} | ...)`: matches a hand if at least `{nb}` matchers match the hand
+* `[{name}]`: basic card matcher; matches if the card is available in hand
+* `<{name}>`: references a declared named matcher or rule
+* `({matcher 1} & {matcher 2} & ...)`: compound matcher that matches if **all** matchers match
+* `({matcher 1} | {matcher 2} | ...)`: compound matcher that matches if **at least one** matcher matches
+* `@atleast({nb})({matcher 1} {matcher 2} ...)`: compound matcher that matches if **at least** `{nb}` of the matchers match
 
 
 ## License
