@@ -12,7 +12,7 @@ public class MatcherParserTest {
         // WHEN
         Assertions.assertThatExceptionOfType(ParseError.class)
                 .isThrownBy(() -> MatcherParser.parse("<R>: "))
-                .withMessage("you should declare at least one matcher");
+                .withMessageStartingWith("you should declare at least one matcher");
     }
 
     @Test
@@ -20,7 +20,7 @@ public class MatcherParserTest {
         // WHEN
         Assertions.assertThatExceptionOfType(ParseError.class)
                 .isThrownBy(() -> MatcherParser.parse("<R>: [mountain] || [lotus petal] && [crumbling vestige]"))
-                .withMessage("'|' expected");
+                .withMessageStartingWith("'|' expected");
     }
 
     @Test

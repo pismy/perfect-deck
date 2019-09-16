@@ -19,7 +19,7 @@ public class RefMatcher extends Matcher {
     @Override
     public void validate(Validation validation, MatcherContext context) {
         if (context.findByName(name) == null) {
-            validation.warning("Matcher <" + name + "> not found");
+            validation.error("Matcher <" + name + "> not found");
         }
     }
 

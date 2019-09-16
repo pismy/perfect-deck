@@ -1,7 +1,0 @@
-feign:
-  hystrix:
-    enabled: true
-
-eureka:
-  client:
-    enabled: false
