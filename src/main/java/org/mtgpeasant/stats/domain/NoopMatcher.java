@@ -9,9 +9,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-public class NoopMatcher extends Matcher {
-    final String card;
-
+public class NoopMatcher implements Matcher {
     @Override
     public String toString() {
         return "$noop";
@@ -24,9 +22,5 @@ public class NoopMatcher extends Matcher {
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
         return stream;
-    }
-
-    public List<Match> matches(Match upstream, MatcherContext context) {
-        return Collections.singletonList(upstream.select(card));
     }
 }

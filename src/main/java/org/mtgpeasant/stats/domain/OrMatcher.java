@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-public class OrMatcher extends Matcher {
+public class OrMatcher implements Matcher {
     @Singular
     final List<Matcher> matchers;
 
@@ -38,15 +38,14 @@ public class OrMatcher extends Matcher {
 
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return stream
-                // TODO: can we optimize not to collect here ? (Stream all way down)
-                .map(match -> matchers.stream().map(matcher -> matcher.matches(match, context)).collect(Collectors.toList()))
-                .flatMap(Collection::stream)
+//        return stream
+//                // TODO: can we optimize not to collect here ? (Stream all way down)
+//                .map(match -> matchers.stream().map(matcher -> matcher.matches(match, context)).collect(Collectors.toList()))
+//                .flatMap(Collection::stream)
+//                .flatMap(Collection::stream);
+        List<Match> upstreamMatches = stream.collect(Collectors.toList());
+        return matchers.stream()
+                .map(matcher -> matcher.matches(upstreamMatches.stream(), context).collect(Collectors.toList()))
                 .flatMap(Collection::stream);
-    }
-
-    @Override
-    public List<Match> matches(Match upstream, MatcherContext context) {
-        return matchers.stream().map(m -> m.matches(upstream, context)).flatMap(List::stream).collect(Collectors.toList());
     }
 }

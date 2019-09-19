@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-public class CardMatcher extends Matcher {
+public class CardMatcher implements Matcher {
     final String card;
 
     @Override

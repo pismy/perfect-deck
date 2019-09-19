@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class AndMatcherTest {
     @Test
@@ -28,7 +30,7 @@ public class AndMatcherTest {
                 .build();
 
         // When
-        List<Match> matches = matcher.matches(Match.from(cards), null);
+        List<Match> matches = matcher.matches(Stream.of(Match.from(cards)), null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(1);
@@ -58,7 +60,7 @@ public class AndMatcherTest {
                 .build();
 
         // When
-        List<Match> matches = matcher.matches(Match.from(cards), null);
+        List<Match> matches = matcher.matches(Stream.of(Match.from(cards)), null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).isEmpty();

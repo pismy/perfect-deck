@@ -4,6 +4,8 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class OrMatcherTest {
     @Test
@@ -14,22 +16,31 @@ public class OrMatcherTest {
                 .card("mountain")
                 .card("ulamog crusher")
                 .card("animate dead")
-                .card("dark ritual")
+                .card("exhume")
                 .card("lotus petal")
                 .card("putrid imp")
                 .build();
 
         Matcher matcher = OrMatcher.builder()
                 .matcher(CardMatcher.builder().card("swamp").build())
-                .matcher(CardMatcher.builder().card("animate dead").build())
+                .matcher(
+                        AndMatcher.builder()
+                                .matcher(CardMatcher.builder().card("animate dead").build())
+                                .matcher(CardMatcher.builder().card("exhume").build())
+                        .build()
+                )
                 .matcher(CardMatcher.builder().card("pathrazer of ulamog").build())
                 .build();
 
         // When
-        List<Match> matches = matcher.matches(Match.from(cards), null);
+        List<Match> matches = matcher.matches(Stream.of(Match.from(cards)), null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(2);
+        Assertions.assertThat(matches.get(0).getSelected().getCards()).containsExactly("swamp");
+        Assertions.assertThat(matches.get(0).getRemaining().getCards()).hasSize(6);
+        Assertions.assertThat(matches.get(1).getSelected().getCards()).containsExactly("animate dead", "exhume");
+        Assertions.assertThat(matches.get(1).getRemaining().getCards()).hasSize(5);
     }
 
     @Test
@@ -52,7 +63,7 @@ public class OrMatcherTest {
                 .build();
 
         // When
-        List<Match> matches = matcher.matches(Match.from(cards), null);
+        List<Match> matches = matcher.matches(Stream.of(Match.from(cards)), null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).isEmpty();

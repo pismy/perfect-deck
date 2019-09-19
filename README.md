@@ -95,7 +95,7 @@ Here is an example of rules:
 # ============
 <B>: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
 <R>: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
-<X>: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige]
+<X>: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
 <+1>: [Lotus Petal] | [Dark Ritual] | [Simian Spirit Guide]
 <creature>: [Hand of Emrakul] | [Greater Sandwurm] | [Pathrazer of Ulamog] | [Ulamog's Crusher]
 <rea>: [Exhume] | [Animate Dead] | [Reanimate]

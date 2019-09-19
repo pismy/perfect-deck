@@ -3,12 +3,11 @@ package org.mtgpeasant.stats.domain;
 import lombok.Builder;
 import lombok.Value;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 @Builder
 @Value
-public class RefMatcher extends Matcher {
+public class RefMatcher implements Matcher {
     final String name;
 
     @Override
@@ -26,9 +25,5 @@ public class RefMatcher extends Matcher {
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
         return context.findByName(name).matches(stream, context);
-    }
-
-    public List<Match> matches(Match upstream, MatcherContext context) {
-        return context.findByName(name).matches(upstream, context);
     }
 }
