@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.cards;
 
 import lombok.Builder;
 import lombok.Value;

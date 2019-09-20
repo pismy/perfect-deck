@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.matchers;
 
 
 import java.util.stream.Stream;

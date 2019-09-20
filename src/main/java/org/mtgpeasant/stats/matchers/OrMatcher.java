@@ -1,15 +1,17 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.matchers;
 
 import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Builder
 @Value
-public class AndMatcher implements Matcher {
+public class OrMatcher implements Matcher {
     @Singular
     final List<Matcher> matchers;
 
@@ -19,7 +21,7 @@ public class AndMatcher implements Matcher {
         sb.append("(");
         for (int i = 0; i < matchers.size(); i++) {
             if (i > 0) {
-                sb.append(" && ");
+                sb.append(" || ");
             }
             sb.append(matchers.get(i));
         }
@@ -36,9 +38,14 @@ public class AndMatcher implements Matcher {
 
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        for (Matcher matcher : matchers) {
-            stream = matcher.matches(stream, context);
-        }
-        return stream;
+//        return stream
+//                // TODO: can we optimize not to collect here ? (Stream all way down)
+//                .map(match -> matchers.stream().map(matcher -> matcher.matches(match, context)).collect(Collectors.toList()))
+//                .flatMap(Collection::stream)
+//                .flatMap(Collection::stream);
+        List<Match> upstreamMatches = stream.collect(Collectors.toList());
+        return matchers.stream()
+                .map(matcher -> matcher.matches(upstreamMatches.stream(), context).collect(Collectors.toList()))
+                .flatMap(Collection::stream);
     }
 }

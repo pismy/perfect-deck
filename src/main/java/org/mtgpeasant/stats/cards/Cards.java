@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.cards;
 
 import lombok.Builder;
 import lombok.Singular;
@@ -33,8 +33,9 @@ public class Cards {
     }
 
     public Cards shuffle() {
-        Collections.shuffle(cards);
-        return this;
+        Cards copy = copy();
+        Collections.shuffle(copy.cards);
+        return copy;
     }
 
     public String draw() {

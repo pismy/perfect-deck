@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.matchers;
 
 import lombok.Builder;
 import lombok.Value;
@@ -19,9 +19,9 @@ public class CardMatcher implements Matcher {
 
     @Override
     public void validate(Validation validation, MatcherContext context) {
-        if(!context.getDeck().has(card)) {
-            validation.warning("Card [" + card + "] not found in deck");
-        }
+//        if(!context.getDeck().has(card)) {
+//            validation.warning("Card [" + card + "] not found in deck");
+//        }
     }
 
     @Override

@@ -1,9 +1,8 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.matchers;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.mtgpeasant.stats.domain.AndMatcher;
-import org.mtgpeasant.stats.domain.OrMatcher;
+import org.mtgpeasant.stats.utils.ParseError;
 
 public class MatcherParserTest {
 

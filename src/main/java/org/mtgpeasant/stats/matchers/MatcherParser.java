@@ -1,9 +1,10 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.matchers;
 
 import com.google.common.collect.Sets;
 import lombok.Builder;
 import lombok.Value;
-import org.mtgpeasant.stats.domain.*;
+import org.mtgpeasant.stats.utils.ParseError;
+import org.mtgpeasant.stats.utils.ParseHelper;
 
 import java.io.StringReader;
 import java.util.ArrayList;

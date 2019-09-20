@@ -1,26 +1,29 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.matchers;
 
 import lombok.Builder;
 import lombok.Value;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Stream;
 
 @Builder
 @Value
-public class NoopMatcher implements Matcher {
+public class RefMatcher implements Matcher {
+    final String name;
+
     @Override
     public String toString() {
-        return "$noop";
+        return "<" + name + ">";
     }
 
     @Override
     public void validate(Validation validation, MatcherContext context) {
+        if (context.findByName(name) == null) {
+            validation.error("Matcher <" + name + "> not found");
+        }
     }
 
     @Override
     public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return stream;
+        return context.findByName(name).matches(stream, context);
     }
 }

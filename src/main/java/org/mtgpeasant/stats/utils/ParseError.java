@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.utils;
 
 import com.google.common.base.Strings;
 import lombok.Getter;

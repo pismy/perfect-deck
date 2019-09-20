@@ -1,4 +1,4 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.utils;
 
 import java.util.ArrayList;
 import java.util.LinkedList;

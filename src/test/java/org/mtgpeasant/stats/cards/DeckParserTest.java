@@ -1,9 +1,7 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.cards;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import org.mtgpeasant.stats.domain.Cards;
-import org.mtgpeasant.stats.domain.Deck;
 
 import java.io.IOException;
 import java.io.StringReader;

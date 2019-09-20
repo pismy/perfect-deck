@@ -1,7 +1,8 @@
-package org.mtgpeasant.stats.domain;
+package org.mtgpeasant.stats.matchers;
 
 import lombok.Builder;
 import lombok.Value;
+import org.mtgpeasant.stats.cards.Cards;
 
 @Builder
 @Value

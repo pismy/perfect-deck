@@ -1,9 +1,9 @@
-package org.mtgpeasant.stats.parser;
+package org.mtgpeasant.stats.cards;
 
 import lombok.Builder;
 import lombok.Value;
-import org.mtgpeasant.stats.domain.Cards;
-import org.mtgpeasant.stats.domain.Deck;
+import org.mtgpeasant.stats.cards.Cards;
+import org.mtgpeasant.stats.cards.Deck;
 
 import java.io.BufferedReader;
 import java.io.IOException;
