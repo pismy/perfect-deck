@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Perfect Hand - Optimizer</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<style>
+    .code {
+        font-family: monospace;
+        white-space: nowrap;
+    }
+    textarea.code {
+        white-space: pre;
+    }
+    #iterations {
+        width: 6em;
+    }
+    #results {
+        border: 1px solid #ced4da;
+        overflow: scroll;
+    }
+    #results .placeholder {
+        padding: 30px;
+        color: #555555;
+        font-style: italic;
+    }
+    #stackTraceLines .line {
+        line-height: 1.5;
+        margin: 0;
+    }
+    #highlightedStackTrace .marker {
+        cursor: pointer;
+        margin-right: 5px;
+        padding: 0 10px;
+        border-right: 1px solid #ced4da;
+        font-weight: bold;
+        color: #555555;
+        display: inline-block;
+    }
+    #highlightedStackTrace .error {
+        background-color: #cce5ff;
+    }
+    #highlightedStackTrace .error .marker {
+        background-color: #004085;
+        color: white;
+    }
+    #highlightedStackTrace .match {
+        background-color: #ecfdf0;
+    }
+    #highlightedStackTrace .match .marker {
+        background-color: #ddfbe6;
+    }
+    #highlightedStackTrace .ignored {
+        background-color: #fff;
+    }
+    #highlightedStackTrace .ignored .marker {
+        background-color: #fafafa;
+    }
+    #highlightedStackTrace .excluded {
+        background-color: #fbe9eb;
+    }
+    #highlightedStackTrace .excluded .marker {
+        background-color: #f9d7dc;
+    }
+    #highlightedStackTrace .error-class {
+        font-weight: bold;
+    }
+    #highlightedStackTrace .error-class:hover, #highlightedStackTrace .classname-and-method:hover, #highlightedStackTrace .file:hover, #highlightedStackTrace .ln:hover {
+        text-decoration: underline;
+        cursor: pointer;
+    }
+    #highlightedStackTrace .error-class {
+        font-weight: bold;
+        color: #004085;
+    }
+    #highlightedStackTrace .classname-and-method {
+        color: #2b6799;
+    }
+    #highlightedStackTrace .file {
+        color: #993b86;
+    }
+    #highlightedStackTrace .ln {
+        color: #664d99;
+    }
+</style>
+<body>
+<!-- header fragment with navigation bar -->
+<header id="header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="index.html">Tools <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="about.html">About</a>
+                    </li>
+                </ul>
+            </div>
+            <a class="nav-link" href="https://github.com/pismy/perfect-hand">GitHub project</a>
+        </div>
+    </nav>
+</header>
+
+<div class="container page-body">
+    <h1>Perfect Hand - Optimizer</h1>
+
+    <div class="alert alert-primary">
+        <p>This tool helps you optimize your deck against your criteria to keep and opening hand.</p>
+    </div>
+
+    <h2 class="my-3">Deck</h2>
+
+    <ul class="nav nav-tabs" id="deck-tabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="deck1-tab" data-toggle="tab" href="#deck1" role="tab" aria-selected="true">Main</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="deck2-tab" data-toggle="tab" href="#deck2" role="tab" aria-selected="true">Alt.1
+                <button type="button" class="close ml-2" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </a>
+        </li>
+        <li classs="nav-add">
+            <button type="button" class="btn btn-secondary ml-2">&plus;</button>
+        </li>
+    </ul>
+    <div class="tab-content" id="deck-tabs-content">
+        <div class="tab-pane fade show active" id="deck1" role="tabpanel" aria-labelledby="deck1-tab">
+            <div class="form-group">
+        <textarea class="form-control code" rows="30" placeholder="type in your deck to optimize here"># discard
+4 Faithless Looting
+4 Putrid Imp
+
+# reanimation
+4 Animate Dead
+4 Exhume
+
+# creatures
+4 Hand of Emrakul
+2 Greater Sandwurm
+1 Pathrazer of Ulamog
+4 Ulamog's Crusher
+
+# mana
+3 Dark Ritual
+4 Lotus Petal
+1 Crumbling Vestige
+7 Mountain
+10 Swamp
+
+# others
+3 Dragon Breath
+3 Gitaxian Probe
+2 Shred Memory
+
+# Sideboard:
+SB 3 Apostle's Blessing
+SB 4 Duress
+SB 2 Electrickery
+SB 2 Mind Rake
+SB 2 Pyroblast
+SB 2 Shenanigans</textarea>
+            </div>
+        </div>
+        <div class="tab-pane fade show" id="deck2" role="tabpanel" aria-labelledby="deck2-tab">
+            <div class="form-group">
+        <textarea class="form-control code" rows="30" placeholder="type in your deck to optimize here"># discard
+4 Faithless Looting
+4 Putrid Imp
+
+# reanimation
+4 Animate Dead
+4 Exhume
+
+# creatures
+4 Hand of Emrakul
+2 Greater Sandwurm
+1 Pathrazer of Ulamog
+4 Ulamog's Crusher
+
+# mana
+3 Dark Ritual
+4 Lotus Petal
+1 Crumbling Vestige
+7 Mountain
+10 Swamp
+
+# others
+3 Dragon Breath
+3 Gitaxian Probe
+2 Shred Memory
+
+# Sideboard:
+SB 3 Apostle's Blessing
+SB 4 Duress
+SB 2 Electrickery
+SB 2 Mind Rake
+SB 2 Pyroblast
+SB 2 Shenanigans</textarea>
+            </div>
+        </div>
+    </div>
+
+
+    <h2 lass="my-3">Hand Keeping Rules</h2>
+        <div class="form-group">
+            <textarea class="form-control code" id="rules" rows="20" placeholder="type in your hand keeping rules here..."># ============
+# === Matchers
+# ============
+&lt;B&gt;: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
+&lt;R&gt;: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
+&lt;X&gt;: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
+&lt;+1&gt;: [Lotus Petal] | [Dark Ritual] | [Simian Spirit Guide]
+&lt;creature&gt;: [Hand of Emrakul] | [Greater Sandwurm] | [Pathrazer of Ulamog] | [Ulamog's Crusher]
+&lt;rea&gt;: [Exhume] | [Animate Dead] | [Reanimate]
+&lt;cantrip&gt;: [Gitaxian Probe]
+
+# ======================
+# === Hand keeping rules
+# ======================
+# I can reanimate turn 1
+&lt;&lt;turn 1 imp&gt;&gt;: &lt;B&gt; &amp; [Dark Ritual] &amp; [Putrid Imp] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
+
+# I can reanimate turn 2
+&lt;&lt;turn 2 imp&gt;&gt;: &lt;B&gt; &amp; &lt;X&gt; &amp; [Putrid Imp] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
+&lt;&lt;turn 2 looting&gt;&gt;: &lt;B&gt; &amp; &lt;R&gt; &amp; [Faithless Looting] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
+
+# I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
+&lt;&lt;turn 2 OTD&gt;&gt;: &lt;B&gt; &amp; &lt;+1&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;
+
+# I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
+&lt;&lt;turn 3 OTD&gt;&gt;: &lt;B&gt; &amp; &lt;X&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;
+
+# one element of the combo is missing but I can play Faithless Looting turn 1
+&lt;&lt;looting to find last element&gt;&gt;: &lt;R&gt; &amp; [Faithless Looting] &amp; @atleast(2)( &lt;B&gt; &lt;creature&gt; &lt;rea&gt; )
+
+# I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
+&lt;&lt;probe to find mana source&gt;&gt;: &lt;X&gt; &amp; &lt;cantrip&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;</textarea>
+        </div>
+
+    <h2 lass="my-3">Simulate</h2>
+
+    <div class="form-inline">
+        <div class="form-group">
+            <input type="number" class="form-control mr-2" id="iterations" value="5000"/>
+            <label for="iterations" class="mr-4">iterations</label>
+        </div>
+
+        <button class="btn btn-lg btn-primary" id="compute">Go!</button>
+    </div>
+
+    <h2 class="my-3">Results</h2>
+    <div id="results">
+        <div class="placeholder">Results will show here...</div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="js/perfect-hand.js"></script>
+<script language="JavaScript">
+    $(document).ready(function(){
+        $("#compute").click(function(){
+            var exclude_no_source = $("#excludeNoSource").prop("checked");
+            var exclusion_patterns = $("#exclusionPatterns").val().trim().split("\n").map(function (pattern) {
+                try {
+                    return new RegExp(pattern);
+                } catch(e) {
+                    alert("Invalid exclusion pattern: '"+pattern+"'");
+                }
+            });
+            var inclusion_patterns = $("#inclusionPatterns").val().trim().split("\n").map(function (pattern) {
+                try {
+                    return new RegExp(pattern);
+                } catch(e) {
+                    alert("Invalid inclusion pattern: '"+pattern+"'");
+                }
+            });
+            var stack_lines = $("#stackTrace").val().trim().split("\n");
+            var debugged_stack = [];
+            var digest = new StackDigester(exclude_no_source, inclusion_patterns, exclusion_patterns).compute(stack_lines, debugged_stack);
+            $("#digest").text(digest);
+            $("#stackTraceLines").html(debugged_stack.join("\n"));
+        });
+    });
+</script>
+
+</body>
+</html>

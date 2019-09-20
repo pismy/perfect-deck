@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Perfect Hand - About</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- header fragment with navigation bar -->
+<header id="header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar"
+                    aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbar">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Tool</a>
+                    </li>
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">About <span class="sr-only">(current)</span></a>
+                    </li>
+                </ul>
+            </div>
+            <a class="nav-link" href="https://github.com/pismy/perfect-hand">GitHub project</a>
+        </div>
+    </nav>
+</header>
+
+<div class="container page-body">
+    <h1>Welcome to the <i>Java Stack Digest filter plugin</i> pages</h1>
+
+    <div class="alert alert-primary">
+        <p>This site introduces the utility of computing Java stack digests, highlights the <a href="challenge.html">stack digest stability challenge</a>,
+            and also provides a <a href="index.html">debugger</a> to help you configure and tweak your <i>Java Stack Digest filter plugin</i> configuration.</p>
+    </div>
+
+    <h2 class="my-3" id="why">Why generating stack digests?</h2>
+
+    <p>A full Java stack trace is very helpful to analyse and debug a single error, but is not very handy to compare two
+        errors.</p>
+
+    <p>The idea is to turn a full Java stack trace into a <strong>short</strong> and <strong>stable</strong> digest,
+        that could help matching several
+        distinct occurrences of the same type of error:</p>
+    <ul>
+        <li><strong>short</strong> for easing elasticsearch indexing, and take advantage of it (we use a MD5 hash),</li>
+        <li><strong>stable</strong> is the tricky part, as the same type of error occurring twice may not generate
+            exactly the same stack trace (see  <a href="challenge.html">challenge</a>).
+        </li>
+    </ul>
+
+    <p>This done, it becomes easy with elasticsearch or any other logs centralization and indexation system to:</p>
+    <ul>
+        <li><strong>count</strong> distinct type of errors that occur in your code over time,</li>
+        <li><strong>count</strong> occurrences and frequency of a given type of error,</li>
+        <li><strong>detect</strong> when a (new) type of error occurred for the first time (maybe linking this to a new
+            version being deployed?).
+        </li>
+    </ul>
+
+    <p>The stack digest may also become a simple error id that you can link your bug tracker with...</p>
+
+</div>
+</body>
+</html>

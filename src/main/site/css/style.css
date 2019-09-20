@@ -1,0 +1,9 @@
+body {
+    background: url("grey_linen.png");
+}
+.page-body {
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.5);
+    background: url("white_linen.png");
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
