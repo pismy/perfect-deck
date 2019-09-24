@@ -1,5 +1,6 @@
 package org.mtgpeasant.stats;
 
+import dnl.utils.text.table.TextTable;
 import org.mtgpeasant.stats.cards.Deck;
 import org.mtgpeasant.stats.cards.DeckParser;
 import org.mtgpeasant.stats.matchers.MatcherParser;
@@ -37,23 +38,30 @@ public class PerfectHand {
                 @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000") int iterations,
                 @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
 
-        ) throws IOException, ParseError {
+        ) throws IOException {
             Deck deck = DeckParser.parse(new FileReader(deckFile));
 
             System.out.println("Deck loaded: " + deck.getMain().size() + " cards (" + deck.getSideboard().size() + " cards in sideboard)");
             System.out.println();
 
             Rules rules = Rules.parse(new FileReader(matchersFile));
+            if (!rules.getErrors().isEmpty()) {
+                System.out.println("=== ERRORS ===");
+                for (ParseError error : rules.getErrors()) {
+                    System.out.println(error.getMessage());
+                }
+                return;
+            }
 
             // validation
             Validation validation = rules.validate();
-            if (!validation.getErrors().isEmpty()) {
-                System.out.println("=== WARNING ===");
-                for (String msg : validation.getWarnings()) {
-                    System.out.println("-> " + msg);
-                }
-                System.out.println();
-            }
+//            if (!validation.getWarnings().isEmpty()) {
+//                System.out.println("=== WARNING ===");
+//                for (String msg : validation.getWarnings()) {
+//                    System.out.println("-> " + msg);
+//                }
+//                System.out.println();
+//            }
             if (!validation.getErrors().isEmpty()) {
                 System.out.println("=== ERRORS ===");
                 for (String msg : validation.getErrors()) {
@@ -66,6 +74,7 @@ public class PerfectHand {
             if (verbose) {
                 System.out.println("=== SIMULATE " + iterations + " DRAWS ===");
             }
+            long startTime = System.currentTimeMillis();
             Simulator simulator = Simulator.builder().iterations(iterations).rules(rules).build();
             Simulator.Results results = simulator.simulate(deck);
             if (verbose) {
@@ -73,12 +82,24 @@ public class PerfectHand {
             }
 
             // dump stats
-            System.out.println("=== STATS (elapsed " + (results.getElapse()) + "ms) ===");
-            for (MatcherParser.MatcherDeclaration decl : rules.getCriterias()) {
-                int matchesCount = results.getMatchCount().getOrDefault(decl.getName(), 0);
-                System.out.println(decl.getName() + ": " + matchesCount + "/" + iterations + " (" + PERCENT.format(100f * (float) matchesCount / (float) iterations) + "%)");
+            System.out.println("=== STATS (elapsed " + (System.currentTimeMillis() - startTime) + "ms) ===");
+            String[] columnNames = new String[]{"Criterias", "Deck #1"};
+            Object[][] data = new Object[rules.getCriterias().size()+1][2];
+            for(int i=0; i<rules.getCriterias().size(); i++) {
+                MatcherParser.MatcherDeclaration criteria = rules.getCriterias().get(i);
+                data[i][0] = criteria.getName();
+                int count = results.getMatchCount().get(criteria.getName())[0];
+                data[i][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             }
-            System.out.println("NONE: " + results.getNoMatchCount() + "/" + iterations + " (" + PERCENT.format(100f * (float) results.getNoMatchCount() / (float) iterations) + "%)");
+            data[rules.getCriterias().size()][0] = "no match";
+            int count = results.getNoMatchCount()[0];
+            data[rules.getCriterias().size()][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
+            new TextTable(columnNames, data).printTable();
+//            for (RulesParser.MatcherDeclaration decl : rules.getCriterias()) {
+//                int matchesCount = results.getMatchCount().getOrDefault(decl.getName(), 0);
+//                System.out.println(decl.getName() + ": " + matchesCount + "/" + iterations + " (" + PERCENT.format(100f * (float) matchesCount / (float) iterations) + "%)");
+//            }
+//            System.out.println("NONE: " + results.getNoMatchCount() + "/" + iterations + " (" + PERCENT.format(100f * (float) results.getNoMatchCount() / (float) iterations) + "%)");
         }
     }
 }

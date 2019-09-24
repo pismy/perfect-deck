@@ -8,6 +8,7 @@ import org.mtgpeasant.stats.matchers.Match;
 import org.mtgpeasant.stats.matchers.MatcherParser;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -21,34 +22,44 @@ public class Simulator {
 
     @Value
     public static class Results {
-        final Map<String, Integer> matchCount;
-        final int noMatchCount;
-        final long elapse;
+        final int iterations;
+        final Map<String, int[]> matchCount;
+        final int[] noMatchCount;
+
+        private Results(int iterations, List<MatcherParser.MatcherDeclaration> criterias, Deck... decks) {
+            this.iterations = iterations;
+            this.matchCount = new HashMap<>();
+            for (MatcherParser.MatcherDeclaration decl : criterias) {
+                matchCount.put(decl.getName(), new int[decks.length]);
+            }
+            noMatchCount = new int[decks.length];
+        }
+
+        private void addMatch(int deck, MatcherParser.MatcherDeclaration criteria) {
+            matchCount.get(criteria.getName())[deck]++;
+        }
+
+        private void addNoMatch(int deck) {
+            noMatchCount[deck]++;
+        }
     }
 
-    public Results simulate(Deck deck) {
-        Map<String, Integer> matchCount = new HashMap<>();
-        int noMatchCount = 0;
-
-        long startTime = System.currentTimeMillis();
-        for (int it = 0; it < iterations; it++) {
-            Cards hand = deck.getMain().shuffle().draw(draw);
-            MatcherParser.MatcherDeclaration matching = findMatch(hand);
-            if (matching != null) {
-                // increment match count
-                matchCount.put(matching.getName(), matchCount.getOrDefault(matching.getName(), 0) + 1);
-            } else {
-                noMatchCount++;
+    public Results simulate(Deck... decks) {
+        Results results = new Results(iterations, rules.getCriterias(), decks);
+        for (int d = 0; d < decks.length; d++) {
+            Deck deck = decks[d];
+            for (int it = 0; it < iterations; it++) {
+                Cards hand = deck.getMain().shuffle().draw(draw);
+                MatcherParser.MatcherDeclaration matching = findMatch(hand);
+                if (matching != null) {
+                    // increment match count
+                    results.addMatch(d, matching);
+                } else {
+                    results.addNoMatch(d);
+                }
             }
-//            if (verbose) {
-//                if (matching == null) {
-//                    System.out.println("Hand " + hand + " is rejected");
-//                } else {
-//                    System.out.println("Hand " + hand + " matches " + matching);
-//                }
-//            }
         }
-        return new Results(matchCount, noMatchCount, System.currentTimeMillis() - startTime);
+        return results;
     }
 
     private MatcherParser.MatcherDeclaration findMatch(Cards hand) {

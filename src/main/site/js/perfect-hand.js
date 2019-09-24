@@ -1,21 +1,19 @@
-const Util = function() {
-};
-
-Util.getCombinations = function(array, size, start, initialStuff, output) {
-    if (initialStuff.length >= size) {
-        output.push(initialStuff);
-    } else {
-        var i;
-
-        for (i = start; i < array.length; ++i) {
-            Util.getCombinations(array, size, i + 1, initialStuff.concat(array[i]), output);
+class Util {
+    static getCombinations(array, size, start, initialStuff, output) {
+        if (initialStuff.length >= size) {
+            output.push(initialStuff);
+        } else {
+            let i;
+            for (i = start; i < array.length; ++i) {
+                Util.getCombinations(array, size, i + 1, initialStuff.concat(array[i]), output);
+            }
         }
+        return output;
     }
-    return output;
-}
 
-Util.getAllPossibleCombinations = function(array, size) {
-    return Util.getCombinations(array, size, 0, [], []);
+    static getAllPossibleCombinations(array, size) {
+        return Util.getCombinations(array, size, 0, [], []);
+    }
 }
 
 class ParseError {
@@ -43,7 +41,7 @@ class ParseError {
 class Parser {
     /**
      * Creates a multi-purpose parser
-     * @param {Array} input text to parse (array of chars)
+     * @param {string} input text to parse (array of chars)
      * @constructor
      */
     constructor(input) {
@@ -55,23 +53,33 @@ class Parser {
         this.colNb = -1;
     }
 
+    /**
+     * @return {string}
+     */
     get curChar() {
-        if(this.curIdx >= this.input.length) {
+        if (this.curIdx >= this.input.length) {
             return null;
         } else {
             return this.input[this.curIdx];
         }
     }
 
+    /**
+     * @return {boolean}
+     */
     get eof() {
-        return this.curChar == null;
+        return this.curIdx >= this.input.length;
     }
 
+    /**
+     * @return {string}
+     */
     nextChar() {
         // --- change line if current char is LF
-        if (this.curChar == '\n') {
+        if (this.curChar === '\n') {
             this.lineNb++;
             this.colNb = -1;
+            // reset current line buffer
             this.curLine.length = 0;
         }
 
@@ -79,7 +87,7 @@ class Parser {
         this.curIdx++;
 
         // ---
-        if (!this.eof && this.curChar != '\n' && this.curChar != '\r') {
+        if (!this.eof && this.curChar !== '\n' && this.curChar !== '\r') {
             this.curLine.push(this.curChar);
             this.colNb++;
         }
@@ -89,7 +97,7 @@ class Parser {
     /**
      * Reads and consumes the given char.
      *
-     * @param {char} c
+     * @param {string} c
      *            the character to read
      * @param {String} skip
      *            chars allowed to skip
@@ -99,7 +107,7 @@ class Parser {
     consumeChar(c, skip) {
         if (skip != null)
             this.skipChars(skip);
-        if (this.curChar != c)
+        if (this.curChar !== c)
             return false;
 
         // --- expected char has been read
@@ -179,7 +187,7 @@ class Cards {
     }
 
     isEmpty() {
-        return this.cards.length == 0;
+        return this.cards.length === 0;
     }
 
     shuffle() {
@@ -209,6 +217,7 @@ class Cards {
     /**
      * Checks whether has given card.
      * @param {String} card card name.
+     * @returns {boolean}
      */
     has(card) {
         return this.cards.indexOf(card) >= 0;
@@ -217,16 +226,18 @@ class Cards {
     /**
      * Removes the given card.
      * @param {String} card card name.
+     * @return {Cards}
      */
     remove(card) {
         let copy = Array.from(this.cards);
-        copy.remove(card);
+        copy.splice(copy.indexOf(card), 1);
         return new Cards(copy);
     }
 
     /**
      * Adds the given card.
      * @param {String} card card name.
+     * @return {Cards}
      */
     add(card) {
         let copy = Array.from(this.cards);
@@ -235,49 +246,63 @@ class Cards {
     }
 }
 
-const CARD_LINE = /(SB[:\s]\s*)?(?:(\d+)x?\s+)?(?:\[(.*)\]\s*)?(.+)/;
-
-/**
- * Parses a card line
- * @param {String} line line
- * @returns {*}
- */
-const parseCardLine = function (line) {
-    line = line.trim();
-    if (line.length == 0 || line.startsWith("#")) {
-        // empty or commented line
-        return null;
-    } else {
-        var m = CARD_LINE.exec(line);
-        return {
-            main: m[1] == null,
-            count: m[2] == null ? 0 : parseInt(m[2], 10),
-            extension: m[3],
-            name: m[4]
-        }
+class Deck {
+    /**
+     * Constructor
+     * @param {Cards} main
+     * @param {Cards} side
+     */
+    constructor(main, side) {
+        this.main = main;
+        this.side = side;
     }
 }
 
-/**
- * Parses a deck
- * @param {String} text deck text
- */
-const parseDeck = function (text) {
-    let main = [];
-    let side = [];
-    text.split("\n").forEach((line) => {
-        let c = parseCardLine(line);
-        for (let i = 0; i < c.count; i++) {
-            if (c.main) {
-                main.push(c.name)
-            } else {
-                side.push(c.name)
+const CARD_LINE = /(SB[:\s]\s*)?(?:(\d+)x?\s+)?(?:\[(.*)\]\s*)?(.+)/;
+
+class DeckParser {
+    /**
+     * Parses a deck
+     * @param {String} text deck text
+     * @return {Deck}
+     */
+    static parse(text) {
+        let main = [];
+        let side = [];
+        text.split("\n").forEach((line) => {
+            let card = DeckParser.parseCard(line);
+            if (card) {
+                for (let i = 0; i < card.count; i++) {
+                    if (card.main) {
+                        main.push(card.name)
+                    } else {
+                        side.push(card.name)
+                    }
+                }
+            }
+        });
+        return new Deck(new Cards(main), new Cards(side));
+    }
+
+    /**
+     * Parses a card line
+     * @param {String} line line
+     * @returns {*}
+     */
+    static parseCard(line) {
+        line = line.trim();
+        if (line.length === 0 || line.startsWith("#")) {
+            // empty or commented line
+            return null;
+        } else {
+            let m = CARD_LINE.exec(line);
+            return {
+                main: m[1] == null,
+                count: m[2] == null ? 0 : parseInt(m[2], 10),
+                extension: m[3],
+                name: m[4].toLowerCase()
             }
         }
-    });
-    return {
-        main: new Cards(main),
-        side: new Cards(side)
     }
 }
 
@@ -295,7 +320,7 @@ class Match {
     /**
      * Determines whether has given card
      * @param {string} card name
-     * @returns boolean
+     * @returns {boolean}
      */
     has(card) {
         return this.remaining.has(card);
@@ -313,7 +338,7 @@ class Match {
 
 class Matcher {
     /**
-     *
+     * Constructor
      * @param {Validation} validation
      * @param context
      */
@@ -339,25 +364,22 @@ class Validation {
 }
 
 class MatcherContext {
-    /**
-     *
-     * @param {Cards} deck
-     * @param {Object.<string, Matcher>} matchers
-     */
-    constructor(deck, matchers) {
-        this.deck = deck;
-        this.matchers = matchers;
-    }
 
     /**
-     *
+     * Returns the declared matcher with given name
      * @param {string} name
      * @return {Matcher}
      */
-    findByName(name) {
-        return this.matchers[name];
+    matcher(name) {
     }
 
+    /**
+     * Returns the card with given name
+     * @param {string} name
+     * @return {string} card
+     */
+    card(name) {
+    }
 }
 
 class NoopMatcher extends Matcher {
@@ -386,8 +408,8 @@ class CardMatcher extends Matcher {
     }
 
     validate(validation, context) {
-        if(!context.deck.has(card)) {
-            validation.warnings.push("Card [" + card + "] not found in deck");
+        if (!context.card(this.card)) {
+            validation.warnings.push("Card [" + this.card + "] not found in deck");
         }
     }
 
@@ -426,7 +448,8 @@ class AndMatcher extends Matcher {
     }
 
     matches(stream, context) {
-        for (let matcher in this.matchers) {
+        for (let i = 0; i < this.matchers.length; i++) {
+            let matcher = this.matchers[i];
             stream = matcher.matches(stream, context);
         }
         return stream;
@@ -463,9 +486,7 @@ class OrMatcher extends Matcher {
     }
 
     matches(stream, context) {
-        return this.matchers
-            .map((matcher) => {matcher.matches(stream, context)})
-            .flatMap();
+        return this.matchers.flatMap(matcher => matcher.matches(stream, context));
     }
 }
 
@@ -512,13 +533,83 @@ class RefMatcher extends Matcher {
     }
 
     validate(validation, context) {
-        if (context.findByName(this.name) == null) {
+        if (context.matcher(this.name) == null) {
             validation.errors.push("Matcher <" + this.name + "> not found");
         }
     }
 
     matches(stream, context) {
-        return context.findByName(this.name).matches(stream, context);
+        return context.matcher(this.name).matches(stream, context);
+    }
+}
+
+class Rules extends MatcherContext {
+    constructor() {
+        super();
+        this.criterias = [];
+        this.matchers = {};
+        this.validation = new Validation();
+    }
+
+    /**
+     *
+     * @param {DeclaredMatcher} declaredMatcher
+     */
+    add(declaredMatcher) {
+        this.matchers[declaredMatcher.name] = declaredMatcher.matcher;
+        if (declaredMatcher.criteria) {
+            this.criterias.push(declaredMatcher);
+        }
+    }
+
+    matcher(name) {
+        return this.matchers[name];
+    }
+
+    card(name) {
+        // TODO
+        return name;
+    }
+
+    validate() {
+        for (let matchersKey in this.matchers) {
+            this.matchers[matchersKey].validate(this.validation, this);
+        }
+    }
+
+    /**
+     * Looks for the first declared matcher that matches the given cards
+     * @param {Cards} hand
+     * @return {DeclaredMatcher}
+     */
+    matches(hand) {
+        let match = new Match(hand, new Cards([]));
+        let matching = this.criterias.find(declMatcher => declMatcher.matcher.matches([match], this).length > 0);
+        if (matching) {
+            console.log("hand", hand, " matches ", matching)
+        } else {
+            console.log("hand", hand, " rejected")
+        }
+        return matching;
+    }
+
+}
+
+class DeclaredMatcher {
+    /**
+     * Constructor
+     * @param {string} name
+     * @param {boolean} criteria
+     * @param {Matcher} matcher
+     */
+    constructor(name, criteria, matcher) {
+        this.name = name;
+        this.criteria = criteria;
+        this.matcher = matcher;
+    }
+
+    toString() {
+        return (this.criteria ? "<<" : "<") + this.name + (this.criteria ? ">>" : ">") + ": " + this.matcher;
     }
 }
 
@@ -526,362 +617,355 @@ const SEPARATORS = "[]<>()";
 const WHITE = " \t";
 const DIGITS = "0123456789";
 
-/**
- *
- * @param {String} line
- * @return {*}
- */
-function parseRuleDeclaration(line) {
-    let parser = new Parser(line);
-
-    // 1: read name
-    if (!parser.consumeChar('<', WHITE)) {
-        parser.error("'<' expected to open a matcher name declaration");
-    }
-    let isCriteria = parser.consumeChar('<', "");
-    let name = parser.readUntil(SEPARATORS).trim();
-    if (name.length == 0) {
-        parser.error("matcher name should not be empty");
-    }
-    if (!parser.consumeChar('>', WHITE)) {
-        parser.error("'>' expected to close a matcher name declaration");
-    }
-    if (isCriteria && !parser.consumeChar('>', WHITE)) {
-        parser.error("'>>' expected to close a criteria name declaration");
-    }
-    // 2: read ':'
-    if (!parser.consumeChar(':', WHITE)) {
-        parser.error("':' expected after matcher name declaration");
-    }
-    // 3: read either function or matchers
-    parser.skipChars(WHITE);
-    let matcher = null;
-    if (parser.consumeChar('@', WHITE)) {
-        matcher = parseFn(parser);
-    } else {
-        matcher = parseCompound(parser);
-    }
-
-    return {
-        name: name,
-        criteria: isCriteria,
-        matcher : matcher
-    }
-}
-
-/**
- * 
- * @param {Parser} parser
- * @return {Matcher}
- */
-function parseMatcher(parser) {
-    // 1: read integer (times)
-    let timesStr = "";
-    while (DIGITS.indexOf(parser.curChar) > 0) {
-        timesStr += parser.curChar;
-        parser.nextChar();
-    }
-    let times = 1;
-    if (!timesStr.length == 0) {
-        times = parseInt(timesStr, 10);
-    }
-    // 2: read card matcher or ref matcher
-    let matcher = null;
-    if (parser.consumeChar('[', WHITE)) {
-        // card matcher
-        matcher = new CardMatcher(parser.readUntil(SEPARATORS).trim().toLowerCase());
-        if (!parser.consumeChar(']', WHITE)) {
-            parser.error("']' expected to close a card matcher");
-        }
-    } else if (parser.consumeChar('<', WHITE)) {
-        // ref matcher
-        matcher = new RefMatcher(parser.readUntil(SEPARATORS).trim());
-        if (!parser.consumeChar('>', WHITE)) {
-            parser.error("'>' expected to close a matcher reference");
-        }
-    } else if (parser.consumeChar('(', WHITE)) {
-        // compound matcher
-        matcher = parseCompound(parser);
-        if (!parser.consumeChar(')', WHITE)) {
-            parser.error("')' expected to close a compound matcher");
-        }
-    } else if (parser.consumeChar('@', WHITE)) {
-        // function matcher
-        matcher = parseFn(parser);
-    } else {
-        parser.error("either '[' or '<' expected to declare a matcher");
-    }
-    parser.skipChars(WHITE);
-
-    if (times == 1) {
-        return matcher;
-    } else {
-        return new TimesMatcher(times, matcher);
-    }
-}
-
-/**
- *
- * @param {Parser} parser
- * @return {Matcher}
- */
-function parseCompound(parser) {
-    let matchers = [];
-    let compound = null;
-    while (!parser.eof && parser.curChar != ')') {
-        if (matchers.length == 1) {
-            // read "&&" or "||"
-            if (parser.consumeChar('&', WHITE)) {
-                // optional doubled
-                parser.consumeChar('&', "");
-                compound = '&';
-            } else if (parser.consumeChar('|', WHITE)) {
-                // optional doubled
-                parser.consumeChar('|', "");
-                compound = '|';
+class RulesParser {
+    /**
+     * Parses a set of rules
+     * @param {string} text
+     * @return {Rules}
+     */
+    static parse(text) {
+        let rules = new Rules();
+        text.split("\n").forEach((line, lineNb) => {
+            if (line.length === 0 || line.startsWith("#")) {
+                // empty or commented line
             } else {
-                parser.error("either '&' or '|' expected to assemble several matchers");
-            }
-        } else if (matchers.length > 1) {
-            if (!parser.consumeChar(compound, WHITE)) {
-                parser.error("'" + compound + "' expected");
-            }
-            // optional doubled
-            parser.consumeChar(compound, "");
-        }
-
-        matchers.push(parseMatcher(parser));
-    }
-
-    if (matchers.length == 0) {
-        parser.error("you should declare at least one matcher");
-    }
-
-    if (matchers.length == 1) {
-        return matchers.get(0);
-    } else if (compound == '&') {
-        return new AndMatcher(matchers);
-    } else {
-        return new OrMatcher(matchers);
-    }
-}
-
-/**
- *
- * @param {Parser} parser
- * @return {Matcher}
- */
-function parseFn(parser) {
-    let name = parser.readUntil(SEPARATORS).trim();
-    if (name.length == 0) {
-        parser.error("function name may not be empty");
-    }
-    switch (name) {
-        case "any":
-        case "all": {
-            let matchers = parseMatcherList(parser);
-            if (matchers.length == 0) {
-                parser.error("you shall provide at least one matcher");
-            }
-            if (matchers.length == 1) {
-                return matchers.get(0);
-            }
-            return name == "any" ? new OrMatcher(matchers) : new AndMatcher(matchers);
-        }
-        case "xof":
-        case "atleast": {
-            let arg1 = parseFnArg(parser);
-            if (arg1.length == 0) {
-                parser.error("1st arg must be a valid integer");
-            }
-            let nb = 0;
-            try {
-                nb = parseInt(arg1, 10);
-            } catch (nfe) {
-                parser.error("1st arg must be a valid integer");
-            }
-            if (nb < 0) {
-                parser.error("1st arg must be a positive integer");
-            }
-            let matchers = parseMatcherList(parser);
-            if (nb == 0) {
-                return new NoopMatcher();
-            }
-            if (nb > matchers.length) {
-                parser.error("1st arg cannot exceed matchers size");
-            }
-            if (matchers.length == 0) {
-                parser.error("you shall provide at least one matcher");
-            }
-            if (matchers.length == 1) {
-                return matchers.get(0);
-            }
-            if (nb == 1) {
-                return new OrMatcher(matchers);
-            } else if (nb == matchers.length) {
-                new AndMatcher(matchers);
-            } else {
-                // make all combinations of NB among matchers:
-                // any( all(M1, M2, ... Mn), ...)
-                let allCombinations = Util.getAllPossibleCombinations(matchers, nb);
-                return new OrMatcher(allCombinations.map(combination => new AndMatcher(combination)));
-            }
-        }
-        default: {
-            parser.error("unknown function @" + name);
-        }
-    }
-    return null;
-}
-
-/**
- *
- * @param {Parser} parser
- * @return {Array.<Matcher>}
- */
-function parseMatcherList(parser) {
-    let matchers = [];
-    if (!parser.consumeChar('(', WHITE)) {
-        parser.error("'(' expected (matchers list)");
-    }
-    while (!parser.consumeChar(')', WHITE) && !parser.eof) {
-        matchers.push(parseMatcher(parser));
-    }
-    return matchers;
-}
-
-/**
- *
- * @param {Parser} parser
- * @return {String}
- */
-function parseFnArg(parser) {
-    if (!parser.consumeChar('(', WHITE)) {
-        parser.error("'(' expected (open function arg)");
-    }
-    let arg = parser.readUntil(SEPARATORS);
-    if (!parser.consumeChar(')', WHITE)) {
-        parser.error("')' expected (close function arg)");
-    }
-    return arg;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var StackDigester = function (exclude_no_source, inclusion_patterns, exclusion_patterns) {
-    // Regexp to capture the Error classname from the first stack trace line
-    // group 1: error classname
-    this.error_pattern = /((?:[\w$]+\.){2,}[\w$]+):/
-
-    // Regexp to extract stack trace elements information
-    // group 1: classname+method
-    // group 2: filename (optional)
-    // group 3: line number (optional)
-    this.stack_element_pattern = /^\s+at\s+((?:[\w$]+\.){2,}[\w$]+)\((?:([^:]+)(?::(\d+))?)?\)/
-
-    this.exclude_no_source = exclude_no_source;
-
-    this.inclusion_patterns = inclusion_patterns;
-
-    this.exclusion_patterns = exclusion_patterns;
-
-    this.compute = function(stack_trace, debugged_stack) {
-        var digest = md5.create();
-
-        // 1: extract error class from first line
-        var cur_stack_trace_line = stack_trace.shift();
-        var error_class = cur_stack_trace_line.match(this.error_pattern);
-
-        // populate debugged stack
-        var highlighted_line = cur_stack_trace_line.replace(this.error_pattern, "<span class='error-class' title='Error class'>$1</span>:");
-        debugged_stack.push("<div class='line error'><span class='marker' title='Stack error'>E</span>" + highlighted_line+"</div>");
-
-        // digest: error classname
-        digest.update(error_class[1]);
-
-        // 2: read all stack trace elements until stack trace is empty or we hit the next error
-        var ste_count = 0;
-        while (stack_trace.length > 0) {
-            cur_stack_trace_line = stack_trace[0];
-            if (cur_stack_trace_line.startsWith(' ') || cur_stack_trace_line.startsWith('\t')) {
-                // current line starts with a whitespace: is it a stack trace element ?
-                var stack_element = cur_stack_trace_line.match(this.stack_element_pattern);
-                if (stack_element) {
-                    // current line is a stack trace element
-                    ste_count += 1;
-                    var excluded = this.is_excluded(stack_element);
-                    if (!excluded) {
-                        // digest: STE classname and method
-                        digest.update(stack_element[1]);
-                        // digest: line number (if present)
-                        if (stack_element[3]) {
-                            digest.update(stack_element[3]);
-                        }
-                    }
-                    // populate debugged stack
-                    var highlighted_line = cur_stack_trace_line.replace(this.stack_element_pattern, function(match, classname_and_method, file, line) {
-                        var fileAndLine = file ? "<span class='file' title='File'>" + file + "</span>" + (line ? ":<span class='ln' title='Line'>" + line + "</span>" : "") : "";
-                        return "\tat <span class='classname-and-method' title='Classname and method'>" + classname_and_method + "</span>(" + fileAndLine + ")";
-                    });
-                    if(excluded) {
-                        debugged_stack.push("<div class='line excluded ste'><span class='marker' title='"+excluded+"'>-</span>" + highlighted_line + "</div>");
-                    } else {
-                        debugged_stack.push("<div class='line match ste'><span class='marker'>+</span>" + highlighted_line + "</div>");
-                    }
-                } else {
-                    debugged_stack.push("<div class='line ignored'><span class='marker'>?</span>" + cur_stack_trace_line + "</div>");
+                try {
+                    rules.add(RulesParser.parseRuleDeclaration(line));
+                } catch (pe) {
+                    pe.line = lineNb;
+                    rules.validation.errors.push(pe);
                 }
-            } else if (ste_count > 0) {
-                // current line doesn't start with a whitespace and we've already read stack trace elements: it looks like the next error in the stack
-                break
-            } else {
-                // current line doesn't start with a whitespace and we've not read any stack trace element yet: it looks like a wrapping error message
-                debugged_stack.push("<div class='line ignored'><span class='marker'>?</span>" + cur_stack_trace_line+"</div>");
             }
-            // move to next line
-            stack_trace.shift();
-        }
-
-        // 3: if stack trace not empty, compute digest for next error
-        if (stack_trace.length > 1) {
-            digest.update(this.compute(stack_trace, debugged_stack));
-        }
-
-        return digest.hex();
-    }
-
-    // Determines whether the given stack trace element (Regexp match) should be excluded from digest computation
-    this.is_excluded = function(stack_element) {
-        // 1: exclude elements without source info ?
-        var lineNb = stack_element[3];
-        if (this.exclude_no_source && !lineNb) {
-            return "no source info";
-        }
-        var classnameAndMethod = stack_element[1];
-        // 2: Regex based inclusion
-        if(this.inclusion_patterns.length > 0) {
-            var includedBy = this.inclusion_patterns.find(function (pattern) {
-                return classnameAndMethod.match(pattern);
-            });
-            if(!includedBy) {
-                return "not matching any inclusion pattern"
-            }
-        }
-        // 3: Regex based exclusion
-        var excludedBy = this.exclusion_patterns.find(function (pattern) {
-            return classnameAndMethod.match(pattern);
         });
-        return excludedBy ? "excluded by "+excludedBy.toString() : null;
+        // validate
+        rules.validate();
+        return rules;
     }
-};
+
+    /**
+     *
+     * @param {String} line
+     * @return {DeclaredMatcher}
+     */
+    static parseRuleDeclaration(line) {
+        let parser = new Parser(line);
+
+        // 1: read name
+        if (!parser.consumeChar('<', WHITE)) {
+            parser.error("'<' expected to open a matcher name declaration");
+        }
+        let isCriteria = parser.consumeChar('<', "");
+        let name = parser.readUntil(SEPARATORS).trim();
+        if (name.length === 0) {
+            parser.error("matcher name should not be empty");
+        }
+        if (!parser.consumeChar('>', WHITE)) {
+            parser.error("'>' expected to close a matcher name declaration");
+        }
+        if (isCriteria && !parser.consumeChar('>', WHITE)) {
+            parser.error("'>>' expected to close a criteria name declaration");
+        }
+        // 2: read ':'
+        if (!parser.consumeChar(':', WHITE)) {
+            parser.error("':' expected after matcher name declaration");
+        }
+        // 3: read either function or matchers
+        parser.skipChars(WHITE);
+        let matcher = null;
+        if (parser.consumeChar('@', WHITE)) {
+            matcher = RulesParser.parseFn(parser);
+        } else {
+            matcher = RulesParser.parseCompound(parser);
+        }
+
+        return new DeclaredMatcher(name, isCriteria, matcher);
+    }
+
+    /**
+     *
+     * @param {Parser} parser
+     * @return {Matcher}
+     */
+    static parseMatcher(parser) {
+        // 1: read integer (times)
+        let timesStr = "";
+        while (DIGITS.indexOf(parser.curChar) > 0) {
+            timesStr += parser.curChar;
+            parser.nextChar();
+        }
+        let times = 1;
+        if (timesStr.length > 0) {
+            times = parseInt(timesStr, 10);
+        }
+        // 2: read card matcher or ref matcher
+        let matcher = null;
+        if (parser.consumeChar('[', WHITE)) {
+            // card matcher
+            matcher = new CardMatcher(parser.readUntil(SEPARATORS).trim().toLowerCase());
+            if (!parser.consumeChar(']', WHITE)) {
+                parser.error("']' expected to close a card matcher");
+            }
+        } else if (parser.consumeChar('<', WHITE)) {
+            // ref matcher
+            matcher = new RefMatcher(parser.readUntil(SEPARATORS).trim());
+            if (!parser.consumeChar('>', WHITE)) {
+                parser.error("'>' expected to close a matcher reference");
+            }
+        } else if (parser.consumeChar('(', WHITE)) {
+            // compound matcher
+            matcher = RulesParser.parseCompound(parser);
+            if (!parser.consumeChar(')', WHITE)) {
+                parser.error("')' expected to close a compound matcher");
+            }
+        } else if (parser.consumeChar('@', WHITE)) {
+            // function matcher
+            matcher = RulesParser.parseFn(parser);
+        } else {
+            parser.error("either '[' or '<' expected to declare a matcher");
+        }
+        parser.skipChars(WHITE);
+
+        if (times === 1) {
+            return matcher;
+        } else {
+            return new TimesMatcher(times, matcher);
+        }
+    }
+
+    /**
+     *
+     * @param {Parser} parser
+     * @return {Matcher}
+     */
+    static parseCompound(parser) {
+        let matchers = [];
+        let compound = null;
+        while (!parser.eof && parser.curChar !== ')') {
+            if (matchers.length === 1) {
+                // read "&&" or "||"
+                if (parser.consumeChar('&', WHITE)) {
+                    // optional doubled
+                    parser.consumeChar('&', "");
+                    compound = '&';
+                } else if (parser.consumeChar('|', WHITE)) {
+                    // optional doubled
+                    parser.consumeChar('|', "");
+                    compound = '|';
+                } else {
+                    parser.error("either '&' or '|' expected to assemble several matchers");
+                }
+            } else if (matchers.length > 1) {
+                if (!parser.consumeChar(compound, WHITE)) {
+                    parser.error("'" + compound + "' expected");
+                }
+                // optional doubled
+                parser.consumeChar(compound, "");
+            }
+
+            matchers.push(RulesParser.parseMatcher(parser));
+        }
+
+        if (matchers.length === 0) {
+            parser.error("you should declare at least one matcher");
+        }
+
+        if (matchers.length === 1) {
+            return matchers[0];
+        } else if (compound === '&') {
+            return new AndMatcher(matchers);
+        } else {
+            return new OrMatcher(matchers);
+        }
+    }
+
+    /**
+     *
+     * @param {Parser} parser
+     * @return {Matcher}
+     */
+    static parseFn(parser) {
+        let name = parser.readUntil(SEPARATORS).trim();
+        if (name.length === 0) {
+            parser.error("function name may not be empty");
+        }
+        switch (name) {
+            case "any":
+            case "all": {
+                let matchers = RulesParser.parseMatcherList(parser);
+                if (matchers.length === 0) {
+                    parser.error("you shall provide at least one matcher");
+                }
+                if (matchers.length === 1) {
+                    return matchers[0];
+                }
+                return name === "any" ? new OrMatcher(matchers) : new AndMatcher(matchers);
+            }
+            case "xof":
+            case "atleast": {
+                let arg1 = RulesParser.parseFnArg(parser);
+                if (arg1.length === 0) {
+                    parser.error("1st arg must be a valid integer");
+                }
+                let nb = 0;
+                try {
+                    nb = parseInt(arg1, 10);
+                } catch (nfe) {
+                    parser.error("1st arg must be a valid integer");
+                }
+                if (nb < 0) {
+                    parser.error("1st arg must be a positive integer");
+                }
+                let matchers = RulesParser.parseMatcherList(parser);
+                if (nb === 0) {
+                    return new NoopMatcher();
+                }
+                if (nb > matchers.length) {
+                    parser.error("1st arg cannot exceed matchers size");
+                }
+                if (matchers.length === 0) {
+                    parser.error("you shall provide at least one matcher");
+                }
+                if (matchers.length === 1) {
+                    return matchers[0];
+                }
+                if (nb === 1) {
+                    return new OrMatcher(matchers);
+                } else if (nb === matchers.length) {
+                    new AndMatcher(matchers);
+                } else {
+                    // make all combinations of NB among matchers:
+                    // any( all(M1, M2, ... Mn), ...)
+                    let allCombinations = Util.getAllPossibleCombinations(matchers, nb);
+                    return new OrMatcher(allCombinations.map(combination => new AndMatcher(combination)));
+                }
+            }
+            default: {
+                parser.error("unknown function @" + name);
+            }
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param {Parser} parser
+     * @return {Array.<Matcher>}
+     */
+    static parseMatcherList(parser) {
+        let matchers = [];
+        if (!parser.consumeChar('(', WHITE)) {
+            parser.error("'(' expected (matchers list)");
+        }
+        while (!parser.consumeChar(')', WHITE) && !parser.eof) {
+            matchers.push(RulesParser.parseMatcher(parser));
+        }
+        return matchers;
+    }
+
+    /**
+     *
+     * @param {Parser} parser
+     * @return {String}
+     */
+    static parseFnArg(parser) {
+        if (!parser.consumeChar('(', WHITE)) {
+            parser.error("'(' expected (open function arg)");
+        }
+        let arg = parser.readUntil(SEPARATORS);
+        if (!parser.consumeChar(')', WHITE)) {
+            parser.error("')' expected (close function arg)");
+        }
+        return arg;
+    }
+}
+
+class Simulation {
+    /**
+     * Simulates a large number of draws on several deck variants
+     * @param {Rules} rules
+     * @param {Array.<Deck>} decks
+     * @param {number} iterations
+     * @param {number} draw
+     */
+    constructor(rules, decks, iterations, draw) {
+        this.rules = rules;
+        this.decks = decks;
+        this.iterations = iterations;
+        this.draw = draw;
+        this.noMatchCount = new Array(decks.length).fill(0);
+        this.matchCount = {};
+        rules.criterias.forEach(crit => this.matchCount[crit.name] = new Array(decks.length).fill(0));
+    }
+
+    formatHint(count) {
+        return count + "/" + this.iterations;
+    }
+
+    formatCount(count) {
+        return (count * 100.0 / this.iterations).toPrecision(2) + "%";
+    }
+
+    toTable() {
+        let html = '<table class="table table-sm">';
+
+        // header
+        html += '<tr><th scope="col">#</th><th scope="col">rules</th>';
+        html += '<th scope="col">main (' + this.decks[0].main.cards.length + ' cards)</th>';
+        for (let i = 1; i < this.decks.length; i++) {
+            html += '<th scope="col">alt.' + i + ' (' + this.decks[i].main.cards.length + ' cards)</th>';
+        }
+        html += "</tr>";
+
+        // criterias
+        this.rules.criterias.forEach((crit, idx) => {
+            html += '<tr>';
+            html += '<td scope="row">' + (idx + 1) + '</td>';
+            html += '<td>' + crit.name + '</td>';
+            for (let i = 0; i < this.decks.length; i++) {
+                html += '<td title="' + this.formatHint(this.matchCount[crit.name][i]) + '">' + this.formatCount(this.matchCount[crit.name][i]) + '</td>';
+            }
+            html += "</tr>";
+        });
+
+        // no match count
+        html += '<tr class="table-danger">';
+        html += '<td scope="row">---</td>';
+        html += '<td>no match</td>';
+        for (let i = 0; i < this.decks.length; i++) {
+            html += '<td title="' + this.formatHint(this.noMatchCount[i]) + '">' + this.formatCount(this.noMatchCount[i]) + '</td>';
+        }
+        html += "</tr>";
+
+
+        html += "</table>";
+        return html;
+    }
+}
+
+class Simulator {
+    /**
+     * Simulates a large number of draws on several deck variants
+     * @param {Rules} rules
+     * @param {Array.<Deck>} decks
+     * @param {number} iterations
+     * @param {number} draw
+     * @return {Simulation}
+     */
+    static simulate(rules, decks, iterations, draw) {
+        let results = new Simulation(rules, decks, iterations, draw);
+        for (let d = 0; d < decks.length; d++) {
+            let deck = decks[d];
+            for (let it = 0; it < iterations; it++) {
+                let hand = deck.main.shuffle().draw(draw);
+                let matching = rules.matches(hand);
+                if (matching != null) {
+                    // increment match count
+                    results.matchCount[matching.name][d]++;
+                } else {
+                    results.noMatchCount[d]++;
+                }
+            }
+        }
+        return results;
+    }
+}

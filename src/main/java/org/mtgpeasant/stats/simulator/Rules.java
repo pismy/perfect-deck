@@ -18,29 +18,38 @@ import java.util.Map;
 @Value
 public class Rules implements MatcherContext {
     final Map<String, Matcher> matchers;
+    final List<ParseError> errors;
     final List<MatcherParser.MatcherDeclaration> criterias;
 
-    public static Rules parse(Reader input) throws IOException, ParseError {
+    public static Rules parse(Reader input) throws IOException {
         List<MatcherParser.MatcherDeclaration> criterias = new ArrayList<>();
         Map<String, Matcher> matchers = new HashMap<>();
+        List<ParseError> errors = new ArrayList<>();
 
         BufferedReader reader = new BufferedReader(input);
         String line = null;
+        int lineNb = 0;
         while ((line = reader.readLine()) != null) {
+            lineNb++;
             line = line.trim();
             if (line.isEmpty() || line.startsWith("#")) {
                 // empty or commented line
             } else {
-                MatcherParser.MatcherDeclaration decl = MatcherParser.parse(line);
-                matchers.put(decl.getName(), decl.getMatcher());
-                if (decl.isCriteria()) {
-                    criterias.add(decl);
+                try {
+                    MatcherParser.MatcherDeclaration decl = MatcherParser.parse(line);
+                    matchers.put(decl.getName(), decl.getMatcher());
+                    if (decl.isCriteria()) {
+                        criterias.add(decl);
+                    }
+                } catch(ParseError pe) {
+                    pe.setLine(lineNb);
+                    errors.add(pe);
                 }
             }
         }
         reader.close();
 
-        return new Rules(matchers, criterias);
+        return new Rules(matchers, errors, criterias);
     }
 
     @Override

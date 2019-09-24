@@ -2,6 +2,7 @@ package org.mtgpeasant.stats.utils;
 
 import com.google.common.base.Strings;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 public class ParseError extends Exception {
@@ -11,6 +12,7 @@ public class ParseError extends Exception {
     public static int RC_APPLICATION_ERROR = 200;
 
     private int errCode;
+    @Setter
     private int line;
     private int column;
     private String curLine;
@@ -45,6 +47,6 @@ public class ParseError extends Exception {
     }
 
     private String getCurCharArrow() {
-        return Strings.repeat("-", column - 1) + '^';
+        return Strings.repeat("-", column) + '^';
     }
 }

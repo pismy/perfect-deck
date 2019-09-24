@@ -117,25 +117,27 @@
 
     <h2 class="my-3">Deck</h2>
 
+    <!-- tabs -->
     <ul class="nav nav-tabs" id="deck-tabs" role="tablist">
-        <li class="nav-item">
-            <a class="nav-link active" id="deck1-tab" data-toggle="tab" href="#deck1" role="tab" aria-selected="true">Main</a>
+        <li class="nav-item" id="main-tab">
+            <a class="nav-link active" data-toggle="tab" href="#main-deck" role="tab" aria-selected="true">Main</a>
         </li>
-        <li class="nav-item">
-            <a class="nav-link" id="deck2-tab" data-toggle="tab" href="#deck2" role="tab" aria-selected="true">Alt.1
-                <button type="button" class="close ml-2" aria-label="Close">
+        <li class="nav-item" id="alt1-tab">
+            <a class="nav-link" data-toggle="tab" href="#alt1-deck" role="tab" aria-selected="true">Alt.1
+                <button type="button" class="close-deck close ml-2" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </a>
         </li>
-        <li classs="nav-add">
-            <button type="button" class="btn btn-secondary ml-2">&plus;</button>
+        <li class="nav-add">
+            <button id="new-deck" type="button" class="btn btn-secondary ml-2">&plus;</button>
         </li>
     </ul>
+    <!-- tab contents -->
     <div class="tab-content" id="deck-tabs-content">
-        <div class="tab-pane fade show active" id="deck1" role="tabpanel" aria-labelledby="deck1-tab">
+        <div class="tab-pane fade show active" id="main-deck" role="tabpanel" aria-labelledby="main-tab">
             <div class="form-group">
-        <textarea class="form-control code" rows="30" placeholder="type in your deck to optimize here"># discard
+        <textarea class="form-control code deck" rows="30" placeholder="type in your deck to optimize here"># discard
 4 Faithless Looting
 4 Putrid Imp
 
@@ -145,20 +147,20 @@
 
 # creatures
 4 Hand of Emrakul
-2 Greater Sandwurm
+1 Greater Sandwurm
 1 Pathrazer of Ulamog
 4 Ulamog's Crusher
 
 # mana
-3 Dark Ritual
-4 Lotus Petal
+4 Dark Ritual
+3 Lotus Petal
 1 Crumbling Vestige
 7 Mountain
 10 Swamp
 
 # others
 3 Dragon Breath
-3 Gitaxian Probe
+4 Gitaxian Probe
 2 Shred Memory
 
 # Sideboard:
@@ -170,33 +172,32 @@ SB 2 Pyroblast
 SB 2 Shenanigans</textarea>
             </div>
         </div>
-        <div class="tab-pane fade show" id="deck2" role="tabpanel" aria-labelledby="deck2-tab">
+        <div class="tab-pane fade show" id="alt1-deck" role="tabpanel" aria-labelledby="alt1-tab">
             <div class="form-group">
-        <textarea class="form-control code" rows="30" placeholder="type in your deck to optimize here"># discard
+        <textarea class="form-control code deck" rows="30" placeholder="type in your deck to optimize here"># discard
 4 Faithless Looting
 4 Putrid Imp
 
 # reanimation
 4 Animate Dead
 4 Exhume
+1 Reanimate
 
 # creatures
 4 Hand of Emrakul
-2 Greater Sandwurm
-1 Pathrazer of Ulamog
+4 Greater Sandwurm
 4 Ulamog's Crusher
 
 # mana
-3 Dark Ritual
+3 Simian Spirit Guide
 4 Lotus Petal
-1 Crumbling Vestige
-7 Mountain
-10 Swamp
+4 Crumbling Vestige
+5 Mountain
+9 Swamp
 
 # others
 3 Dragon Breath
 3 Gitaxian Probe
-2 Shred Memory
 
 # Sideboard:
 SB 3 Apostle's Blessing
@@ -209,7 +210,7 @@ SB 2 Shenanigans</textarea>
         </div>
     </div>
 
-
+    <!-- rules -->
     <h2 lass="my-3">Hand Keeping Rules</h2>
         <div class="form-group">
             <textarea class="form-control code" id="rules" rows="20" placeholder="type in your hand keeping rules here..."># ============
@@ -250,11 +251,11 @@ SB 2 Shenanigans</textarea>
 
     <div class="form-inline">
         <div class="form-group">
-            <input type="number" class="form-control mr-2" id="iterations" value="5000"/>
+            <input type="number" class="form-control mr-2" id="iterations" value="10000"/>
             <label for="iterations" class="mr-4">iterations</label>
         </div>
 
-        <button class="btn btn-lg btn-primary" id="compute">Go!</button>
+        <button class="btn btn-lg btn-primary" id="run">Go!</button>
     </div>
 
     <h2 class="my-3">Results</h2>
@@ -269,27 +270,46 @@ SB 2 Shenanigans</textarea>
 <script src="js/perfect-hand.js"></script>
 <script language="JavaScript">
     $(document).ready(function(){
-        $("#compute").click(function(){
-            var exclude_no_source = $("#excludeNoSource").prop("checked");
-            var exclusion_patterns = $("#exclusionPatterns").val().trim().split("\n").map(function (pattern) {
-                try {
-                    return new RegExp(pattern);
-                } catch(e) {
-                    alert("Invalid exclusion pattern: '"+pattern+"'");
-                }
-            });
-            var inclusion_patterns = $("#inclusionPatterns").val().trim().split("\n").map(function (pattern) {
-                try {
-                    return new RegExp(pattern);
-                } catch(e) {
-                    alert("Invalid inclusion pattern: '"+pattern+"'");
-                }
-            });
-            var stack_lines = $("#stackTrace").val().trim().split("\n");
-            var debugged_stack = [];
-            var digest = new StackDigester(exclude_no_source, inclusion_patterns, exclusion_patterns).compute(stack_lines, debugged_stack);
-            $("#digest").text(digest);
-            $("#stackTraceLines").html(debugged_stack.join("\n"));
+        $("#new-deck").click(function () {
+            // add tab
+            console.log("new...")
+
+            // add tab content
+        });
+
+        $(".close-deck").click(function(){
+            let tab = $(this).closest(".nav-item");
+            var id = tab.attr("id");
+            console.log("id: "+id);
+
+            // close tab
+            $(tab).remove();
+
+            // close tab content
+            $("#"+id.replace("tab", "deck")).remove();
+        });
+
+        $("#run").click(function() {
+            // 1: parse rules
+            let rules = RulesParser.parse($("#rules").val());
+            if(rules.validation.errors.length > 0) {
+                console.log("Rules errors:")
+                rules.validation.errors.forEach(console.log)
+                return;
+            }
+
+            // 2: parse deck(s)
+            let decks = $(".deck").map((idx, elt) => DeckParser.parse(elt.value));
+
+            $("#results").html("Computing...");
+
+            setTimeout(function(){
+                // 3: simulate
+                let results = Simulator.simulate(rules, decks, parseInt($("#iterations").val()), 7);
+
+                /// 4: display results
+                $("#results").html(results.toTable());
+            }, 5);
         });
     });
 </script>
