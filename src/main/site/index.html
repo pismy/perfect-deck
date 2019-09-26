@@ -12,6 +12,8 @@
     }
     #new-deck {
         font-size: 2em;
+        color: #007bff;
+        opacity: .7;
     }
     .code {
         font-family: monospace;
@@ -25,12 +27,13 @@
     }
     #results {
         border: 1px solid #ced4da;
-        /*overflow: scroll;*/
+        background-color: white;
     }
     #results .placeholder {
         padding: 30px;
         color: #555555;
         font-style: italic;
+        font-size: 1.5em;
     }
 </style>
 <body>
@@ -228,7 +231,7 @@ SB: 2 Shenanigans</textarea>
             // 2: parse deck(s)
             let decks = $(".deck").map((idx, elt) => DeckParser.parse(elt.value));
 
-            $("#results").html("Computing...");
+            $("#results").html('<div class="placeholder"><span class="fa fa-clock-o"></span> Computing...</div>');
 
             setTimeout(function(){
                 // 3: simulate
