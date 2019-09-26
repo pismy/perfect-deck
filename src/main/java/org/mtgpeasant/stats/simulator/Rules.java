@@ -19,10 +19,10 @@ import java.util.Map;
 public class Rules implements MatcherContext {
     final Map<String, Matcher> matchers;
     final List<ParseError> errors;
-    final List<MatcherParser.MatcherDeclaration> criterias;
+    final List<MatcherParser.DeclaredMatcher> criteria;
 
     public static Rules parse(Reader input) throws IOException {
-        List<MatcherParser.MatcherDeclaration> criterias = new ArrayList<>();
+        List<MatcherParser.DeclaredMatcher> criteria = new ArrayList<>();
         Map<String, Matcher> matchers = new HashMap<>();
         List<ParseError> errors = new ArrayList<>();
 
@@ -32,14 +32,14 @@ public class Rules implements MatcherContext {
         while ((line = reader.readLine()) != null) {
             lineNb++;
             line = line.trim();
-            if (line.isEmpty() || line.startsWith("#")) {
+            if (line.isEmpty() || line.startsWith("#") || line.startsWith("//")) {
                 // empty or commented line
             } else {
                 try {
-                    MatcherParser.MatcherDeclaration decl = MatcherParser.parse(line);
+                    MatcherParser.DeclaredMatcher decl = MatcherParser.parse(line);
                     matchers.put(decl.getName(), decl.getMatcher());
-                    if (decl.isCriteria()) {
-                        criterias.add(decl);
+                    if (decl.isCriterion()) {
+                        criteria.add(decl);
                     }
                 } catch(ParseError pe) {
                     pe.setLine(lineNb);
@@ -49,7 +49,7 @@ public class Rules implements MatcherContext {
         }
         reader.close();
 
-        return new Rules(matchers, errors, criterias);
+        return new Rules(matchers, errors, criteria);
     }
 
     @Override

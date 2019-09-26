@@ -3,9 +3,16 @@
 <head>
     <title>Perfect Hand - Optimizer</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" type="text/css" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <style>
+    .nav-toolbar {
+        margin-left: auto;
+    }
+    #new-deck {
+        font-size: 2em;
+    }
     .code {
         font-family: monospace;
         white-space: nowrap;
@@ -18,70 +25,12 @@
     }
     #results {
         border: 1px solid #ced4da;
-        overflow: scroll;
+        /*overflow: scroll;*/
     }
     #results .placeholder {
         padding: 30px;
         color: #555555;
         font-style: italic;
-    }
-    #stackTraceLines .line {
-        line-height: 1.5;
-        margin: 0;
-    }
-    #highlightedStackTrace .marker {
-        cursor: pointer;
-        margin-right: 5px;
-        padding: 0 10px;
-        border-right: 1px solid #ced4da;
-        font-weight: bold;
-        color: #555555;
-        display: inline-block;
-    }
-    #highlightedStackTrace .error {
-        background-color: #cce5ff;
-    }
-    #highlightedStackTrace .error .marker {
-        background-color: #004085;
-        color: white;
-    }
-    #highlightedStackTrace .match {
-        background-color: #ecfdf0;
-    }
-    #highlightedStackTrace .match .marker {
-        background-color: #ddfbe6;
-    }
-    #highlightedStackTrace .ignored {
-        background-color: #fff;
-    }
-    #highlightedStackTrace .ignored .marker {
-        background-color: #fafafa;
-    }
-    #highlightedStackTrace .excluded {
-        background-color: #fbe9eb;
-    }
-    #highlightedStackTrace .excluded .marker {
-        background-color: #f9d7dc;
-    }
-    #highlightedStackTrace .error-class {
-        font-weight: bold;
-    }
-    #highlightedStackTrace .error-class:hover, #highlightedStackTrace .classname-and-method:hover, #highlightedStackTrace .file:hover, #highlightedStackTrace .ln:hover {
-        text-decoration: underline;
-        cursor: pointer;
-    }
-    #highlightedStackTrace .error-class {
-        font-weight: bold;
-        color: #004085;
-    }
-    #highlightedStackTrace .classname-and-method {
-        color: #2b6799;
-    }
-    #highlightedStackTrace .file {
-        color: #993b86;
-    }
-    #highlightedStackTrace .ln {
-        color: #664d99;
     }
 </style>
 <body>
@@ -103,7 +52,7 @@
                     </li>
                 </ul>
             </div>
-            <a class="nav-link" href="https://github.com/pismy/perfect-hand">GitHub project</a>
+            <a class="nav-link" href="https://github.com/pismy/perfect-hand"><span class="fa fa-github"></span> GitHub</a>
         </div>
     </nav>
 </header>
@@ -112,100 +61,59 @@
     <h1>Perfect Hand - Optimizer</h1>
 
     <div class="alert alert-primary">
-        <p>This tool helps you optimize your deck against your criteria to keep and opening hand.</p>
+        <p>This tool helps you optimize your deck against your mulligan criteria.</p>
     </div>
 
     <h2 class="my-3">Deck</h2>
 
     <!-- tabs -->
-    <ul class="nav nav-tabs" id="deck-tabs" role="tablist">
-        <li class="nav-item" id="main-tab">
-            <a class="nav-link active" data-toggle="tab" href="#main-deck" role="tab" aria-selected="true">Main</a>
-        </li>
-        <li class="nav-item" id="alt1-tab">
-            <a class="nav-link" data-toggle="tab" href="#alt1-deck" role="tab" aria-selected="true">Alt.1
-                <button type="button" class="close-deck close ml-2" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </a>
-        </li>
-        <li class="nav-add">
-            <button id="new-deck" type="button" class="btn btn-secondary ml-2">&plus;</button>
-        </li>
-    </ul>
+    <div>
+        <ul class="nav nav-tabs" id="deck-tabs" role="tablist">
+            <li class="nav-item" id="main-tab">
+                <a class="nav-link active" data-toggle="tab" href="#main-deck" role="tab" aria-selected="true">Main</a>
+            </li>
+            <li class="nav-toolbar">
+                <button id="new-deck" type="button" class="close mt-1" title="Create an alternate version of your deck (to compare)"><span class="fa fa-plus-square"></span></button>
+            </li>
+        </ul>
+    </div>
     <!-- tab contents -->
     <div class="tab-content" id="deck-tabs-content">
         <div class="tab-pane fade show active" id="main-deck" role="tabpanel" aria-labelledby="main-tab">
             <div class="form-group">
-        <textarea class="form-control code deck" rows="30" placeholder="type in your deck to optimize here"># discard
+                <textarea class="form-control code deck" rows="30" placeholder="type in your deck to optimize here">// discard
 4 Faithless Looting
 4 Putrid Imp
 
-# reanimation
+// reanimation
 4 Animate Dead
 4 Exhume
 
-# creatures
+// creatures
 4 Hand of Emrakul
 1 Greater Sandwurm
 1 Pathrazer of Ulamog
 4 Ulamog's Crusher
 
-# mana
+// mana
 4 Dark Ritual
 3 Lotus Petal
 1 Crumbling Vestige
 7 Mountain
 10 Swamp
 
-# others
+// others
 3 Dragon Breath
 4 Gitaxian Probe
 2 Shred Memory
 
-# Sideboard:
-SB 3 Apostle's Blessing
-SB 4 Duress
-SB 2 Electrickery
-SB 2 Mind Rake
-SB 2 Pyroblast
-SB 2 Shenanigans</textarea>
-            </div>
-        </div>
-        <div class="tab-pane fade show" id="alt1-deck" role="tabpanel" aria-labelledby="alt1-tab">
-            <div class="form-group">
-        <textarea class="form-control code deck" rows="30" placeholder="type in your deck to optimize here"># discard
-4 Faithless Looting
-4 Putrid Imp
-
-# reanimation
-4 Animate Dead
-4 Exhume
-1 Reanimate
-
-# creatures
-4 Hand of Emrakul
-4 Greater Sandwurm
-4 Ulamog's Crusher
-
-# mana
-3 Simian Spirit Guide
-4 Lotus Petal
-4 Crumbling Vestige
-5 Mountain
-9 Swamp
-
-# others
-3 Dragon Breath
-3 Gitaxian Probe
-
-# Sideboard:
-SB 3 Apostle's Blessing
-SB 4 Duress
-SB 2 Electrickery
-SB 2 Mind Rake
-SB 2 Pyroblast
-SB 2 Shenanigans</textarea>
+// Sideboard:
+SB: 3 Apostle's Blessing
+SB: 4 Duress
+SB: 2 Electrickery
+SB: 2 Mind Rake
+SB: 2 Pyroblast
+SB: 2 Shenanigans</textarea>
             </div>
         </div>
     </div>
@@ -213,9 +121,9 @@ SB 2 Shenanigans</textarea>
     <!-- rules -->
     <h2 lass="my-3">Hand Keeping Rules</h2>
         <div class="form-group">
-            <textarea class="form-control code" id="rules" rows="20" placeholder="type in your hand keeping rules here..."># ============
-# === Matchers
-# ============
+            <textarea class="form-control code" id="rules" rows="20" placeholder="type in your hand keeping rules here...">// ============
+// === Matchers
+// ============
 &lt;B&gt;: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
 &lt;R&gt;: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
 &lt;X&gt;: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
@@ -224,26 +132,26 @@ SB 2 Shenanigans</textarea>
 &lt;rea&gt;: [Exhume] | [Animate Dead] | [Reanimate]
 &lt;cantrip&gt;: [Gitaxian Probe]
 
-# ======================
-# === Hand keeping rules
-# ======================
-# I can reanimate turn 1
+// ======================
+// === Hand keeping rules
+// ======================
+// I can reanimate turn 1
 &lt;&lt;turn 1 imp&gt;&gt;: &lt;B&gt; &amp; [Dark Ritual] &amp; [Putrid Imp] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
 
-# I can reanimate turn 2
+// I can reanimate turn 2
 &lt;&lt;turn 2 imp&gt;&gt;: &lt;B&gt; &amp; &lt;X&gt; &amp; [Putrid Imp] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
 &lt;&lt;turn 2 looting&gt;&gt;: &lt;B&gt; &amp; &lt;R&gt; &amp; [Faithless Looting] &amp; &lt;creature&gt; &amp; &lt;rea&gt;
 
-# I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
+// I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
 &lt;&lt;turn 2 OTD&gt;&gt;: &lt;B&gt; &amp; &lt;+1&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;
 
-# I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
+// I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
 &lt;&lt;turn 3 OTD&gt;&gt;: &lt;B&gt; &amp; &lt;X&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;
 
-# one element of the combo is missing but I can play Faithless Looting turn 1
+// one element of the combo is missing but I can play Faithless Looting turn 1
 &lt;&lt;looting to find last element&gt;&gt;: &lt;R&gt; &amp; [Faithless Looting] &amp; @atleast(2)( &lt;B&gt; &lt;creature&gt; &lt;rea&gt; )
 
-# I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
+// I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
 &lt;&lt;probe to find mana source&gt;&gt;: &lt;X&gt; &amp; &lt;cantrip&gt; &amp; &lt;creature&gt; &amp; &lt;rea&gt;</textarea>
         </div>
 
@@ -272,21 +180,40 @@ SB 2 Shenanigans</textarea>
     $(document).ready(function(){
         $("#new-deck").click(function () {
             // add tab
-            console.log("new...")
+            let newId = Date.now();
+            let nbDecks = $("#deck-tabs-content").children().length;
+            $(this).closest('li').before('<li class="nav-item" id="alt'+(newId)+'-tab"><a class="nav-link" data-toggle="tab" href="#alt'+(newId)+'-deck" role="tab" aria-selected="true">Alt.'+(nbDecks)+'<button type="button" class="close-deck close ml-2" aria-label="Close"><span aria-hidden="true" class="fa fa-times"></span></button></a></li>');
 
             // add tab content
-        });
+            $('#deck-tabs-content').append('<div class="tab-pane fade show" id="alt'+(newId)+'-deck" role="tabpanel" aria-labelledby="alt'+(newId)+'-tab"><div class="form-group"><textarea class="form-control code deck" rows="30"></textarea></div></div>');
 
-        $(".close-deck").click(function(){
-            let tab = $(this).closest(".nav-item");
-            var id = tab.attr("id");
-            console.log("id: "+id);
+            // copy main deck content and select all
+            $("#alt"+(newId)+"-deck textarea").val("// ============================\n// === Alternate "+(nbDecks)+"\n// ============================\n"+$("#main-deck textarea").val());
+            // $("#alt"+(newId)+"-deck textarea").select();
 
-            // close tab
-            $(tab).remove();
+            // select new tab
+            $("#alt"+(newId)+"-tab a").tab('show');
 
-            // close tab content
-            $("#"+id.replace("tab", "deck")).remove();
+            // close tab callback
+            $(".close-deck").click(function(evt) {
+                evt.preventDefault();
+                let tab = $(this).closest(".nav-item");
+                let id = tab.attr("id");
+
+                // if selected, select the tab just before
+                if($("#"+id+" a").hasClass("active")) {
+                    let prevTab = $(tab).prev().find("a");
+                    setTimeout(function () {
+                        prevTab.tab('show');
+                    }, 5);
+                }
+
+                // remove tab
+                $(tab).remove();
+
+                // remove tab content
+                $("#"+id.replace("tab", "deck")).remove();
+            });
         });
 
         $("#run").click(function() {

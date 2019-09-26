@@ -31,7 +31,7 @@ public class PerfectHand {
 
         private static final DecimalFormat PERCENT = new DecimalFormat("#.##");
 
-        @ShellMethod("Simulates hundreds of hand draws and computes statistics about matching criteria")
+        @ShellMethod("Simulates hundreds of hand draws and computes statistics about matching criterion")
         public void mkstats(
                 @ShellOption(value = {"-D", "--deck"}, help = "the deck to test") File deckFile,
                 @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules") File matchersFile,
@@ -83,19 +83,19 @@ public class PerfectHand {
 
             // dump stats
             System.out.println("=== STATS (elapsed " + (System.currentTimeMillis() - startTime) + "ms) ===");
-            String[] columnNames = new String[]{"Criterias", "Deck #1"};
-            Object[][] data = new Object[rules.getCriterias().size()+1][2];
-            for(int i=0; i<rules.getCriterias().size(); i++) {
-                MatcherParser.MatcherDeclaration criteria = rules.getCriterias().get(i);
+            String[] columnNames = new String[]{"Criteria", "Deck #1"};
+            Object[][] data = new Object[rules.getCriteria().size()+1][2];
+            for(int i = 0; i<rules.getCriteria().size(); i++) {
+                MatcherParser.DeclaredMatcher criteria = rules.getCriteria().get(i);
                 data[i][0] = criteria.getName();
                 int count = results.getMatchCount().get(criteria.getName())[0];
                 data[i][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             }
-            data[rules.getCriterias().size()][0] = "no match";
+            data[rules.getCriteria().size()][0] = "no match";
             int count = results.getNoMatchCount()[0];
-            data[rules.getCriterias().size()][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
+            data[rules.getCriteria().size()][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             new TextTable(columnNames, data).printTable();
-//            for (RulesParser.MatcherDeclaration decl : rules.getCriterias()) {
+//            for (RulesParser.DeclaredMatcher decl : rules.getCriteria()) {
 //                int matchesCount = results.getMatchCount().getOrDefault(decl.getName(), 0);
 //                System.out.println(decl.getName() + ": " + matchesCount + "/" + iterations + " (" + PERCENT.format(100f * (float) matchesCount / (float) iterations) + "%)");
 //            }

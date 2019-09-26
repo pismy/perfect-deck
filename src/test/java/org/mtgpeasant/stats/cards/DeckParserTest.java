@@ -9,8 +9,8 @@ import java.io.StringReader;
 
 public class DeckParserTest {
     @Test
-    public void should_parse() throws IOException {
-        Deck deck = DeckParser.parse(new StringReader("6x swamp\n3 mountains  \n2   Ulamog Crusher\ndark ritual"));
+    public void should_parse_1() throws IOException {
+        Deck deck = DeckParser.parse(new StringReader("// this is a comment\n6x Swamp\n3x Mountains  \n2x Ulamog Crusher\nDark Ritual\nSB: 2x Shenanigans\nSB: 2x Pyroblast"));
         Assertions.assertThat(deck.getMain().size()).isEqualTo(12);
         Assertions.assertThat(deck.getMain().getCards()).containsExactly(
                 "swamp",
@@ -26,7 +26,42 @@ public class DeckParserTest {
                 "ulamog crusher",
                 "dark ritual"
         );
+        Assertions.assertThat(deck.getSideboard().size()).isEqualTo(4);
+        Assertions.assertThat(deck.getSideboard().getCards()).containsExactly(
+                "shenanigans",
+                "shenanigans",
+                "pyroblast",
+                "pyroblast"
+        );
     }
+
+    @Test
+    public void should_parse_2() throws IOException {
+        Deck deck = DeckParser.parse(new StringReader("// this is a comment\n6 Swamp\n3 Mountains  \n2 Ulamog Crusher\nDark Ritual\nSideboard:\n2 Shenanigans\n2 Pyroblast"));
+        Assertions.assertThat(deck.getMain().size()).isEqualTo(12);
+        Assertions.assertThat(deck.getMain().getCards()).containsExactly(
+                "swamp",
+                "swamp",
+                "swamp",
+                "swamp",
+                "swamp",
+                "swamp",
+                "mountains",
+                "mountains",
+                "mountains",
+                "ulamog crusher",
+                "ulamog crusher",
+                "dark ritual"
+        );
+        Assertions.assertThat(deck.getSideboard().size()).isEqualTo(4);
+        Assertions.assertThat(deck.getSideboard().getCards()).containsExactly(
+                "shenanigans",
+                "shenanigans",
+                "pyroblast",
+                "pyroblast"
+        );
+    }
+
 
     @Test
     public void comment_should_parse() {

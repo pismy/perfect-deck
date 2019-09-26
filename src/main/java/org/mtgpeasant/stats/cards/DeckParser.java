@@ -19,9 +19,10 @@ public class DeckParser {
         Cards.CardsBuilder side = Cards.builder();
         Cards.CardsBuilder main = Cards.builder();
         String line = null;
+        boolean[] isReadingSideboard = new boolean[]{false};
         while ((line = reader.readLine()) != null) {
-            CardLine dl = parse(line);
-            if(dl != null) {
+            CardLine dl = parse(line, isReadingSideboard);
+            if (dl != null) {
                 for (int i = 0; i < dl.getCount(); i++) {
                     (dl.isMain() ? main : side).card(dl.getName());
                 }
@@ -34,16 +35,23 @@ public class DeckParser {
                 .build();
     }
 
-    public static CardLine parse(String line) {
+    static CardLine parse(String line) {
+        return parse(line, new boolean[]{false});
+    }
+
+    static CardLine parse(String line, boolean[] isReadingSideboard) {
         line = line.trim();
-        if (line.isEmpty() || line.startsWith("#")) {
+        if (line.isEmpty() || line.startsWith("#") || line.startsWith("//")) {
             // empty or commented line
+            return null;
+        } else if (line.toLowerCase().startsWith("sideboard")) {
+            isReadingSideboard[0] = true;
             return null;
         } else {
             Matcher m = CARD_LINE.matcher(line);
             if (m.matches()) {
                 return CardLine.builder()
-                        .main(m.group(1) == null)
+                        .main(isReadingSideboard[0] ? false : m.group(1) == null)
                         .count(m.group(2) == null ? 1 : Integer.parseInt(m.group(2)))
                         .extension(m.group(3))
                         .name(m.group(4).toLowerCase())

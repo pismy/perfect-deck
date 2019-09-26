@@ -20,18 +20,18 @@ public class MatcherParser {
 
     @Builder
     @Value
-    public static class MatcherDeclaration {
+    public static class DeclaredMatcher {
         final String name;
-        final boolean criteria;
+        final boolean criterion;
         final Matcher matcher;
 
         @Override
         public String toString() {
-            return (criteria ? "<<" : "<") + name + (criteria ? ">>" : ">") + ": " + matcher.toString();
+            return (criterion ? "<<" : "<") + name + (criterion ? ">>" : ">") + ": " + matcher.toString();
         }
     }
 
-    public static MatcherDeclaration parse(String line) throws ParseError {
+    public static DeclaredMatcher parse(String line) throws ParseError {
         ParseHelper parser = new ParseHelper(new StringReader(line));
         parser.curChar();
 
@@ -48,7 +48,7 @@ public class MatcherParser {
             parser.error(ParseError.RC_SYNTAX_ERROR, "'>' expected to close a matcher name declaration");
         }
         if (isCriteria && !parser.consumeChar('>', WHITE)) {
-            parser.error(ParseError.RC_SYNTAX_ERROR, "'>>' expected to close a criteria name declaration");
+            parser.error(ParseError.RC_SYNTAX_ERROR, "'>>' expected to close a criterion name declaration");
         }
         // 2: read ':'
         if (!parser.consumeChar(':', WHITE)) {
@@ -63,9 +63,9 @@ public class MatcherParser {
             matcher = parseCompound(parser);
         }
 
-        return MatcherDeclaration.builder()
+        return DeclaredMatcher.builder()
                 .name(name)
-                .criteria(isCriteria)
+                .criterion(isCriteria)
                 .matcher(matcher)
                 .build();
     }

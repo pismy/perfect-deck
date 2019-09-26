@@ -269,8 +269,9 @@ class DeckParser {
     static parse(text) {
         let main = [];
         let side = [];
+        let isReadingSideboard = [false];
         text.split("\n").forEach((line) => {
-            let card = DeckParser.parseCard(line);
+            let card = DeckParser.parseCard(line, isReadingSideboard);
             if (card) {
                 for (let i = 0; i < card.count; i++) {
                     if (card.main) {
@@ -287,17 +288,21 @@ class DeckParser {
     /**
      * Parses a card line
      * @param {String} line line
+     * @param {Array.<boolean>} isReadingSideboard
      * @returns {*}
      */
-    static parseCard(line) {
+    static parseCard(line, isReadingSideboard) {
         line = line.trim();
-        if (line.length === 0 || line.startsWith("#")) {
+        if (line.length === 0 || line.startsWith("#") || line.startsWith("//")) {
             // empty or commented line
+            return null;
+        } else if (line.toLowerCase().startsWith("sideboard")) {
+            isReadingSideboard[0] = true;
             return null;
         } else {
             let m = CARD_LINE.exec(line);
             return {
-                main: m[1] == null,
+                main: (isReadingSideboard[0] ? false : m[1] == null),
                 count: m[2] == null ? 0 : parseInt(m[2], 10),
                 extension: m[3],
                 name: m[4].toLowerCase()
@@ -546,7 +551,7 @@ class RefMatcher extends Matcher {
 class Rules extends MatcherContext {
     constructor() {
         super();
-        this.criterias = [];
+        this.criteria = [];
         this.matchers = {};
         this.validation = new Validation();
     }
@@ -557,8 +562,8 @@ class Rules extends MatcherContext {
      */
     add(declaredMatcher) {
         this.matchers[declaredMatcher.name] = declaredMatcher.matcher;
-        if (declaredMatcher.criteria) {
-            this.criterias.push(declaredMatcher);
+        if (declaredMatcher.criterion) {
+            this.criteria.push(declaredMatcher);
         }
     }
 
@@ -584,7 +589,7 @@ class Rules extends MatcherContext {
      */
     matches(hand) {
         let match = new Match(hand, new Cards([]));
-        let matching = this.criterias.find(declMatcher => declMatcher.matcher.matches([match], this).length > 0);
+        let matching = this.criteria.find(declMatcher => declMatcher.matcher.matches([match], this).length > 0);
         if (matching) {
             console.log("hand", hand, " matches ", matching)
         } else {
@@ -599,17 +604,17 @@ class DeclaredMatcher {
     /**
      * Constructor
      * @param {string} name
-     * @param {boolean} criteria
+     * @param {boolean} criterion
      * @param {Matcher} matcher
      */
-    constructor(name, criteria, matcher) {
+    constructor(name, criterion, matcher) {
         this.name = name;
-        this.criteria = criteria;
+        this.criterion = criterion;
         this.matcher = matcher;
     }
 
     toString() {
-        return (this.criteria ? "<<" : "<") + this.name + (this.criteria ? ">>" : ">") + ": " + this.matcher;
+        return (this.criterion ? "<<" : "<") + this.name + (this.criterion ? ">>" : ">") + ": " + this.matcher;
     }
 }
 
@@ -626,7 +631,7 @@ class RulesParser {
     static parse(text) {
         let rules = new Rules();
         text.split("\n").forEach((line, lineNb) => {
-            if (line.length === 0 || line.startsWith("#")) {
+            if (line.length === 0 || line.startsWith("#") || line.startsWith("//")) {
                 // empty or commented line
             } else {
                 try {
@@ -663,7 +668,7 @@ class RulesParser {
             parser.error("'>' expected to close a matcher name declaration");
         }
         if (isCriteria && !parser.consumeChar('>', WHITE)) {
-            parser.error("'>>' expected to close a criteria name declaration");
+            parser.error("'>>' expected to close a criterion name declaration");
         }
         // 2: read ':'
         if (!parser.consumeChar(':', WHITE)) {
@@ -894,7 +899,7 @@ class Simulation {
         this.draw = draw;
         this.noMatchCount = new Array(decks.length).fill(0);
         this.matchCount = {};
-        rules.criterias.forEach(crit => this.matchCount[crit.name] = new Array(decks.length).fill(0));
+        rules.criteria.forEach(crit => this.matchCount[crit.name] = new Array(decks.length).fill(0));
     }
 
     formatHint(count) {
@@ -916,8 +921,8 @@ class Simulation {
         }
         html += "</tr>";
 
-        // criterias
-        this.rules.criterias.forEach((crit, idx) => {
+        // criterion
+        this.rules.criteria.forEach((crit, idx) => {
             html += '<tr>';
             html += '<td scope="row">' + (idx + 1) + '</td>';
             html += '<td>' + crit.name + '</td>';

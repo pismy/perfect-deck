@@ -37,49 +37,51 @@ shell:>mkstats -D src/test/resources/reanimator-deck.txt -R src/test/resources/r
 
 ## Deck format
 
+This tools supports MWS, Apprentice and [Cockatrice](https://github.com/Cockatrice/Cockatrice/wiki/Deck-List-Import-Formats) deck file formats.
+
 Here is an example of a deck file:
 
 ```
-# discard
+// discard
 4 Faithless Looting
 4 Putrid Imp
 
-# reanimation
+// reanimation
 4 Animate Dead
 4 Exhume
 
-# steaks
+// steaks
 4 Hand of Emrakul
 2 Greater Sandwurm
 1 Pathrazer of Ulamog
 4 Ulamog's Crusher
 
-# mana
+// mana
 3 Dark Ritual
 4 Lotus Petal
 1 Crumbling Vestige
 7 Mountain
 10 Swamp
 
-# others
+// others
 3 Dragon Breath
 3 Gitaxian Probe
 2 Shred Memory
 
-# Sideboard:
-SB 3 Apostle's Blessing
-SB 4 Duress
-SB 2 Electrickery
-SB 2 Mind Rake
-SB 2 Pyroblast
-SB 2 Shenanigans
+// Sideboard:
+SB: 3 Apostle's Blessing
+SB: 4 Duress
+SB: 2 Electrickery
+SB: 2 Mind Rake
+SB: 2 Pyroblast
+SB: 2 Shenanigans
 ```
 
 Syntax is quite straightforward:
 
 * an empty line is ignored
-* a line starting with `#` is ignored (_comment_)
-* a line starting with `SB ` is considered as a card from sideboard
+* a line starting with `#` or `//` is ignored (_comment_)
+* a line starting with `SB: ` is considered as a card from sideboard
 * a card can be defined as:
     * `{number} {name}` (ex: `3 Swamp`)
     * `{number}x {name}` (ex: `3x Swamp`)
@@ -90,9 +92,9 @@ Syntax is quite straightforward:
 Here is an example of rules:
 
 ```
-# ============
-# === Matchers
-# ============
+// ============
+// === Matchers
+// ============
 <B>: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
 <R>: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
 <X>: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
@@ -101,26 +103,26 @@ Here is an example of rules:
 <rea>: [Exhume] | [Animate Dead] | [Reanimate]
 <cantrip>: [Gitaxian Probe]
 
-# ======================
-# === Hand keeping rules
-# ======================
-# I can reanimate turn 1
+// ======================
+// === Hand keeping rules
+// ======================
+// I can reanimate turn 1
 <<turn 1 imp>>: <B> & [Dark Ritual] & [Putrid Imp] & <creature> & <rea>
 
-# I can reanimate turn 2
+// I can reanimate turn 2
 <<turn 2 imp>>: <B> & <X> & [Putrid Imp] & <creature> & <rea>
 <<turn 2 looting>>: <B> & <R> & [Faithless Looting] & <creature> & <rea>
 
-# I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
+// I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
 <<turn 2 OTD>>: <B> & <+1> & <creature> & <rea>
 
-# I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
+// I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
 <<turn 3 OTD>>: <B> & <X> & <creature> & <rea>
 
-# one element of the combo is missing but I can play Faithless Looting turn 1
+// one element of the combo is missing but I can play Faithless Looting turn 1
 <<looting to find last element>>: <R> & [Faithless Looting] & @atleast(2)( <B> <creature> <rea> )
 
-# I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
+// I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
 <<probe to find mana source>>: <X> & <cantrip> & <creature> & <rea>
 ```
 

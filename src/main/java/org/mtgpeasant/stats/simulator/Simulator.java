@@ -26,16 +26,16 @@ public class Simulator {
         final Map<String, int[]> matchCount;
         final int[] noMatchCount;
 
-        private Results(int iterations, List<MatcherParser.MatcherDeclaration> criterias, Deck... decks) {
+        private Results(int iterations, List<MatcherParser.DeclaredMatcher> criteria, Deck... decks) {
             this.iterations = iterations;
             this.matchCount = new HashMap<>();
-            for (MatcherParser.MatcherDeclaration decl : criterias) {
+            for (MatcherParser.DeclaredMatcher decl : criteria) {
                 matchCount.put(decl.getName(), new int[decks.length]);
             }
             noMatchCount = new int[decks.length];
         }
 
-        private void addMatch(int deck, MatcherParser.MatcherDeclaration criteria) {
+        private void addMatch(int deck, MatcherParser.DeclaredMatcher criteria) {
             matchCount.get(criteria.getName())[deck]++;
         }
 
@@ -45,12 +45,12 @@ public class Simulator {
     }
 
     public Results simulate(Deck... decks) {
-        Results results = new Results(iterations, rules.getCriterias(), decks);
+        Results results = new Results(iterations, rules.getCriteria(), decks);
         for (int d = 0; d < decks.length; d++) {
             Deck deck = decks[d];
             for (int it = 0; it < iterations; it++) {
                 Cards hand = deck.getMain().shuffle().draw(draw);
-                MatcherParser.MatcherDeclaration matching = findMatch(hand);
+                MatcherParser.DeclaredMatcher matching = findMatch(hand);
                 if (matching != null) {
                     // increment match count
                     results.addMatch(d, matching);
@@ -62,9 +62,9 @@ public class Simulator {
         return results;
     }
 
-    private MatcherParser.MatcherDeclaration findMatch(Cards hand) {
+    private MatcherParser.DeclaredMatcher findMatch(Cards hand) {
         Match match = Match.from(hand);
-        for (MatcherParser.MatcherDeclaration decl : rules.getCriterias()) {
+        for (MatcherParser.DeclaredMatcher decl : rules.getCriteria()) {
             if (decl.getMatcher().matches(Stream.of(match), rules).findFirst().isPresent()) {
                 return decl;
             }
