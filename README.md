@@ -22,7 +22,7 @@ Once in the tool shell, you can use the following:
 # global help
 shell:>help
 
-# help on stats command
+perfectdeck
 shell:>help mkstats
 
 # exit shell

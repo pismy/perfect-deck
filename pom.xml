@@ -86,7 +86,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>org.mtgpeasant.stats.PerfectHand</mainClass>
+                    <mainClass>org.mtgpeasant.perfectdeck.PerfectDeck</mainClass>
                 </configuration>
             </plugin>
         </plugins>
