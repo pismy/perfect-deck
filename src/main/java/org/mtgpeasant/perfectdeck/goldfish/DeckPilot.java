@@ -2,7 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-public class Player {
+public class DeckPilot {
     /**
      * Determines whether the given hand should be kept
      *
@@ -42,8 +42,13 @@ public class Player {
 
     }
 
-    public boolean hasWon(Game context) {
-        return context.getOpponentLife() <= 0 || context.getOpponentPoisonCounters() >= 10;
+    public void checkWin(Game context) {
+        if (context.getOpponentLife() <= 0) {
+            throw new GameWonException("opponent is dead");
+        }
+        if (context.getOpponentPoisonCounters() >= 10) {
+            throw new GameWonException("opponent is deadly poisoned");
+        }
     }
 
 }

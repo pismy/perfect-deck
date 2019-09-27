@@ -8,14 +8,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class ReanimatorPlayerTest extends Player {
+public class ReanimatorDeckPilotTest extends DeckPilot {
     private static List<String> LANDS = Arrays.asList("swamp", "mountain", "crumbling vestige");
     private static List<String> REANIMATOR = Arrays.asList("Exhume", "Animate Dead", "Reanimate");
     private static List<String> MONSTERS = Arrays.asList("Hand of Emrakul", "Greater Sandwurm", "Pathrazer of Ulamog", "Ulamog's Crusher");
 
     private final MulliganRules rules;
 
-    public ReanimatorPlayerTest(MulliganRules rules) {
+    public ReanimatorDeckPilotTest(MulliganRules rules) {
         this.rules = rules;
     }
 
@@ -41,9 +41,12 @@ public class ReanimatorPlayerTest extends Player {
     }
 
     @Override
-    public boolean hasWon(Game context) {
+    public void checkWin(Game context) {
+        super.checkWin(context);
         // consider I won as soon as I have a monster on the board
         Cards board = context.getBoard();
-        return MONSTERS.stream().filter(board::has).findFirst().isPresent();
+        if(MONSTERS.stream().filter(board::has).findFirst().isPresent()) {
+            throw new GameWonException("I reanimated a monster");
+        }
     }
 }
