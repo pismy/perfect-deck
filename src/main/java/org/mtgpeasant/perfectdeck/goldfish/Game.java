@@ -66,7 +66,7 @@ public class Game {
         return this;
     }
 
-    Game untapAll() {
+    public Game untapAll() {
         tapped.clear();
         return this;
     }
