@@ -4,11 +4,12 @@ import lombok.Builder;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
-import org.mtgpeasant.perfectdeck.common.matchers.MatcherParser;
+import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 @Builder
@@ -24,16 +25,16 @@ public class HandSimulator {
         final Map<String, int[]> matchCount;
         final int[] noMatchCount;
 
-        private Results(int iterations, List<MatcherParser.DeclaredMatcher> criteria, Deck... decks) {
+        private Results(int iterations, List<Matchers.NamedMatcher> criteria, Deck... decks) {
             this.iterations = iterations;
             this.matchCount = new HashMap<>();
-            for (MatcherParser.DeclaredMatcher decl : criteria) {
+            for (Matchers.NamedMatcher decl : criteria) {
                 matchCount.put(decl.getName(), new int[decks.length]);
             }
             noMatchCount = new int[decks.length];
         }
 
-        private void addMatch(int deck, MatcherParser.DeclaredMatcher criteria) {
+        private void addMatch(int deck, Matchers.NamedMatcher criteria) {
             matchCount.get(criteria.getName())[deck]++;
         }
 
@@ -48,10 +49,10 @@ public class HandSimulator {
             Deck deck = decks[d];
             for (int it = 0; it < iterations; it++) {
                 Cards hand = deck.getMain().shuffle().draw(draw);
-                MatcherParser.DeclaredMatcher matching = rules.findMatch(hand);
-                if (matching != null) {
+                Optional<Matchers.NamedMatcher> matching = rules.firstMatch(hand);
+                if (matching.isPresent()) {
                     // increment match count
-                    results.addMatch(d, matching);
+                    results.addMatch(d, matching.get());
                 } else {
                     results.addNoMatch(d);
                 }

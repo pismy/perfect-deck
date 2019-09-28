@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-class OrMatcher implements Matcher {
+class OrMatcher extends Matcher {
     @Singular
     final List<Matcher> matchers;
 

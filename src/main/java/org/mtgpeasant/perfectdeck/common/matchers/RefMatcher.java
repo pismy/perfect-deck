@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-class RefMatcher implements Matcher {
+class RefMatcher extends Matcher {
     final String name;
 
     @Override

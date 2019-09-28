@@ -2,26 +2,25 @@ package org.mtgpeasant.perfectdeck.handoptimizer;
 
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
-import org.mtgpeasant.perfectdeck.common.matchers.*;
+import org.mtgpeasant.perfectdeck.common.matchers.Matcher;
+import org.mtgpeasant.perfectdeck.common.matchers.MatcherContext;
+import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
+import org.mtgpeasant.perfectdeck.common.matchers.Validation;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import java.util.*;
 
 @Value
 public class MulliganRules implements MatcherContext {
     final Map<String, Matcher> matchers;
     final List<ParseError> errors;
-    final List<MatcherParser.DeclaredMatcher> criteria;
+    final List<Matchers.NamedMatcher> criteria;
 
     public static MulliganRules parse(Reader input) throws IOException {
-        List<MatcherParser.DeclaredMatcher> criteria = new ArrayList<>();
+        List<Matchers.NamedMatcher> criteria = new ArrayList<>();
         Map<String, Matcher> matchers = new HashMap<>();
         List<ParseError> errors = new ArrayList<>();
 
@@ -35,12 +34,12 @@ public class MulliganRules implements MatcherContext {
                 // zero or commented line
             } else {
                 try {
-                    MatcherParser.DeclaredMatcher decl = MatcherParser.parse(line);
+                    Matchers.NamedMatcher decl = Matchers.parse(line);
                     matchers.put(decl.getName(), decl.getMatcher());
                     if (decl.isCriterion()) {
                         criteria.add(decl);
                     }
-                } catch(ParseError pe) {
+                } catch (ParseError pe) {
                     pe.setLine(lineNb);
                     errors.add(pe);
                 }
@@ -64,13 +63,9 @@ public class MulliganRules implements MatcherContext {
         return validation;
     }
 
-    public MatcherParser.DeclaredMatcher findMatch(Cards hand) {
-        Match match = Match.from(hand);
-        for (MatcherParser.DeclaredMatcher decl : getCriteria()) {
-            if (decl.getMatcher().matches(Stream.of(match), this).findFirst().isPresent()) {
-                return decl;
-            }
-        }
-        return null;
+    public Optional<Matchers.NamedMatcher> firstMatch(Cards hand) {
+        return getCriteria().stream()
+                .filter(c -> c.getMatcher().matches(hand, this).findFirst().isPresent())
+                .findFirst();
     }
 }

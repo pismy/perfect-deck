@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-class AndMatcher implements Matcher {
+class AndMatcher extends Matcher {
     @Singular
     final List<Matcher> matchers;
 

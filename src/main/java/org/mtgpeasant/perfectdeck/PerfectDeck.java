@@ -2,8 +2,7 @@ package org.mtgpeasant.perfectdeck;
 
 import dnl.utils.text.table.TextTable;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
-import org.mtgpeasant.perfectdeck.common.cards.DeckParser;
-import org.mtgpeasant.perfectdeck.common.matchers.MatcherParser;
+import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
 import org.mtgpeasant.perfectdeck.common.matchers.Validation;
 import org.mtgpeasant.perfectdeck.handoptimizer.MulliganRules;
 import org.mtgpeasant.perfectdeck.handoptimizer.HandSimulator;
@@ -39,7 +38,7 @@ public class PerfectDeck {
                 @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
 
         ) throws IOException {
-            Deck deck = DeckParser.parse(new FileReader(deckFile));
+            Deck deck = Deck.parse(new FileReader(deckFile));
 
             System.out.println("Deck loaded: " + deck.getMain().size() + " cards (" + deck.getSideboard().size() + " cards in sideboard)");
             System.out.println();
@@ -86,7 +85,7 @@ public class PerfectDeck {
             String[] columnNames = new String[]{"Criteria", "Deck #1"};
             Object[][] data = new Object[rules.getCriteria().size()+1][2];
             for(int i = 0; i<rules.getCriteria().size(); i++) {
-                MatcherParser.DeclaredMatcher criteria = rules.getCriteria().get(i);
+                Matchers.NamedMatcher criteria = rules.getCriteria().get(i);
                 data[i][0] = criteria.getName();
                 int count = results.getMatchCount().get(criteria.getName())[0];
                 data[i][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
@@ -95,7 +94,7 @@ public class PerfectDeck {
             int count = results.getNoMatchCount()[0];
             data[rules.getCriteria().size()][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             new TextTable(columnNames, data).printTable();
-//            for (RulesParser.DeclaredMatcher decl : rules.getCriteria()) {
+//            for (RulesParser.NamedMatcher decl : rules.getCriteria()) {
 //                int matchesCount = results.getMatchCount().getOrDefault(decl.getName(), 0);
 //                System.out.println(decl.getName() + ": " + matchesCount + "/" + iterations + " (" + PERCENT.format(100f * (float) matchesCount / (float) iterations) + "%)");
 //            }

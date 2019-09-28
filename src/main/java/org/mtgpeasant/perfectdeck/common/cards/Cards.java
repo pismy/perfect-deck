@@ -54,6 +54,36 @@ public class Cards {
         return cards.contains(card);
     }
 
+    public String hasOne(String... cards) {
+        for(String card : cards) {
+            if(this.cards.contains(card)) {
+                return card;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasAll(String... cards) {
+        for(String card : cards) {
+            if(!this.cards.contains(card)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public Cards select(String... cards) {
+        Cards thiz = this;
+        List<String> selected = new ArrayList<>();
+        for(String card : cards) {
+            if(thiz.has(card)) {
+                selected.add(card);
+                thiz = thiz.remove(card);
+            }
+        }
+        return new Cards(selected);
+    }
+
     public Cards remove(String card) {
         Cards copy = copy();
         copy.cards.remove(card);

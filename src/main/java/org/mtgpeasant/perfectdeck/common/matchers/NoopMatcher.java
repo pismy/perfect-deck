@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-class NoopMatcher implements Matcher {
+class NoopMatcher extends Matcher {
     @Override
     public String toString() {
         return "$noop";

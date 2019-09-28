@@ -74,10 +74,12 @@ public class Game {
     Game startNextTurn() {
         currentTurn++;
         landed = 0;
-        untapAll();
+        emptyPool();
+        return this;
+    }
+
+    Game emptyPool() {
         pool = Mana.zero();
-        // TODO: maybe split upkeep phase ?
-        draw(1);
         return this;
     }
 

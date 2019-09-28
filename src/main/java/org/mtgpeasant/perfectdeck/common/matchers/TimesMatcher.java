@@ -7,7 +7,7 @@ import java.util.stream.Stream;
 
 @Builder
 @Value
-class TimesMatcher implements Matcher {
+class TimesMatcher extends Matcher {
     final int times;
 
     final Matcher matcher;

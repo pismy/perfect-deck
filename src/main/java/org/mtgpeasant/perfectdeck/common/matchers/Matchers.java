@@ -1,5 +1,6 @@
 package org.mtgpeasant.perfectdeck.common.matchers;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import lombok.Builder;
 import lombok.Value;
@@ -7,20 +8,94 @@ import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 import org.mtgpeasant.perfectdeck.common.utils.ParseHelper;
 
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
-public class MatcherParser {
+public class Matchers {
+    public static Matcher noop() {
+        return new NoopMatcher();
+    }
+
+    public static Matcher card(String name) {
+        return new CardMatcher(name.toLowerCase());
+    }
+
+    public static Matcher atleast(int nb, List<Matcher> matchers) {
+        if (nb == 0) {
+            return noop();
+        }
+        Preconditions.checkArgument(nb <= matchers.size(), "Min number of expected matchers (" + nb + ") can't exceed total number of matcher (" + matchers.size() + ")");
+        if (matchers.size() == 1) {
+            return matchers.get(0);
+        }
+        if (nb == 1) {
+            return or(matchers);
+        } else if (nb == matchers.size()) {
+            return and(matchers);
+        } else {
+            // make all combinations of NB among matchers:
+            // any( all(M1, M2, ... Mn), ...)
+            Set<Set<Matcher>> allCombinations = Sets.combinations(new HashSet<>(matchers), nb);
+            return OrMatcher.builder().
+                    matchers(
+                            allCombinations.stream().map(combination -> AndMatcher.builder().matchers(combination).build()).collect(Collectors.toList()))
+                    .build();
+        }
+    }
+
+    public static Matcher atleast(int nb, Matcher... matchers) {
+        return atleast(nb, Arrays.asList(matchers));
+    }
+
+    public static Matcher and(List<Matcher> matchers) {
+        if (matchers.isEmpty()) {
+            return noop();
+        } else if (matchers.size() == 1) {
+            return matchers.get(0);
+        } else {
+            return new AndMatcher(matchers);
+        }
+    }
+
+    public static Matcher and(Matcher... matchers) {
+        return new AndMatcher(Arrays.asList(matchers));
+    }
+
+    public static Matcher times(int times, Matcher matcher) {
+        if (times == 0) {
+            return noop();
+        } else if (times == 1) {
+            return matcher;
+        } else {
+            return new TimesMatcher(times, matcher);
+        }
+    }
+
+    public static Matcher or(List<Matcher> matchers) {
+        if (matchers.isEmpty()) {
+            return noop();
+        } else if (matchers.size() == 1) {
+            return matchers.get(0);
+        } else {
+            return new OrMatcher(matchers);
+        }
+    }
+
+    public static Matcher or(Matcher... matchers) {
+        return new OrMatcher(Arrays.asList(matchers));
+    }
+
+    public static Matcher ref(String name) {
+        return new RefMatcher(name);
+    }
+
     static final String SEPARATORS = "[]<>()";
     static final String WHITE = " \t";
     static final String DIGITS = "0123456789";
 
     @Builder
     @Value
-    public static class DeclaredMatcher {
+    public static class NamedMatcher {
         final String name;
         final boolean criterion;
         final Matcher matcher;
@@ -31,7 +106,7 @@ public class MatcherParser {
         }
     }
 
-    public static DeclaredMatcher parse(String line) throws ParseError {
+    public static NamedMatcher parse(String line) throws ParseError {
         ParseHelper parser = new ParseHelper(new StringReader(line));
         parser.curChar();
 
@@ -63,7 +138,7 @@ public class MatcherParser {
             matcher = parseCompound(parser);
         }
 
-        return DeclaredMatcher.builder()
+        return NamedMatcher.builder()
                 .name(name)
                 .criterion(isCriteria)
                 .matcher(matcher)
@@ -85,13 +160,13 @@ public class MatcherParser {
         Matcher matcher = null;
         if (parser.consumeChar('[', WHITE)) {
             // card matcher
-            matcher = CardMatcher.builder().card(parser.readUntil(SEPARATORS).trim().toLowerCase()).build();
+            matcher = card(parser.readUntil(SEPARATORS).trim());
             if (!parser.consumeChar(']', WHITE)) {
                 parser.error(ParseError.RC_SYNTAX_ERROR, "']' expected to close a card matcher");
             }
         } else if (parser.consumeChar('<', WHITE)) {
             // ref matcher
-            matcher = RefMatcher.builder().name(parser.readUntil(SEPARATORS).trim()).build();
+            matcher = ref(parser.readUntil(SEPARATORS).trim());
             if (!parser.consumeChar('>', WHITE)) {
                 parser.error(ParseError.RC_SYNTAX_ERROR, "'>' expected to close a matcher reference");
             }
@@ -112,7 +187,7 @@ public class MatcherParser {
         if (times == 1) {
             return matcher;
         } else {
-            return TimesMatcher.builder().times(times).matcher(matcher).build();
+            return times(times, matcher);
         }
     }
 
@@ -151,9 +226,9 @@ public class MatcherParser {
         if (matchers.size() == 1) {
             return matchers.get(0);
         } else if (compound == '&') {
-            return AndMatcher.builder().matchers(matchers).build();
+            return and(matchers);
         } else {
-            return OrMatcher.builder().matchers(matchers).build();
+            return or(matchers);
         }
     }
 
@@ -172,9 +247,7 @@ public class MatcherParser {
                 if (matchers.size() == 1) {
                     return matchers.get(0);
                 }
-                return name.equals("any") ?
-                        OrMatcher.builder().matchers(matchers).build()
-                        : AndMatcher.builder().matchers(matchers).build();
+                return name.equals("any") ? or(matchers) : and(matchers);
             }
             case "xof":
             case "atleast": {
@@ -192,31 +265,7 @@ public class MatcherParser {
                     parser.error(ParseError.RC_SYNTAX_ERROR, "1st arg must be a positive integer");
                 }
                 List<Matcher> matchers = parseMatcherList(parser);
-                if (nb == 0) {
-                    return NoopMatcher.builder().build();
-                }
-                if (nb > matchers.size()) {
-                    parser.error(ParseError.RC_SYNTAX_ERROR, "1st arg cannot exceed matchers size");
-                }
-                if (matchers.isEmpty()) {
-                    parser.error(ParseError.RC_SYNTAX_ERROR, "you shall provide at least one matcher");
-                }
-                if (matchers.size() == 1) {
-                    return matchers.get(0);
-                }
-                if (nb == 1) {
-                    return OrMatcher.builder().matchers(matchers).build();
-                } else if (nb == matchers.size()) {
-                    AndMatcher.builder().matchers(matchers).build();
-                } else {
-                    // make all combinations of NB among matchers:
-                    // any( all(M1, M2, ... Mn), ...)
-                    Set<Set<Matcher>> allCombinations = Sets.combinations(new HashSet<>(matchers), nb);
-                    return OrMatcher.builder().
-                            matchers(
-                                    allCombinations.stream().map(combination -> AndMatcher.builder().matchers(combination).build()).collect(Collectors.toList()))
-                            .build();
-                }
+                return atleast(nb, matchers);
             }
             default: {
                 parser.error(ParseError.RC_SYNTAX_ERROR, "unknown function @" + name);

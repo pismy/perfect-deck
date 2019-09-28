@@ -42,13 +42,23 @@ public class DeckPilot {
 
     }
 
-    public void checkWin(Game context) {
+    public String checkWin(Game context) {
         if (context.getOpponentLife() <= 0) {
-            throw new GameWonException("opponent is dead");
+            return "opponent is dead";
         }
         if (context.getOpponentPoisonCounters() >= 10) {
-            throw new GameWonException("opponent is deadly poisoned");
+            return "opponent is deadly poisoned";
         }
+        return null;
     }
 
+    /**
+     * Get rid of cards after one or several mulligans
+     *
+     * @param cards number of cards to get rid of
+     * @param game  game
+     */
+    public void getRidOfCards(int cards, Game game) {
+        throw new RuntimeException("getRidOfCards() not implemented yet");
+    }
 }

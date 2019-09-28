@@ -4,13 +4,13 @@ import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 
-public class MatcherParserTest {
+public class MatchersTest {
 
     @Test
     public void should_not_parse_due_to_no_matcher() throws ParseError {
         // WHEN
         Assertions.assertThatExceptionOfType(ParseError.class)
-                .isThrownBy(() -> MatcherParser.parse("<R>: "))
+                .isThrownBy(() -> Matchers.parse("<R>: "))
                 .withMessageStartingWith("you should declare at least one matcher");
     }
 
@@ -18,14 +18,14 @@ public class MatcherParserTest {
     public void should_not_parse_due_to_and_or() throws ParseError {
         // WHEN
         Assertions.assertThatExceptionOfType(ParseError.class)
-                .isThrownBy(() -> MatcherParser.parse("<R>: [mountain] || [lotus petal] && [crumbling vestige]"))
+                .isThrownBy(() -> Matchers.parse("<R>: [mountain] || [lotus petal] && [crumbling vestige]"))
                 .withMessageStartingWith("'|' expected");
     }
 
     @Test
     public void or_cards_matchers_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<R>: [mountain] || [lotus petal] || [crumbling vestige]  ");
+        Matchers.NamedMatcher declaration = Matchers.parse("<R>: [mountain] || [lotus petal] || [crumbling vestige]  ");
 
         System.out.println(declaration);
 
@@ -38,7 +38,7 @@ public class MatcherParserTest {
     @Test
     public void fn_any_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<R>: @any([mountain] [lotus petal] [crumbling vestige])");
+        Matchers.NamedMatcher declaration = Matchers.parse("<R>: @any([mountain] [lotus petal] [crumbling vestige])");
 
         System.out.println(declaration);
 
@@ -51,7 +51,7 @@ public class MatcherParserTest {
     @Test
     public void and_matchers_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<<turn 1>>: <B> &    [putrid imp] && <rea> && [dark ritual] && <steak>");
+        Matchers.NamedMatcher declaration = Matchers.parse("<<turn 1>>: <B> &    [putrid imp] && <rea> && [dark ritual] && <steak>");
 
         System.out.println(declaration);
 
@@ -64,7 +64,7 @@ public class MatcherParserTest {
     @Test
     public void fn_all_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<<turn 1>>: @all(<B> [putrid imp] <rea> [dark ritual] <steak>)");
+        Matchers.NamedMatcher declaration = Matchers.parse("<<turn 1>>: @all(<B> [putrid imp] <rea> [dark ritual] <steak>)");
 
         System.out.println(declaration);
 
@@ -77,7 +77,7 @@ public class MatcherParserTest {
     @Test
     public void fn_xof_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<<turn 1>>: @xof(2)(<B> <rea> <steak>)");
+        Matchers.NamedMatcher declaration = Matchers.parse("<<turn 1>>: @xof(2)(<B> <rea> <steak>)");
 
         System.out.println(declaration);
 
@@ -90,7 +90,7 @@ public class MatcherParserTest {
     @Test
     public void compound_matchers_should_parse() throws ParseError {
         // WHEN
-        MatcherParser.DeclaredMatcher declaration = MatcherParser.parse("<<turn 1 or 3>>: <B> & [putrid imp] && ( <rea> | ( [dark ritual] && [shred memory]) ) && <steak>");
+        Matchers.NamedMatcher declaration = Matchers.parse("<<turn 1 or 3>>: <B> & [putrid imp] && ( <rea> | ( [dark ritual] && [shred memory]) ) && <steak>");
 
         System.out.println(declaration);
 
