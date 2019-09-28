@@ -4,10 +4,7 @@ import lombok.Builder;
 import lombok.Singular;
 import lombok.Value;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 
 @Builder
@@ -63,6 +60,10 @@ public class Cards {
         return null;
     }
 
+    public int count(String... cards) {
+        return select(cards).size();
+    }
+
     public boolean hasAll(String... cards) {
         for(String card : cards) {
             if(!this.cards.contains(card)) {
@@ -73,12 +74,12 @@ public class Cards {
     }
 
     public Cards select(String... cards) {
-        Cards thiz = this;
+        Set<String> set = new HashSet<>(Arrays.asList(cards));
         List<String> selected = new ArrayList<>();
-        for(String card : cards) {
-            if(thiz.has(card)) {
+        int count = 0;
+        for(String card : this.cards) {
+            if(set.contains(card)) {
                 selected.add(card);
-                thiz = thiz.remove(card);
             }
         }
         return new Cards(selected);

@@ -11,7 +11,7 @@ public class Game {
     private int currentTurn = 0;
     private int opponentLife = 20;
     private int opponentPoisonCounters = 0;
-    private int landed = 0;
+    private boolean landed = false;
 
     private Cards library;
     private Cards hand;
@@ -73,7 +73,7 @@ public class Game {
 
     Game startNextTurn() {
         currentTurn++;
-        landed = 0;
+        landed = false;
         emptyPool();
         return this;
     }
@@ -87,12 +87,12 @@ public class Game {
         if (!hand.has(cardName)) {
             throw new IllegalMoveException("Can't land [" + cardName + "]: not in hand");
         }
-        if (landed > 0) {
+        if (landed) {
             throw new IllegalMoveException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
         hand = hand.remove(cardName);
         board = board.add(cardName);
-        landed++;
+        landed = true;
         return this;
     }
 

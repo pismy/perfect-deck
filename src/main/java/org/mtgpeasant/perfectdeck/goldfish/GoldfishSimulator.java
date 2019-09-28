@@ -18,12 +18,12 @@ public class GoldfishSimulator {
         for (int d = 0; d < decks.length; d++) {
             Deck deck = decks[d];
             for (int it = 0; it < iterations; it++) {
-                simulateGame(maxTurns, pilot, deck);
+                simulateGame(pilot, deck, maxTurns, true);
             }
         }
     }
 
-    private GameResult simulateGame(int maxTurns, DeckPilot pilot, Deck deck) {
+    private GameResult simulateGame(DeckPilot pilot, Deck deck, int maxTurns, boolean onThePlay) {
         // 1: select hand
         int mulligans = -1;
         Cards library;
@@ -48,8 +48,10 @@ public class GoldfishSimulator {
                 // upkeep
                 pilot.upkeep(game);
 
-                // draw
-                pilot.draw(game);
+                // draw (unless first turn on the play)
+                if(!onThePlay || game.getCurrentTurn() > 0) {
+                    pilot.draw(game);
+                }
 
                 // first main phase
                 game.emptyPool();

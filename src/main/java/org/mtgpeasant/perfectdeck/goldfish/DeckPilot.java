@@ -14,39 +14,39 @@ public class DeckPilot {
         return true;
     }
 
-    public void untap(Game context) {
-        context.untapAll();
+    public void untap(Game game) {
+        game.untapAll();
     }
 
-    public void upkeep(Game context) {
-
-    }
-
-    public void draw(Game context) {
-        context.draw(1);
-    }
-
-    public void firstMainPhase(Game context) {
+    public void upkeep(Game game) {
 
     }
 
-    public void combatPhase(Game context) {
+    public void draw(Game game) {
+        game.draw(1);
+    }
+
+    public void firstMainPhase(Game game) {
 
     }
 
-    public void secondMainPhase(Game context) {
+    public void combatPhase(Game game) {
 
     }
 
-    public void endingPhase(Game context) {
+    public void secondMainPhase(Game game) {
 
     }
 
-    public String checkWin(Game context) {
-        if (context.getOpponentLife() <= 0) {
+    public void endingPhase(Game game) {
+
+    }
+
+    public String checkWin(Game game) {
+        if (game.getOpponentLife() <= 0) {
             return "opponent is dead";
         }
-        if (context.getOpponentPoisonCounters() >= 10) {
+        if (game.getOpponentPoisonCounters() >= 10) {
             return "opponent is deadly poisoned";
         }
         return null;
