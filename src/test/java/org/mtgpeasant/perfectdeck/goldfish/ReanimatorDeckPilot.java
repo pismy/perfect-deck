@@ -6,6 +6,10 @@ import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import java.awt.geom.Area;
 
 public class ReanimatorDeckPilot extends DeckPilot {
+    public static final Mana B = Mana.of("B");
+    public static final Mana B1 = Mana.of("1B");
+    public static final Mana R = Mana.of("R");
+    public static final Mana R2 = Mana.of("2R");
     private static String[] LANDS = new String[]{"swamp", "mountain", "crumbling vestige"};
     private static String[] FREEMANA = new String[]{"lotus petal", "simian spirit guide"};
     private static String[] REANIMATORS_1B = new String[]{"exhume", "animate dead"};
@@ -20,7 +24,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
     @Override
     public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
-        if (mulligans >= 2) {
+        if (mulligans >= 3) {
             return true;
         }
         return rules.firstMatch(hand) != null;
@@ -29,7 +33,6 @@ public class ReanimatorDeckPilot extends DeckPilot {
     @Override
     public void firstMainPhase() {
         while (play()) {
-
         }
     }
 
@@ -38,19 +41,19 @@ public class ReanimatorDeckPilot extends DeckPilot {
         if (!monstersInGy.isEmpty()) {
             // I have a monster in the graveyard: I must now reanimate
             Cards reanimators = game.getHand().select(REANIMATORS_1B);
-            if (game.getHand().has("reanimate") && canPay(game, Mana.of("B"))) {
-                pay(game, Mana.of("B"));
-                game.castNonPermanent("reanimate", Mana.of("B"));
-                game.move(Area.GRAVEYARD, Area.BOARD, monstersInGy.getCards().get(0));
+            if (game.getHand().contains("reanimate") && canPay(B)) {
+                pay(B);
+                game.castNonPermanent("reanimate", B);
+                game.move(monstersInGy.getFirst(), Game.Area.graveyard, Game.Area.board);
                 // done
                 return false;
-            } else if (!reanimators.isEmpty() && canPay(game, Mana.of("1B"))) {
-                pay(game, Mana.of("1B"));
-                game.castNonPermanent(reanimators.getCards().get(0), Mana.of("1B"));
-                game.move(Area.GRAVEYARD, Area.BOARD, monstersInGy.getCards().get(0));
+            } else if (!reanimators.isEmpty() && canPay(B1)) {
+                pay(B1);
+                game.castNonPermanent(reanimators.getFirst(), B1);
+                game.move(monstersInGy.getFirst(), Game.Area.graveyard, Game.Area.board);
                 // done
                 return false;
-            } else if (game.getHand().has("gitaxian probe")) {
+            } else if (game.getHand().contains("gitaxian probe")) {
                 // play it: we'll maybe find what we miss
                 game.castNonPermanent("gitaxian probe", Mana.zero()).draw(1);
                 return true;
@@ -66,69 +69,82 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
             if (monstersInHand.isEmpty()) {
                 // no monster in hand: can I look for one ?
-                if (game.getHand().has("gitaxian probe")) {
+                if (game.getHand().contains("gitaxian probe")) {
                     game.castNonPermanent("gitaxian probe", Mana.zero()).draw(1);
                     return true;
-                } else if (game.getHand().has("faithless looting") && canPay(game, Mana.of("R"))) {
-                    pay(game, Mana.of("R"));
+                } else if (game.getHand().contains("faithless looting") && canPay(R)) {
+                    pay(R);
                     game
-                            .castPermanent("faithless looting", Mana.of("R"))
+                            .castNonPermanent("faithless looting", R)
                             .draw(2);
                     // now discard 2 cards
-                    discard(game, 2);
+                    discard(2);
+                    return true;
+                } else if (game.getGraveyard().contains("faithless looting") && canPay(R2)) {
+                    pay(R2);
+                    game
+                            .cast("faithless looting", Game.Area.graveyard, Game.Area.exile, R2)
+                            .draw(2);
+                    // then another card...
+                    discard(2);
                     return true;
                 } else {
                     // fallback: land, cast imp if none on board
                     // TODO
                 }
-            } else if (game.getBoard().has("putrid imp")) {
+            } else if (game.getBoard().contains("putrid imp")) {
                 // I can discard a monster (any)
-                game.discard(monstersInHand.getCards().get(0));
+                game.discard(monstersInHand.getFirst());
                 return true;
-            } else if (game.getHand().has("putrid imp") && canPay(game, Mana.of("B"))) {
-                pay(game, Mana.of("B"));
+            } else if (game.getHand().contains("putrid imp") && canPay(B)) {
+                pay(B);
                 game
-                        .castPermanent("putrid imp", Mana.of("B"))
+                        .castPermanent("putrid imp", B)
                         // discard a monster (any)
-                        .discard(monstersInHand.getCards().get(0));
+                        .discard(monstersInHand.getFirst());
                 return true;
-            } else if (game.getHand().has("faithless looting") && canPay(game, Mana.of("R"))) {
-                pay(game, Mana.of("R"));
+            } else if (game.getHand().contains("faithless looting") && canPay(R)) {
+                pay(R);
                 game
-                        .castNonPermanent("faithless looting", Mana.of("R"))
+                        .castNonPermanent("faithless looting", R)
                         .draw(2)
                         // discard a monster (any)
-                        .discard(monstersInHand.getCards().get(0));
+                        .discard(monstersInHand.getFirst());
                 // then another card...
-                discard(game, 1);
+                discard(1);
                 return true;
-            } else if (game.getGraveyard().has("faithless looting") && canPay(game, Mana.of("2R"))) {
-                pay(game, Mana.of("2R"));
+            } else if(game.getHand().contains("greater sandwurm") && canPay(Mana.of("2"))) {
+                // cycle
+                pay(Mana.of("2"));
                 game
-                        .castNonPermanent(Area.GRAVEYARD, Area.EXILE, "faithless looting", Mana.of("2R"))
+                        .discard("greater sandwurm")
+                        .draw(1);
+                return true;
+            } else if (game.getGraveyard().contains("faithless looting") && canPay(R2)) {
+                pay(R2);
+                game
+                        .cast("faithless looting", Game.Area.graveyard, Game.Area.exile, R2)
                         .draw(2)
                         // discard a monster (any)
-                        .discard(monstersInHand.getCards().get(0));
+                        .discard(monstersInHand.getFirst());
                 // then another card...
-                discard(game, 1);
+                discard(1);
                 return true;
             } else {
-
+                // TODO
             }
-
-            // if I have in hand: a monster + a discard + the required mana, let's do it!
         }
+    }
 
-        // count available mana
-        if (rules.findByName("turn 1 imp").matches(game.getHand(), rules) != null) {
+    private void discard(int number) {
+        // TODO
+    }
 
-        }
-        // first land
-//        Cards hand = game.getHand();
-//        if (LANDS.stream().filter(hand::has).findFirst().isPresent()) {
-//
-//        }
-        return false;
+    private void pay(Mana mana) {
+        // TODO
+    }
+
+    private boolean canPay(Mana mana) {
     }
 
     @Override
