@@ -1,11 +1,7 @@
-package org.mtgpeasant.perfectdeck.handoptimizer;
+package org.mtgpeasant.perfectdeck.common.matchers;
 
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
-import org.mtgpeasant.perfectdeck.common.matchers.Matcher;
-import org.mtgpeasant.perfectdeck.common.matchers.MatcherContext;
-import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
-import org.mtgpeasant.perfectdeck.common.matchers.Validation;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 
 import java.io.BufferedReader;

@@ -30,7 +30,7 @@ class OrMatcher extends Matcher {
     }
 
     @Override
-    public void validate(Validation validation, MatcherContext context) {
+    protected void validate(Validation validation, MatcherContext context) {
         for (Matcher matcher : matchers) {
             matcher.validate(validation, context);
         }

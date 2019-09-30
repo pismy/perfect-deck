@@ -25,11 +25,11 @@
     #iterations {
         width: 6em;
     }
-    #results {
+    #deckMatches {
         border: 1px solid #ced4da;
         background-color: white;
     }
-    #results .placeholder {
+    #deckMatches .placeholder {
         padding: 30px;
         color: #555555;
         font-style: italic;
@@ -170,7 +170,7 @@ SB: 2 Shenanigans</textarea>
     </div>
 
     <h2 class="my-3">Results</h2>
-    <div id="results">
+    <div id="deckMatches">
         <div class="placeholder">Results will show here...</div>
     </div>
 </div>
@@ -231,14 +231,14 @@ SB: 2 Shenanigans</textarea>
             // 2: parse deck(s)
             let decks = $(".deck").map((idx, elt) => DeckParser.parse(elt.value));
 
-            $("#results").html('<div class="placeholder"><span class="fa fa-clock-o"></span> Computing...</div>');
+            $("#deckMatches").html('<div class="placeholder"><span class="fa fa-clock-o"></span> Computing...</div>');
 
             setTimeout(function(){
                 // 3: simulate
-                let results = Simulator.simulate(rules, decks, parseInt($("#iterations").val()), 7);
+                let deckMatches = Simulator.simulate(rules, decks, parseInt($("#iterations").val()), 7);
 
-                /// 4: display results
-                $("#results").html(results.toTable());
+                /// 4: display deckMatches
+                $("#deckMatches").html(deckMatches.toTable());
             }, 5);
         });
     });

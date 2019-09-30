@@ -3,46 +3,59 @@ package org.mtgpeasant.perfectdeck.goldfish;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 public class DeckPilot {
+    public Game game;
+
     /**
      * Determines whether the given hand should be kept
      *
+     * @param onThePlay whether you are on the play or on the drawPhase
+     * @param mulligans mulligans counts (0 for first drawPhase)
      * @param hand      opening hand
-     * @param mulligans mulligans counts (0 for first draw)
      * @return {@code true} if the hand should be kept
      */
-    public boolean keep(Cards hand, int mulligans) {
+    public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
         return true;
     }
 
-    public void untap(Game game) {
+    /**
+     * Starts a game
+     *
+     * @param mulligans number of mulligans taken - therefore that number of cards should be sent at the bottom of the library
+     * @param game      game
+     */
+    public void startGame(int mulligans, Game game) {
+        this.game = game;
+    }
+
+    public void untapPhase() {
         game.untapAll();
     }
 
-    public void upkeep(Game game) {
+    public void upkeepPhase() {
 
     }
 
-    public void draw(Game game) {
+    public void drawPhase() {
         game.draw(1);
     }
 
-    public void firstMainPhase(Game game) {
+    public void firstMainPhase() {
 
     }
 
-    public void combatPhase(Game game) {
+    public void combatPhase() {
 
     }
 
-    public void secondMainPhase(Game game) {
+    public void secondMainPhase() {
 
     }
 
-    public void endingPhase(Game game) {
+    public void endingPhase() {
 
     }
 
-    public String checkWin(Game game) {
+    public String checkWin() {
         if (game.getOpponentLife() <= 0) {
             return "opponent is dead";
         }
@@ -50,15 +63,5 @@ public class DeckPilot {
             return "opponent is deadly poisoned";
         }
         return null;
-    }
-
-    /**
-     * Get rid of cards after one or several mulligans
-     *
-     * @param cards number of cards to get rid of
-     * @param game  game
-     */
-    public void getRidOfCards(int cards, Game game) {
-        throw new RuntimeException("getRidOfCards() not implemented yet");
     }
 }

@@ -18,7 +18,7 @@ class CardMatcher extends Matcher {
     }
 
     @Override
-    public void validate(Validation validation, MatcherContext context) {
+    protected void validate(Validation validation, MatcherContext context) {
 //        if(!context.getDeck().has(card)) {
 //            validation.warning("Card [" + card + "] not found in deck");
 //        }

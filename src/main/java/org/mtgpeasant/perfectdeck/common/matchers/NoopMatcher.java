@@ -14,7 +14,7 @@ class NoopMatcher extends Matcher {
     }
 
     @Override
-    public void validate(Validation validation, MatcherContext context) {
+    protected void validate(Validation validation, MatcherContext context) {
     }
 
     @Override

@@ -6,7 +6,7 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import java.util.stream.Stream;
 
 public abstract class Matcher {
-    public abstract void validate(Validation validation, MatcherContext context);
+    protected abstract void validate(Validation validation, MatcherContext context);
 
     protected abstract Stream<Match> matches(Stream<Match> stream, MatcherContext context);
 

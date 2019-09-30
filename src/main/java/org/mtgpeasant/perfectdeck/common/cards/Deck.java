@@ -6,6 +6,7 @@ import lombok.Value;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +63,10 @@ public class Deck {
                 return null;
             }
         }
+    }
+
+    public static Iterable<Deck> decks(Deck... decks) {
+        return Arrays.asList(decks);
     }
 
     @Value

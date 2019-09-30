@@ -3,10 +3,10 @@ package org.mtgpeasant.perfectdeck;
 import dnl.utils.text.table.TextTable;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
+import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.common.matchers.Validation;
-import org.mtgpeasant.perfectdeck.handoptimizer.MulliganRules;
-import org.mtgpeasant.perfectdeck.handoptimizer.HandSimulator;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
+import org.mtgpeasant.perfectdeck.mulligan.MulliganSimulator;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.shell.standard.ShellComponent;
@@ -17,6 +17,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.List;
 
 @SpringBootApplication
 public class PerfectDeck {
@@ -74,8 +75,8 @@ public class PerfectDeck {
                 System.out.println("=== SIMULATE " + iterations + " DRAWS ===");
             }
             long startTime = System.currentTimeMillis();
-            HandSimulator simulator = HandSimulator.builder().iterations(iterations).rules(rules).build();
-            HandSimulator.Results results = simulator.simulate(deck);
+            MulliganSimulator simulator = MulliganSimulator.builder().iterations(iterations).rules(rules).build();
+            List<MulliganSimulator.DeckMatches> deckMatches = simulator.simulate(Deck.decks(deck));
             if (verbose) {
                 System.out.println();
             }
@@ -83,22 +84,22 @@ public class PerfectDeck {
             // dump perfectdeck
             System.out.println("=== STATS (elapsed " + (System.currentTimeMillis() - startTime) + "ms) ===");
             String[] columnNames = new String[]{"Criteria", "Deck #1"};
-            Object[][] data = new Object[rules.getCriteria().size()+1][2];
-            for(int i = 0; i<rules.getCriteria().size(); i++) {
+            Object[][] data = new Object[rules.getCriteria().size() + 1][2];
+            for (int i = 0; i < rules.getCriteria().size(); i++) {
                 Matchers.NamedMatcher criteria = rules.getCriteria().get(i);
                 data[i][0] = criteria.getName();
-                int count = results.getMatchCount().get(criteria.getName())[0];
+                int count = deckMatches.get(0).getMatchCount(criteria);
                 data[i][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             }
             data[rules.getCriteria().size()][0] = "no match";
-            int count = results.getNoMatchCount()[0];
+            int count = deckMatches.get(0).getNoMatchCount();
             data[rules.getCriteria().size()][1] = count + "/" + iterations + " (" + PERCENT.format(100f * (float) count / (float) iterations) + "%)";
             new TextTable(columnNames, data).printTable();
 //            for (RulesParser.NamedMatcher decl : rules.getCriteria()) {
-//                int matchesCount = results.getMatchCount().getOrDefault(decl.getName(), 0);
+//                int matchesCount = deckMatches.getMatchCount().getOrDefault(decl.getName(), 0);
 //                System.out.println(decl.getName() + ": " + matchesCount + "/" + iterations + " (" + PERCENT.format(100f * (float) matchesCount / (float) iterations) + "%)");
 //            }
-//            System.out.println("NONE: " + results.getNoMatchCount() + "/" + iterations + " (" + PERCENT.format(100f * (float) results.getNoMatchCount() / (float) iterations) + "%)");
+//            System.out.println("NONE: " + deckMatches.getNoMatchCount() + "/" + iterations + " (" + PERCENT.format(100f * (float) deckMatches.getNoMatchCount() / (float) iterations) + "%)");
         }
     }
 }

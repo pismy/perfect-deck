@@ -8,7 +8,10 @@ import java.util.List;
 
 @Getter
 public class Game {
-    private int currentTurn = 0;
+    public enum Area {
+        HAND, LIBRARY_TOP, LIBRARY_BOTTOM, BOARD, EXILE, GRAVEYARD
+    }
+    private int currentTurn = 1;
     private int opponentLife = 20;
     private int opponentPoisonCounters = 0;
     private boolean landed = false;
@@ -26,6 +29,18 @@ public class Game {
 
     private List<String> tapped = new ArrayList<>();
     private Mana pool = Mana.zero();
+
+    Game startNextTurn() {
+        currentTurn++;
+        landed = false;
+        emptyPool();
+        return this;
+    }
+
+    Game emptyPool() {
+        pool = Mana.zero();
+        return this;
+    }
 
     public Game pay(Mana mana) {
         if (!has(mana)) {
@@ -57,10 +72,10 @@ public class Game {
 
     public Game untap(String cardName) {
         if (!board.has(cardName)) {
-            throw new IllegalMoveException("Can't untap [" + cardName + "]: not on board");
+            throw new IllegalMoveException("Can't untapPhase [" + cardName + "]: not on board");
         }
 //        if (!tapped.contains(cardName)) {
-//            throw new IllegalMoveException("Can't untap [" + cardName + "]: already untapped");
+//            throw new IllegalMoveException("Can't untapPhase [" + cardName + "]: already untapped");
 //        }
         tapped.remove(cardName);
         return this;
@@ -68,18 +83,6 @@ public class Game {
 
     public Game untapAll() {
         tapped.clear();
-        return this;
-    }
-
-    Game startNextTurn() {
-        currentTurn++;
-        landed = false;
-        emptyPool();
-        return this;
-    }
-
-    Game emptyPool() {
-        pool = Mana.zero();
         return this;
     }
 
@@ -113,7 +116,7 @@ public class Game {
 
     public Game draw(int cards) {
         if (library.size() < cards) {
-            throw new GameLostException("Can't draw [" + cards + "]: not enough cards");
+            throw new GameLostException("Can't drawPhase [" + cards + "]: not enough cards");
         }
         for (int i = 0; i < cards; i++) {
             hand = hand.add(library.draw());
