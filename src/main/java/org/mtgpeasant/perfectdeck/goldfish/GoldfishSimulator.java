@@ -29,6 +29,10 @@ public class GoldfishSimulator {
 
     final DeckPilot pilot;
 
+    /**
+     * TODO:
+     * stats on mulligans & OTP + kill turn breakdown
+     */
     @Builder
     @Getter
     public static class DeckStats {
@@ -74,7 +78,7 @@ public class GoldfishSimulator {
          */
         public double getWinTurnStdDerivation() {
             double avg = getAverageWinTurn();
-            double distanceSum = winCount.entrySet().stream().map(e -> e.getKey() * (e.getValue() - avg) * (e.getValue() - avg)).collect(Collectors.summingDouble(Double::doubleValue));
+            double distanceSum = winCount.entrySet().stream().map(e -> e.getValue() * ((double) e.getKey() - avg) * ((double) e.getKey() - avg)).collect(Collectors.summingDouble(Double::doubleValue));
             long wonGames = iterations - lostCount - timeoutCount;
             return Math.sqrt(distanceSum / (double) wonGames);
         }
@@ -112,6 +116,10 @@ public class GoldfishSimulator {
 
         Game game = new Game(library, hand);
         pilot.startGame(mulligans, game);
+
+        if (game.getHand().size() > draw - mulligans) {
+            throw new IllegalStateException("You shouldn't have " + game.getHand().size() + " cards in hand after " + mulligans + " mulligans.");
+        }
 
         // 2: simulate a game
         try {

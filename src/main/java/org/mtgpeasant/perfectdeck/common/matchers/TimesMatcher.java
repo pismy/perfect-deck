@@ -1,11 +1,9 @@
 package org.mtgpeasant.perfectdeck.common.matchers;
 
-import lombok.Builder;
 import lombok.Value;
 
 import java.util.stream.Stream;
 
-@Builder
 @Value
 class TimesMatcher extends Matcher {
     final int times;

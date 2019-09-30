@@ -1,7 +1,7 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
-import org.mtgpeasant.perfectdeck.handoptimizer.MulliganRules;
+import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 
 public class ReanimatorDeckPilot extends DeckPilot {
     private static String[] LANDS = new String[]{"swamp", "mountain", "crumbling vestige"};
@@ -17,7 +17,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
     }
 
     @Override
-    public boolean keep(Cards hand, int mulligans) {
+    public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
         if (mulligans >= 2) {
             return true;
         }
@@ -25,17 +25,17 @@ public class ReanimatorDeckPilot extends DeckPilot {
     }
 
     @Override
-    public void firstMainPhase(Game game) {
-        while (play(game)) {
+    public void firstMainPhase() {
+        while (play()) {
 
         }
     }
-    
-    private boolean play(Game game) {
-        if(game.getGraveyard().count(MONSTERS) > 0) {
+
+    private boolean play() {
+        if (game.getGraveyard().count(MONSTERS) > 0) {
             // I have a monster in the graveyard: I must now reanimate
             Cards reanimators = game.getHand().select(REANIMATORS);
-            if(!reanimators.isEmpty()) {
+            if (!reanimators.isEmpty()) {
 
             }
         } else {
@@ -45,13 +45,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
             Cards lands = game.getHand().select(LANDS);
             Cards freemana = game.getHand().select(FREEMANA);
 
-            if(monsters.isEmpty()) {
-                // no monster in hand: can I look for one ?
-            } else if(game.getHand().has("putrid imp") && canPay(Mana.of("B"))) {
-
-            } else if(game.getHand().has("faithless looting") && canPay(Mana.of("R"))) {
-
-            } else
+//            if(monsters.isEmpty()) {
+//                // no monster in hand: can I look for one ?
+//            } else if(game.getHand().has("putrid imp") && canPay(Mana.of("B"))) {
+//
+//            } else if(game.getHand().has("faithless looting") && canPay(Mana.of("R"))) {
+//
+//            } else
 
             // if I have in hand: a monster + a discard + the required mana, let's do it!
 
@@ -63,17 +63,18 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
         }
         // first land
-        Cards hand = game.getHand();
-        if (LANDS.stream().filter(hand::has).findFirst().isPresent()) {
-
-        }
+//        Cards hand = game.getHand();
+//        if (LANDS.stream().filter(hand::has).findFirst().isPresent()) {
+//
+//        }
+        return false;
     }
 
     @Override
-    public String checkWin(Game game) {
-        super.checkWin(game);
+    public String checkWin() {
+        super.checkWin();
         // consider I won as soon as I have a monster on the board
-        if(game.getBoard().count(MONSTERS) > 0) {
+        if (game.getBoard().count(MONSTERS) > 0) {
             return "I reanimated a monster";
         }
         return null;

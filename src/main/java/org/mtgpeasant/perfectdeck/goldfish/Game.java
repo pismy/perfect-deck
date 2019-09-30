@@ -3,14 +3,44 @@ package org.mtgpeasant.perfectdeck.goldfish;
 import lombok.Getter;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Getter
 public class Game {
     public enum Area {
-        HAND, LIBRARY_TOP, LIBRARY_BOTTOM, BOARD, EXILE, GRAVEYARD
+        hand(false), library_top(true), library_bottom(false), board(false), exile(false), graveyard(false);
+
+        private boolean top;
+
+        Area(boolean top) {
+            this.top = top;
+        }
+
+        void put(Game game, String card) {
+            if (top) {
+                cards(game).addFirst(card);
+            } else {
+                cards(game).addLast(card);
+            }
+        }
+
+        Cards cards(Game game) {
+            switch (this) {
+                case hand:
+                    return game.hand;
+                case library_top:
+                case library_bottom:
+                    return game.library;
+                case board:
+                    return game.board;
+                case exile:
+                    return game.exile;
+                case graveyard:
+                    return game.graveyard;
+                default:
+                    return null;
+            }
+        }
     }
+
     private int currentTurn = 1;
     private int opponentLife = 20;
     private int opponentPoisonCounters = 0;
@@ -27,7 +57,7 @@ public class Game {
         this.hand = hand;
     }
 
-    private List<String> tapped = new ArrayList<>();
+    private Cards tapped = Cards.none();
     private Mana pool = Mana.zero();
 
     Game startNextTurn() {
@@ -60,10 +90,12 @@ public class Game {
     }
 
     public Game tap(String cardName) {
-        if (!board.has(cardName)) {
+        int countOnBoard = board.count(cardName);
+        if (countOnBoard == 0) {
             throw new IllegalMoveException("Can't tap [" + cardName + "]: not on board");
         }
-        if (tapped.contains(cardName)) {
+        int countTapped = tapped.count(cardName);
+        if (countTapped >= countOnBoard) {
             throw new IllegalMoveException("Can't tap [" + cardName + "]: already tapped");
         }
         tapped.add(cardName);
@@ -71,12 +103,9 @@ public class Game {
     }
 
     public Game untap(String cardName) {
-        if (!board.has(cardName)) {
-            throw new IllegalMoveException("Can't untapPhase [" + cardName + "]: not on board");
+        if (!board.contains(cardName)) {
+            throw new IllegalMoveException("Can't untap [" + cardName + "]: not on board");
         }
-//        if (!tapped.contains(cardName)) {
-//            throw new IllegalMoveException("Can't untapPhase [" + cardName + "]: already untapped");
-//        }
         tapped.remove(cardName);
         return this;
     }
@@ -87,14 +116,14 @@ public class Game {
     }
 
     public Game land(String cardName) {
-        if (!hand.has(cardName)) {
+        if (!hand.contains(cardName)) {
             throw new IllegalMoveException("Can't land [" + cardName + "]: not in hand");
         }
         if (landed) {
             throw new IllegalMoveException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
-        hand = hand.remove(cardName);
-        board = board.add(cardName);
+        hand.remove(cardName);
+        board.add(cardName);
         landed = true;
         return this;
     }
@@ -116,64 +145,63 @@ public class Game {
 
     public Game draw(int cards) {
         if (library.size() < cards) {
-            throw new GameLostException("Can't drawPhase [" + cards + "]: not enough cards");
+            throw new GameLostException("Can't draw [" + cards + "]: not enough cards");
         }
         for (int i = 0; i < cards; i++) {
-            hand = hand.add(library.draw());
+            hand.add(library.draw());
         }
         return this;
+    }
+
+    public Game move(String cardName, Area from, Area to) {
+        if (!from.cards(this).contains(cardName)) {
+            throw new IllegalMoveException("Can't move [" + cardName + "]: not in " + from);
+        }
+        from.cards(this).remove(cardName);
+        to.put(this, cardName);
+        return this;
+    }
+
+    public Game cast(String cardName, Area from, Area to, Mana mana) {
+        if (!has(mana)) {
+            throw new IllegalMoveException("Can't cast [" + cardName + "]: not enough mana");
+        }
+        pay(mana);
+        return move(cardName, from, to);
     }
 
     public Game castPermanent(String cardName, Mana mana) {
-        if (!hand.has(cardName)) {
-            throw new IllegalMoveException("Can't play [" + cardName + "]: not in hand");
-        }
-        if (!has(mana)) {
-            throw new IllegalMoveException("Can't play [" + cardName + "]: not enough mana");
-        }
-        hand = hand.remove(cardName);
-        board = board.add(cardName);
-        pay(mana);
-        return this;
+        return cast(cardName, Area.hand, Area.board, mana);
     }
 
     public Game castNonPermanent(String cardName, Mana mana) {
-        if (!hand.has(cardName)) {
-            throw new IllegalMoveException("Can't play [" + cardName + "]: not in hand");
-        }
-        if (!has(mana)) {
-            throw new IllegalMoveException("Can't play [" + cardName + "]: not enough mana");
-        }
-        hand = hand.remove(cardName);
-        graveyard = graveyard.add(cardName);
-        pay(mana);
-        return this;
+        return cast(cardName, Area.hand, Area.graveyard, mana);
     }
 
     public Game discard(String cardName) {
-        if (!hand.has(cardName)) {
+        if (!hand.contains(cardName)) {
             throw new IllegalMoveException("Can't discard [" + cardName + "]: not in hand");
         }
-        hand = hand.remove(cardName);
-        graveyard = graveyard.add(cardName);
+        hand.remove(cardName);
+        graveyard.add(cardName);
         return this;
     }
 
     public Game sacrifice(String cardName) {
-        if (!board.has(cardName)) {
+        if (!board.contains(cardName)) {
             throw new IllegalMoveException("Can't sacrifice [" + cardName + "]: not on board");
         }
-        board = board.remove(cardName);
-        graveyard = graveyard.add(cardName);
+        board.remove(cardName);
+        graveyard.add(cardName);
         return this;
     }
 
     public Game destroy(String cardName) {
-        if (!board.has(cardName)) {
+        if (!board.contains(cardName)) {
             throw new IllegalMoveException("Can't destroy [" + cardName + "]: not on board");
         }
-        board = board.remove(cardName);
-        graveyard = graveyard.add(cardName);
+        board.remove(cardName);
+        graveyard.add(cardName);
         return this;
     }
 }

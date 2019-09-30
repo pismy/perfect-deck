@@ -36,10 +36,7 @@ public class Matchers {
             // make all combinations of NB among matchers:
             // any( all(M1, M2, ... Mn), ...)
             Set<Set<Matcher>> allCombinations = Sets.combinations(new HashSet<>(matchers), nb);
-            return OrMatcher.builder().
-                    matchers(
-                            allCombinations.stream().map(combination -> AndMatcher.builder().matchers(combination).build()).collect(Collectors.toList()))
-                    .build();
+            return new OrMatcher(allCombinations.stream().map(combination -> new AndMatcher(new ArrayList<>(combination))).collect(Collectors.toList()));
         }
     }
 

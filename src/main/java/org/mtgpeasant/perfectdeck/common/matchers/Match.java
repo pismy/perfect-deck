@@ -15,13 +15,17 @@ public class Match {
     }
 
     public boolean has(String card) {
-        return remaining.has(card);
+        return remaining.contains(card);
     }
 
     public Match select(String card) {
+        Cards newRemaining = remaining.clone();
+        newRemaining.remove(card);
+        Cards newSelected = selected.clone();
+        newSelected.add(card);
         return Match.builder()
-                .remaining(remaining.remove(card))
-                .selected(selected.add(card))
+                .remaining(newRemaining)
+                .selected(newSelected)
                 .build();
     }
 }

@@ -19,22 +19,22 @@ public class Deck {
 
     public static Deck parse(Reader input) throws IOException {
         BufferedReader reader = new BufferedReader(input);
-        Cards.CardsBuilder side = Cards.builder();
-        Cards.CardsBuilder main = Cards.builder();
+        Cards side = new Cards();
+        Cards main = new Cards();
         String line = null;
         boolean[] isReadingSideboard = new boolean[]{false};
         while ((line = reader.readLine()) != null) {
             CardLine dl = parse(line, isReadingSideboard);
             if (dl != null) {
                 for (int i = 0; i < dl.getCount(); i++) {
-                    (dl.isMain() ? main : side).card(dl.getName());
+                    (dl.isMain() ? main : side).add(dl.getName());
                 }
             }
         }
         input.close();
         return builder()
-                .main(main.build())
-                .sideboard(side.build())
+                .main(main)
+                .sideboard(side)
                 .build();
     }
 

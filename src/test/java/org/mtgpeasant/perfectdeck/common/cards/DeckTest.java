@@ -12,7 +12,7 @@ public class DeckTest {
     public void should_parse_1() throws IOException {
         Deck deck = Deck.parse(new StringReader("// this is a comment\n6x Swamp\n3x Mountains  \n2x Ulamog Crusher\nDark Ritual\nSB: 2x Shenanigans\nSB: 2x Pyroblast"));
         Assertions.assertThat(deck.getMain().size()).isEqualTo(12);
-        Assertions.assertThat(deck.getMain().getCards()).containsExactly(
+        Assertions.assertThat(deck.getMain()).containsExactly(
                 "swamp",
                 "swamp",
                 "swamp",
@@ -27,7 +27,7 @@ public class DeckTest {
                 "dark ritual"
         );
         Assertions.assertThat(deck.getSideboard().size()).isEqualTo(4);
-        Assertions.assertThat(deck.getSideboard().getCards()).containsExactly(
+        Assertions.assertThat(deck.getSideboard()).containsExactly(
                 "shenanigans",
                 "shenanigans",
                 "pyroblast",
@@ -39,7 +39,7 @@ public class DeckTest {
     public void should_parse_2() throws IOException {
         Deck deck = Deck.parse(new StringReader("// this is a comment\n6 Swamp\n3 Mountains  \n2 Ulamog Crusher\nDark Ritual\nSideboard:\n2 Shenanigans\n2 Pyroblast"));
         Assertions.assertThat(deck.getMain().size()).isEqualTo(12);
-        Assertions.assertThat(deck.getMain().getCards()).containsExactly(
+        Assertions.assertThat(deck.getMain()).containsExactly(
                 "swamp",
                 "swamp",
                 "swamp",
@@ -54,7 +54,7 @@ public class DeckTest {
                 "dark ritual"
         );
         Assertions.assertThat(deck.getSideboard().size()).isEqualTo(4);
-        Assertions.assertThat(deck.getSideboard().getCards()).containsExactly(
+        Assertions.assertThat(deck.getSideboard()).containsExactly(
                 "shenanigans",
                 "shenanigans",
                 "pyroblast",

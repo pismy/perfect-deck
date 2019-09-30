@@ -1,16 +1,12 @@
 package org.mtgpeasant.perfectdeck.common.matchers;
 
-import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-@Builder
 @Value
 class AndMatcher extends Matcher {
-    @Singular
     final List<Matcher> matchers;
 
     @Override
