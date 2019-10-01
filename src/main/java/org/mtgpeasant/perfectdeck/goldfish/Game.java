@@ -1,45 +1,15 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 @Getter
+@ToString(exclude = "library")
 public class Game {
-    public enum Area {
-        hand(false), library_top(true), library_bottom(false), board(false), exile(false), graveyard(false);
+    public enum Area {hand, library, board, exile, graveyard}
 
-        private boolean top;
-
-        Area(boolean top) {
-            this.top = top;
-        }
-
-        void put(Game game, String card) {
-            if (top) {
-                cards(game).addFirst(card);
-            } else {
-                cards(game).addLast(card);
-            }
-        }
-
-        Cards cards(Game game) {
-            switch (this) {
-                case hand:
-                    return game.hand;
-                case library_top:
-                case library_bottom:
-                    return game.library;
-                case board:
-                    return game.board;
-                case exile:
-                    return game.exile;
-                case graveyard:
-                    return game.graveyard;
-                default:
-                    return null;
-            }
-        }
-    }
+    public enum Side {top, bottom}
 
     private int currentTurn = 1;
     private int opponentLife = 20;
@@ -59,6 +29,23 @@ public class Game {
 
     private Cards tapped = Cards.none();
     private Mana pool = Mana.zero();
+
+    Cards area(Area area) {
+        switch (area) {
+            case hand:
+                return hand;
+            case library:
+                return library;
+            case board:
+                return board;
+            case exile:
+                return exile;
+            case graveyard:
+                return graveyard;
+            default:
+                return null;
+        }
+    }
 
     Game startNextTurn() {
         currentTurn++;
@@ -153,12 +140,38 @@ public class Game {
         return this;
     }
 
+    /**
+     * Moves the given card from the given origin area to the top of the given target area
+     *
+     * @param cardName name of the card to move
+     * @param from     origin area
+     * @param to       target area
+     * @return this
+     */
     public Game move(String cardName, Area from, Area to) {
-        if (!from.cards(this).contains(cardName)) {
+        return move(cardName, from, to, Side.top);
+    }
+
+    /**
+     * Moves the given card from the given origin area to the given target area
+     *
+     * @param cardName name of the card to move
+     * @param from     origin area
+     * @param to       target area
+     * @param side     side of the target area
+     * @return this
+     */
+    public Game move(String cardName, Area from, Area to, Side side) {
+        Cards fromArea = area(from);
+        if (!fromArea.contains(cardName)) {
             throw new IllegalMoveException("Can't move [" + cardName + "]: not in " + from);
         }
-        from.cards(this).remove(cardName);
-        to.put(this, cardName);
+        fromArea.remove(cardName);
+        if (side == Side.top) {
+            area(to).addFirst(cardName);
+        } else {
+            area(to).addLast(cardName);
+        }
         return this;
     }
 
@@ -179,29 +192,14 @@ public class Game {
     }
 
     public Game discard(String cardName) {
-        if (!hand.contains(cardName)) {
-            throw new IllegalMoveException("Can't discard [" + cardName + "]: not in hand");
-        }
-        hand.remove(cardName);
-        graveyard.add(cardName);
-        return this;
+        return move(cardName, Area.hand, Area.graveyard);
     }
 
     public Game sacrifice(String cardName) {
-        if (!board.contains(cardName)) {
-            throw new IllegalMoveException("Can't sacrifice [" + cardName + "]: not on board");
-        }
-        board.remove(cardName);
-        graveyard.add(cardName);
-        return this;
+        return move(cardName, Area.board, Area.graveyard);
     }
 
     public Game destroy(String cardName) {
-        if (!board.contains(cardName)) {
-            throw new IllegalMoveException("Can't destroy [" + cardName + "]: not on board");
-        }
-        board.remove(cardName);
-        graveyard.add(cardName);
-        return this;
+        return move(cardName, Area.board, Area.graveyard);
     }
 }

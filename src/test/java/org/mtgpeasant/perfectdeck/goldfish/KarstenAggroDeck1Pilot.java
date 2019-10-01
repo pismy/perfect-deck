@@ -2,8 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.hand;
-import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library_bottom;
+import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.*;
 
 /**
  * See: https://www.channelfireball.com/articles/frank-analysis-finding-the-optimal-aggro-deck-via-computer-simulation/
@@ -49,13 +48,13 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
         for (int i = 0; i < mulligans; i++) {
             int lands = game.getHand().count(LAND);
             if (lands > 2) {
-                game.move(LAND, hand, library_bottom);
+                game.move(LAND, hand, library, Game.Side.bottom);
             } else if (game.getHand().contains(LEECH)) {
-                game.move(LEECH, hand, library_bottom);
+                game.move(LEECH, hand, library, Game.Side.bottom);
             } else if (game.getHand().contains(BOLT)) {
-                game.move(BOLT, hand, library_bottom);
+                game.move(BOLT, hand, library, Game.Side.bottom);
             } else {
-                game.move(LIONS, hand, library_bottom);
+                game.move(LIONS, hand, library, Game.Side.bottom);
             }
         }
     }

@@ -25,7 +25,7 @@ public class GoldfishSimulator {
     @Builder.Default
     final int iterations = 50000;
     @Builder.Default
-    final int maxTurns = 5;
+    final int maxTurns = 20;
 
     final DeckPilot pilot;
 
@@ -148,7 +148,13 @@ public class GoldfishSimulator {
                 pilot.secondMainPhase();
 
                 // end phase
+                game.emptyPool();
                 pilot.endingPhase();
+
+                // check no more than 7 cards in hand
+                if (game.getHand().size() > draw) {
+                    throw new IllegalStateException("You shouldn't have " + game.getHand().size() + " cards in hand after ending phase.");
+                }
 
                 // check won
                 String winReason = pilot.checkWin();

@@ -106,4 +106,8 @@ public class Mana {
 //                .append(")")
                 .toString();
     }
+
+    public boolean isEmpty() {
+        return ccm() == 0;
+    }
 }
