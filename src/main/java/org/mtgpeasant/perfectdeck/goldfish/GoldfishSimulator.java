@@ -1,5 +1,6 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
+import com.google.common.base.Predicates;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Value;
@@ -86,6 +87,19 @@ public class GoldfishSimulator {
          */
         public double getWinTurnStdDerivation() {
             return getWinTurnStdDerivation(r -> r.getOutcome() == GameResult.Outcome.WON);
+        }
+
+        public List<Integer> getMulligans(Predicate<GameResult> filter) {
+            return results.stream()
+                    .filter(filter)
+                    .map(GameResult::getMulligans)
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        public List<Integer> getMulligans() {
+            return getMulligans(Predicates.alwaysTrue());
         }
 
 //        final Map<Integer, Integer> winCount = new HashMap<>();
@@ -211,6 +225,7 @@ public class GoldfishSimulator {
                 if (winReason != null) {
                     return GameResult.builder()
                             .onThePlay(onThePlay)
+                            .mulligans(mulligans)
                             .outcome(GameResult.Outcome.WON)
                             .endTurn(game.getCurrentTurn())
                             .reason(winReason)
@@ -222,12 +237,14 @@ public class GoldfishSimulator {
             }
             return GameResult.builder()
                     .onThePlay(onThePlay)
+                    .mulligans(mulligans)
                     .outcome(GameResult.Outcome.TIMEOUT)
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (GameLostException gle) {
             return GameResult.builder()
                     .onThePlay(onThePlay)
+                    .mulligans(mulligans)
                     .outcome(GameResult.Outcome.LOST)
                     .endTurn(game.getCurrentTurn())
                     .reason(gle.getMessage())
@@ -241,6 +258,7 @@ public class GoldfishSimulator {
         public enum Outcome {WON, LOST, TIMEOUT}
 
         final boolean onThePlay;
+        final int mulligans;
         final Outcome outcome;
         final int endTurn;
         final String reason;

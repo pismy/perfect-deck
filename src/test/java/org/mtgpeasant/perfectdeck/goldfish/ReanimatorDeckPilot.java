@@ -42,7 +42,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
         if (mulligans >= 3) {
             return true;
         }
-        return rules.firstMatch(hand) != null;
+        return rules.firstMatch(hand).isPresent();
+    }
+
+    @Override
+    public void startGame(int mulligans, Game game) {
+        super.startGame(mulligans, game);
+        getRid(mulligans);
     }
 
     @Override
@@ -184,6 +190,74 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
+    private void getRid(int number) {
+        for (int i = 0; i < number; i++) {
+            // extra creatures
+            Cards creatures = game.getHand().select(CREATURES);
+            if (creatures.size() > 1) {
+                game.move(creatures.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // dragon breath
+            if (game.getHand().contains(DRAGON_BREATH)) {
+                game.move(DRAGON_BREATH, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // extra reanimator spells
+            Cards reanimators = game.getHand().select(ANIMATE_DEAD, EXHUME, REANIMATE);
+            if (reanimators.size() > 1) {
+                game.move(reanimators.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // extra lands and/or mana
+            Cards redProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
+            if (redProducersInHand.size() > 2) {
+                game.move(redProducersInHand.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            Cards blackProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SWAMP);
+            if (blackProducersInHand.size() > 2) {
+                game.move(blackProducersInHand.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // gitaxian
+            if (game.getHand().contains(GITAXIAN_PROBE)) {
+                game.move(GITAXIAN_PROBE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            Cards discarders = game.getHand().select(PUTRID_IMP, FAITHLESS_LOOTING);
+            if (discarders.size() > 2) {
+                game.move(discarders.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // guide
+            if (game.getHand().contains(SIMIAN_SPIRIT_GUIDE)) {
+                game.move(SIMIAN_SPIRIT_GUIDE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            // petal
+            if (game.getHand().contains(LOTUS_PETAL)) {
+                game.move(LOTUS_PETAL, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            if (game.getHand().contains(MOUNTAIN)) {
+                game.move(MOUNTAIN, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            if (game.getHand().contains(SWAMP)) {
+                game.move(SWAMP, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            if (game.getHand().contains(CRUMBLING_VESTIGE)) {
+                game.move(CRUMBLING_VESTIGE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                continue;
+            }
+            System.out.println("Didn't find any suitable card to get rid of");
+            System.out.println(game);
+            game.move(game.getHand().getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+        }
+    }
+
     private void discard(int number) {
         for (int i = 0; i < number; i++) {
             Cards monstersInGy = game.getGraveyard().select(CREATURES);
@@ -207,13 +281,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
             // I only need 3 mana producers, with one B and one R
             Mana landsProduction = landsProduction(false);
             int redProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
-            if(redProducersInHand > 0 && landsProduction.getR() + redProducersInHand > 1) {
+            if (redProducersInHand > 0 && landsProduction.getR() + redProducersInHand > 1) {
                 // I can discard a red source
                 maybeDiscard(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
                 continue;
             }
             int blackProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, SWAMP);
-            if(blackProducersInHand > 0 && landsProduction.getB() + blackProducersInHand > 1) {
+            if (blackProducersInHand > 0 && landsProduction.getB() + blackProducersInHand > 1) {
                 // I can discard a black source
                 maybeDiscard(CRUMBLING_VESTIGE, SWAMP);
                 continue;
@@ -249,7 +323,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
             }
             System.out.println("Didn't find any suitable card to discard");
             System.out.println(game);
-            if(maybeDiscard(GITAXIAN_PROBE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL)) {
+            if (maybeDiscard(GITAXIAN_PROBE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL)) {
                 continue;
             }
             game.discard(game.getHand().getFirst());
