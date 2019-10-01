@@ -6,9 +6,9 @@ import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -16,12 +16,12 @@ import java.util.stream.StreamSupport;
 @Builder
 @Value
 public class GoldfishSimulator {
-    public enum OnThePlay {YES, NO, RANDOM}
+    public enum Start {OTP, OTD, RANDOM}
 
     @Builder.Default
     final int draw = 7;
     @Builder.Default
-    final OnThePlay otp = OnThePlay.RANDOM;
+    final Start start = Start.RANDOM;
     @Builder.Default
     final int iterations = 50000;
     @Builder.Default
@@ -37,51 +37,101 @@ public class GoldfishSimulator {
     @Getter
     public static class DeckStats {
         final Deck deck;
+        final List<GameResult> results;
         final int iterations;
-        final Map<Integer, Integer> winCount = new HashMap<>();
-        int lostCount = 0;
-        int timeoutCount = 0;
 
-        private void add(GameResult result) {
-            switch (result.getOutcome()) {
-                case WON:
-                    winCount.put(result.getTurns(), getWinCount(result.getTurns()) + 1);
-                    break;
-                case LOST:
-                    lostCount++;
-                    break;
-                case TIMEOUT:
-                    timeoutCount++;
-                    break;
-            }
+        public List<Integer> getWinTurns(Predicate<GameResult> filter) {
+            return results.stream()
+                    .filter(filter)
+                    .map(GameResult::getEndTurn)
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
+        }
+
+        public long count(Predicate<GameResult> filter) {
+            return results.stream()
+                    .filter(filter)
+                    .count();
+        }
+
+        public double getAverageWinTurn(Predicate<GameResult> filter) {
+            long sum = results.stream()
+                    .filter(filter)
+                    .map(GameResult::getEndTurn)
+                    .collect(Collectors.summingLong(Integer::longValue));
+            long count = count(filter);
+            return (double) sum / (double) count;
+        }
+
+        public double getAverageWinTurn() {
+            return getAverageWinTurn(r -> r.getOutcome() == GameResult.Outcome.WON);
         }
 
         /**
-         * Returns the number of games won at the given turn
-         *
-         * @param turn turn number (1-based)
-         * @return number of games won at the given turn
+         * Ecart type
          */
-        public int getWinCount(int turn) {
-            return winCount.getOrDefault(turn, 0);
-        }
-
-        // TODO: comment on calcule ?
-        public double getAverageWinTurn() {
-            long sum = winCount.entrySet().stream().map(e -> e.getKey() * e.getValue()).collect(Collectors.summingLong(Integer::longValue));
-            long wonGames = iterations - lostCount - timeoutCount;
-            return (double) sum / (double) wonGames;
+        public double getWinTurnStdDerivation(Predicate<GameResult> filter) {
+            double avg = getAverageWinTurn(filter);
+            double distanceSum = results.stream()
+                    .filter(filter)
+                    .map(r -> ((double) r.getEndTurn() - avg) * ((double) r.getEndTurn() - avg))
+                    .collect(Collectors.summingDouble(Double::doubleValue));
+            long count = count(filter);
+            return Math.sqrt(distanceSum / (double) count);
         }
 
         /**
          * Ecart type
          */
         public double getWinTurnStdDerivation() {
-            double avg = getAverageWinTurn();
-            double distanceSum = winCount.entrySet().stream().map(e -> e.getValue() * ((double) e.getKey() - avg) * ((double) e.getKey() - avg)).collect(Collectors.summingDouble(Double::doubleValue));
-            long wonGames = iterations - lostCount - timeoutCount;
-            return Math.sqrt(distanceSum / (double) wonGames);
+            return getWinTurnStdDerivation(r -> r.getOutcome() == GameResult.Outcome.WON);
         }
+
+//        final Map<Integer, Integer> winCount = new HashMap<>();
+//        int lostCount = 0;
+//        int timeoutCount = 0;
+//
+//        private void add(GameResult result) {
+//            switch (result.getOutcome()) {
+//                case WON:
+//                    winCount.put(result.getEndTurn(), getWinCount(result.getEndTurn()) + 1);
+//                    break;
+//                case LOST:
+//                    lostCount++;
+//                    break;
+//                case TIMEOUT:
+//                    timeoutCount++;
+//                    break;
+//            }
+//        }
+//
+//        /**
+//         * Returns the number of games won at the given turn
+//         *
+//         * @param turn turn number (1-based)
+//         * @return number of games won at the given turn
+//         */
+//        public int getWinCount(int turn) {
+//            return winCount.getOrDefault(turn, 0);
+//        }
+//
+//        // TODO: comment on calcule ?
+//        public double getAverageWinTurn() {
+//            long sum = winCount.entrySet().stream().map(e -> e.getKey() * e.getValue()).collect(Collectors.summingLong(Integer::longValue));
+//            long wonGames = iterations - lostCount - timeoutCount;
+//            return (double) sum / (double) wonGames;
+//        }
+//
+//        /**
+//         * Ecart type
+//         */
+//        public double getWinTurnStdDerivation() {
+//            double avg = getAverageWinTurn();
+//            double distanceSum = winCount.entrySet().stream().map(e -> e.getValue() * ((double) e.getKey() - avg) * ((double) e.getKey() - avg)).collect(Collectors.summingDouble(Double::doubleValue));
+//            long wonGames = iterations - lostCount - timeoutCount;
+//            return Math.sqrt(distanceSum / (double) wonGames);
+//        }
     }
 
     public List<DeckStats> simulate(Iterable<Deck> decksProvider) {
@@ -91,16 +141,16 @@ public class GoldfishSimulator {
     }
 
     public DeckStats simulate(Deck deck) {
-        DeckStats stats = DeckStats.builder().deck(deck).iterations(iterations).build();
-        boolean onThePlay = otp == OnThePlay.NO ? false : true;
+        List<GameResult> results = new ArrayList<>(iterations);
+        boolean onThePlay = start == Start.OTD ? false : true;
         for (int it = 0; it < iterations; it++) {
-            stats.add(simulateGame(deck, onThePlay));
-            if (otp == OnThePlay.RANDOM) {
+            results.add(simulateGame(deck, onThePlay));
+            if (start == Start.RANDOM) {
                 // change every game
                 onThePlay = !onThePlay;
             }
         }
-        return stats;
+        return DeckStats.builder().deck(deck).iterations(iterations).results(results).build();
     }
 
     private GameResult simulateGame(Deck deck, boolean onThePlay) {
@@ -162,7 +212,7 @@ public class GoldfishSimulator {
                     return GameResult.builder()
                             .onThePlay(onThePlay)
                             .outcome(GameResult.Outcome.WON)
-                            .turns(game.getCurrentTurn())
+                            .endTurn(game.getCurrentTurn())
                             .reason(winReason)
                             .build();
                 }
@@ -173,13 +223,13 @@ public class GoldfishSimulator {
             return GameResult.builder()
                     .onThePlay(onThePlay)
                     .outcome(GameResult.Outcome.TIMEOUT)
-                    .turns(maxTurns + 1)
+                    .endTurn(maxTurns + 1)
                     .build();
         } catch (GameLostException gle) {
             return GameResult.builder()
                     .onThePlay(onThePlay)
                     .outcome(GameResult.Outcome.LOST)
-                    .turns(game.getCurrentTurn())
+                    .endTurn(game.getCurrentTurn())
                     .reason(gle.getMessage())
                     .build();
         }
@@ -187,12 +237,12 @@ public class GoldfishSimulator {
 
     @Builder
     @Value
-    private static class GameResult {
-        private enum Outcome {WON, LOST, TIMEOUT}
+    public static class GameResult {
+        public enum Outcome {WON, LOST, TIMEOUT}
 
         final boolean onThePlay;
         final Outcome outcome;
-        final int turns;
+        final int endTurn;
         final String reason;
     }
 }
