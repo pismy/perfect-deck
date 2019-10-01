@@ -195,66 +195,46 @@ public class ReanimatorDeckPilot extends DeckPilot {
             // extra creatures
             Cards creatures = game.getHand().select(CREATURES);
             if (creatures.size() > 1) {
-                game.move(creatures.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                game.putOnBottomOfLibrary(creatures.getFirst());
                 continue;
             }
             // dragon breath
-            if (game.getHand().contains(DRAGON_BREATH)) {
-                game.move(DRAGON_BREATH, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+            if (game.putOnBottomOfLibraryOneOf(DRAGON_BREATH) != null) {
                 continue;
             }
             // extra reanimator spells
             Cards reanimators = game.getHand().select(ANIMATE_DEAD, EXHUME, REANIMATE);
             if (reanimators.size() > 1) {
-                game.move(reanimators.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                game.putOnBottomOfLibrary(reanimators.getFirst());
                 continue;
             }
             // extra lands and/or mana
             Cards redProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
             if (redProducersInHand.size() > 2) {
-                game.move(redProducersInHand.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                game.putOnBottomOfLibrary(redProducersInHand.getFirst());
                 continue;
             }
             Cards blackProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SWAMP);
             if (blackProducersInHand.size() > 2) {
-                game.move(blackProducersInHand.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                game.putOnBottomOfLibrary(blackProducersInHand.getFirst());
                 continue;
             }
             // gitaxian
-            if (game.getHand().contains(GITAXIAN_PROBE)) {
-                game.move(GITAXIAN_PROBE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+            if (game.putOnBottomOfLibraryOneOf(GITAXIAN_PROBE) != null) {
                 continue;
             }
             Cards discarders = game.getHand().select(PUTRID_IMP, FAITHLESS_LOOTING);
             if (discarders.size() > 2) {
-                game.move(discarders.getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+                game.putOnBottomOfLibrary(discarders.getFirst());
                 continue;
             }
             // guide
-            if (game.getHand().contains(SIMIAN_SPIRIT_GUIDE)) {
-                game.move(SIMIAN_SPIRIT_GUIDE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
-                continue;
-            }
-            // petal
-            if (game.getHand().contains(LOTUS_PETAL)) {
-                game.move(LOTUS_PETAL, Game.Area.hand, Game.Area.library, Game.Side.bottom);
-                continue;
-            }
-            if (game.getHand().contains(MOUNTAIN)) {
-                game.move(MOUNTAIN, Game.Area.hand, Game.Area.library, Game.Side.bottom);
-                continue;
-            }
-            if (game.getHand().contains(SWAMP)) {
-                game.move(SWAMP, Game.Area.hand, Game.Area.library, Game.Side.bottom);
-                continue;
-            }
-            if (game.getHand().contains(CRUMBLING_VESTIGE)) {
-                game.move(CRUMBLING_VESTIGE, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+            if (game.putOnBottomOfLibraryOneOf(SIMIAN_SPIRIT_GUIDE, LOTUS_PETAL, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE) != null) {
                 continue;
             }
             System.out.println("Didn't find any suitable card to get rid of");
             System.out.println(game);
-            game.move(game.getHand().getFirst(), Game.Area.hand, Game.Area.library, Game.Side.bottom);
+            game.putOnBottomOfLibrary(game.getHand().getFirst());
         }
     }
 
@@ -331,13 +311,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
     }
 
     private boolean maybeDiscard(String... cards) {
-        String select = game.getHand().hasOne(cards);
-        if (select != null) {
-            game.discard(select);
-            return true;
-        } else {
-            return false;
-        }
+        return game.discardOneOf(cards) != null;
     }
 
     private Mana landsProduction(boolean untapped) {

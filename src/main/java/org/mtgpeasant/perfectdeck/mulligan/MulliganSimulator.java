@@ -76,6 +76,7 @@ public class MulliganSimulator {
      */
     public DeckMatches simulate(Deck deck) {
         DeckMatches deckMatches = DeckMatches.builder().deck(deck).iterations(iterations).build();
+        // TODO: reduce applicable rules (exclude all rules that don't match the entire deck)
         for (int it = 0; it < iterations; it++) {
             Cards hand = deck.getMain().shuffle().draw(draw);
             Optional<Matchers.NamedMatcher> matching = rules.firstMatch(hand);
