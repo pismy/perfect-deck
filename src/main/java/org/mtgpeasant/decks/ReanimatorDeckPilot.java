@@ -1,15 +1,17 @@
 package org.mtgpeasant.decks;
 
+import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
-import org.mtgpeasant.perfectdeck.goldfish.Mana;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class ReanimatorDeckPilot extends DeckPilot {
+//    boolean firstCreaKilled = false;
+
     public static final Mana B = Mana.of("B");
     public static final Mana B1 = Mana.of("1B");
     public static final Mana R = Mana.of("R");
@@ -54,6 +56,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
     @Override
     public void start() {
         getRid(game.getMulligans());
+//        firstCreaKilled = false;
     }
 
     @Override
@@ -78,15 +81,15 @@ public class ReanimatorDeckPilot extends DeckPilot {
             if (game.getHand().contains(REANIMATE) && canPay(B)) {
                 pay(B);
                 game.castNonPermanent(REANIMATE, B);
-                game.move(monstersInGy.getFirst(), Game.Area.graveyard, Game.Area.board);
-                // done
-                return false;
+                String monster = monstersInGy.getFirst();
+                game.move(monster, Game.Area.graveyard, Game.Area.board);
+                return true;
             } else if (!reanimators.isEmpty() && canPay(B1)) {
                 pay(B1);
                 game.castNonPermanent(reanimators.getFirst(), B1);
-                game.move(monstersInGy.getFirst(), Game.Area.graveyard, Game.Area.board);
-                // done
-                return false;
+                String monster = monstersInGy.getFirst();
+                game.move(monster, Game.Area.graveyard, Game.Area.board);
+                return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 pay(R);
                 game
@@ -164,8 +167,8 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 // then another card...
                 discard(2);
                 return true;
-            } else if (game.getHand().size() >= 8) {
-                // I have a monster in hand: I can discard it at the end of the turn
+            } else if (game.getHand().size() >= 7) {
+                // I have a monster in hand: I can discard it at the end of this turn or next one
                 return false;
             }
         }
@@ -543,7 +546,14 @@ public class ReanimatorDeckPilot extends DeckPilot {
     public String checkWin() {
         super.checkWin();
         // consider I won as soon as I have a monster on the board
-        if (game.getBoard().count(CREATURES) > 0) {
+        Cards monstersOnBoard = game.getBoard().select(CREATURES);
+//        if (!monstersOnBoard.isEmpty() && !firstCreaKilled) {
+//            // kill first creature
+//            game.destroy(monstersOnBoard.removeFirst());
+//            firstCreaKilled = true;
+//        }
+        if (!monstersOnBoard.isEmpty()) {
+//            return "I reanimated a second monster";
             return "I reanimated a monster";
         }
         return null;

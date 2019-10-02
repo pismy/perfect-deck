@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.goldfish;
+package org.mtgpeasant.perfectdeck.common;
 
 import com.google.common.base.Strings;
 import lombok.Value;
@@ -83,13 +83,20 @@ public class Mana {
     }
 
     public Mana minus(Mana other) {
+        if (!contains(other)) {
+            throw new IllegalArgumentException("Can't remove " + other + " mana from " + this);
+        }
         return new Mana(
-                Math.max(0, B - other.B),
-                Math.max(0, U - other.U),
-                Math.max(0, G - other.G),
-                Math.max(0, R - other.R),
-                Math.max(0, W - other.W),
+                B - other.B,
+                U - other.U,
+                G - other.G,
+                R - other.R,
+                W - other.W,
                 X - other.X);
+    }
+
+    public boolean isEmpty() {
+        return ccm() == 0;
     }
 
     @Override
@@ -98,19 +105,16 @@ public class Mana {
             return "0";
         }
         return new StringBuilder()
-                .append(X == 0 ? "" : X)
+                .append(X > 0 ? X : "")
                 .append(Strings.repeat("B", B))
                 .append(Strings.repeat("U", U))
                 .append(Strings.repeat("G", G))
                 .append(Strings.repeat("R", R))
                 .append(Strings.repeat("W", W))
+                .append(X < 0 ? X : "")
 //                .append("(")
 //                .append(ccm())
 //                .append(")")
                 .toString();
-    }
-
-    public boolean isEmpty() {
-        return ccm() == 0;
     }
 }

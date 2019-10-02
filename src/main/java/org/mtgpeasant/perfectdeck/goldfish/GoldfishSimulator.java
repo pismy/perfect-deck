@@ -116,7 +116,7 @@ public class GoldfishSimulator {
         boolean onThePlay = start == Start.OTD ? false : true;
         for (int it = 0; it < iterations; it++) {
             results.add(simulateGame(deck, onThePlay));
-            if(verbose) {
+            if (verbose) {
                 System.out.println();
             }
             if (start == Start.RANDOM) {
@@ -189,6 +189,9 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
+                    if (verbose) {
+                        System.out.println("===> WIN: " + winReason);
+                    }
                     return GameResult.builder()
                             .onThePlay(game.isOnThePlay())
                             .mulligans(game.getMulligans())
@@ -198,6 +201,9 @@ public class GoldfishSimulator {
                             .build();
                 }
             }
+            if (verbose) {
+                System.out.println("===> MAX TURNS REACHED");
+            }
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())
@@ -205,6 +211,9 @@ public class GoldfishSimulator {
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (GameLostException gle) {
+            if (verbose) {
+                System.out.println("===> LOST: " + gle.getMessage());
+            }
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())

@@ -2,6 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Getter;
 import lombok.ToString;
+import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 import java.io.PrintStream;

@@ -5,7 +5,7 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.GameMock;
-import org.mtgpeasant.perfectdeck.goldfish.Mana;
+import org.mtgpeasant.perfectdeck.common.Mana;
 
 import java.io.IOException;
 import java.io.InputStreamReader;

@@ -2,6 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
+import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 import java.util.ArrayList;
