@@ -1,13 +1,13 @@
-# Perfect Hand
+# Perfect Deck
 
-[Magic: The Gathering](https://magic.wizards.com) tool for optimizing a deck based on opening hand keeping rules.
+This project provides a set of tools for optimizing a [Magic: The Gathering](https://magic.wizards.com) deck.
 
 ## Usage
 
 Clone the repository, install Maven, Java, and run:
 
 ```bash
-mvn clean package
+mvn clean package -DskipTests
 ```
 
 Then start the tool by running:
@@ -20,19 +20,32 @@ Once in the tool shell, you can use the following:
 
 ```bash
 # global help
-shell:>help
+help
 
-# help on stats command
-shell:>help mkstats
+# help on commands
+help hands
+help goldfish
 
 # exit shell
 exit
 ```
 
-You can test the program with a predefined deck and rules with:
+You can run the mulligans simulator with a predefined deck and rules with:
 
 ```bash
-shell:>mkstats -D src/test/resources/reanimator-deck.txt -R src/test/resources/reanimator-rules.txt -I 5000 -v
+hands -D src/main/resources/reanimator-deck2.txt -R src/main/resources/reanimator-rules.txt -I 50000
+```
+
+You can run the goldfish simulator with a predefined deck and rules with:
+
+```bash
+goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.ReanimatorDeckPilot -I 50000
+```
+
+You can run and follow 5 goldfish games with a predefined deck and rules with:
+
+```bash
+goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.ReanimatorDeckPilot -I 5 -n -v
 ```
 
 ## Deck format
