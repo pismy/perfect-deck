@@ -28,7 +28,7 @@ public class GoldfishSimulator {
     @Builder.Default
     final int maxTurns = 20;
     @Builder.Default
-    final boolean log = false;
+    final boolean verbose = false;
 
     final DeckPilot pilot;
 
@@ -103,51 +103,6 @@ public class GoldfishSimulator {
         public List<Integer> getMulligans() {
             return getMulligans(Predicates.alwaysTrue());
         }
-
-//        final Map<Integer, Integer> winCount = new HashMap<>();
-//        int lostCount = 0;
-//        int timeoutCount = 0;
-//
-//        private void add(GameResult result) {
-//            switch (result.getOutcome()) {
-//                case WON:
-//                    winCount.put(result.getEndTurn(), getWinCount(result.getEndTurn()) + 1);
-//                    break;
-//                case LOST:
-//                    lostCount++;
-//                    break;
-//                case TIMEOUT:
-//                    timeoutCount++;
-//                    break;
-//            }
-//        }
-//
-//        /**
-//         * Returns the number of games won at the given turn
-//         *
-//         * @param turn turn number (1-based)
-//         * @return number of games won at the given turn
-//         */
-//        public int getWinCount(int turn) {
-//            return winCount.getOrDefault(turn, 0);
-//        }
-//
-//        // TODO: comment on calcule ?
-//        public double getAverageWinTurn() {
-//            long sum = winCount.entrySet().stream().map(e -> e.getKey() * e.getValue()).collect(Collectors.summingLong(Integer::longValue));
-//            long wonGames = iterations - lostCount - timeoutCount;
-//            return (double) sum / (double) wonGames;
-//        }
-//
-//        /**
-//         * Ecart type
-//         */
-//        public double getWinTurnStdDerivation() {
-//            double avg = getAverageWinTurn();
-//            double distanceSum = winCount.entrySet().stream().map(e -> e.getValue() * ((double) e.getKey() - avg) * ((double) e.getKey() - avg)).collect(Collectors.summingDouble(Double::doubleValue));
-//            long wonGames = iterations - lostCount - timeoutCount;
-//            return Math.sqrt(distanceSum / (double) wonGames);
-//        }
     }
 
     public List<DeckStats> simulate(Iterable<Deck> decksProvider) {
@@ -161,6 +116,9 @@ public class GoldfishSimulator {
         boolean onThePlay = start == Start.OTD ? false : true;
         for (int it = 0; it < iterations; it++) {
             results.add(simulateGame(deck, onThePlay));
+            if(verbose) {
+                System.out.println();
+            }
             if (start == Start.RANDOM) {
                 // change every game
                 onThePlay = !onThePlay;
@@ -170,7 +128,7 @@ public class GoldfishSimulator {
     }
 
     GameResult simulateGame(Deck deck, boolean onThePlay) {
-        Game game = new Game(log);
+        Game game = new Game(verbose ? System.out : null);
         pilot.setGame(game);
 
         // 1: select hand
@@ -191,11 +149,6 @@ public class GoldfishSimulator {
             throw new IllegalStateException("You shouldn't have " + game.getHand().size() + " cards in hand after " + game.getMulligans() + " mulligans.");
         }
 
-        return runGame(game);
-    }
-
-    GameResult runGame(Game game) {
-        pilot.setGame(game);
         try {
             while (game.getCurrentTurn() <= maxTurns) {
                 // start next turn
@@ -242,7 +195,6 @@ public class GoldfishSimulator {
                             .outcome(GameResult.Outcome.WON)
                             .endTurn(game.getCurrentTurn())
                             .reason(winReason)
-                            .logs(game.getLogs())
                             .build();
                 }
             }
@@ -251,7 +203,6 @@ public class GoldfishSimulator {
                     .mulligans(game.getMulligans())
                     .outcome(GameResult.Outcome.TIMEOUT)
                     .endTurn(maxTurns + 1)
-                    .logs(game.getLogs())
                     .build();
         } catch (GameLostException gle) {
             return GameResult.builder()
@@ -260,7 +211,6 @@ public class GoldfishSimulator {
                     .outcome(GameResult.Outcome.LOST)
                     .endTurn(game.getCurrentTurn())
                     .reason(gle.getMessage())
-                    .logs(game.getLogs())
                     .build();
         }
     }
@@ -275,6 +225,5 @@ public class GoldfishSimulator {
         final Outcome outcome;
         final int endTurn;
         final String reason;
-        final String logs;
     }
 }

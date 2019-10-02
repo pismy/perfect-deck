@@ -1,6 +1,9 @@
-package org.mtgpeasant.perfectdeck.goldfish;
+package org.mtgpeasant.decks;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Mana;
 
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.hand;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;

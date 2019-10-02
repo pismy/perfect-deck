@@ -1,7 +1,13 @@
-package org.mtgpeasant.perfectdeck.goldfish;
+package org.mtgpeasant.decks;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
+import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Mana;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class ReanimatorDeckPilot extends DeckPilot {
     public static final Mana B = Mana.of("B");
@@ -33,8 +39,8 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
     private final MulliganRules rules;
 
-    public ReanimatorDeckPilot(MulliganRules rules) {
-        this.rules = rules;
+    public ReanimatorDeckPilot() throws IOException {
+        this.rules = MulliganRules.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-rules.txt")));
     }
 
     @Override
@@ -56,7 +62,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    private boolean play() {
+    boolean play() {
         // whichever the situation, if I have a probe in hand: play it
         if (game.getHand().contains(GITAXIAN_PROBE)) {
             // play it: we'll maybe find what we miss
@@ -192,7 +198,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    private void getRid(int number) {
+    void getRid(int number) {
         for (int i = 0; i < number; i++) {
             // extra creatures
             Cards creatures = game.getHand().select(CREATURES);
@@ -240,7 +246,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    private void discard(int number) {
+    void discard(int number) {
         for (int i = 0; i < number; i++) {
             Cards monstersInGy = game.getGraveyard().select(CREATURES);
             // 1st: discard a creature
@@ -303,8 +309,8 @@ public class ReanimatorDeckPilot extends DeckPilot {
             if (maybeDiscard(PUTRID_IMP)) {
                 continue;
             }
-            System.out.println("Didn't find any suitable card to discard");
-            System.out.println(game);
+//            System.out.println("Didn't find any suitable card to discard");
+//            System.out.println(game.getHand());
             if (maybeDiscard(GITAXIAN_PROBE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL)) {
                 continue;
             }
@@ -312,11 +318,11 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    private boolean maybeDiscard(String... cards) {
+    boolean maybeDiscard(String... cards) {
         return game.discardOneOf(cards) != null;
     }
 
-    private Mana landsProduction(boolean untapped) {
+    Mana landsProduction(boolean untapped) {
         if (untapped) {
             // untapped lands only
             return Mana.of(game.getBoard().count(SWAMP) - game.getTapped().count(SWAMP), 0, 0, game.getBoard().count(MOUNTAIN) - game.getTapped().count(MOUNTAIN), 0, game.getBoard().count(CRUMBLING_VESTIGE) - game.getTapped().count(CRUMBLING_VESTIGE));
@@ -326,7 +332,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    private boolean canPay(Mana toPay) {
+    boolean canPay(Mana toPay) {
         // draw required X from Vestiges
         int untappedVestiges = game.getBoard().count(CRUMBLING_VESTIGE) - game.getTapped().count(CRUMBLING_VESTIGE);
         if (toPay.getX() > 0 && untappedVestiges > 0) {
@@ -384,7 +390,15 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     return false;
                 }
             } else if (toPay.getX() > 0) {
-                if (!landed && game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE) != null) {
+                if (untappedMountains > 0) {
+                    int nb = Math.min(toPay.getX(), untappedMountains);
+                    untappedMountains -= nb;
+                    toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
+                } else if (untappedSwamps > 0) {
+                    int nb = Math.min(toPay.getX(), untappedSwamps);
+                    untappedSwamps -= nb;
+                    toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
+                } else if (!landed && game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE) != null) {
                     toPay = toPay.minus(X);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -404,7 +418,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         return true;
     }
 
-    private void pay(Mana toPay) {
+    void pay(Mana toPay) {
         // draw required X from Vestiges
         int untappedVestiges = game.getBoard().count(CRUMBLING_VESTIGE) - game.getTapped().count(CRUMBLING_VESTIGE);
         if (toPay.getX() > 0 && untappedVestiges > 0) {
@@ -485,7 +499,21 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 }
             } else if (toPay.getX() > 0) {
                 String xProducer = game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
-                if (!landed && xProducer != null) {
+                if (untappedMountains > 0) {
+                    int nb = Math.min(toPay.getX(), untappedMountains);
+                    for (int i = 0; i < nb; i++) {
+                        game.tapLandForMana(MOUNTAIN, R);
+                    }
+                    untappedMountains -= nb;
+                    toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
+                } else if (untappedSwamps > 0) {
+                    int nb = Math.min(toPay.getX(), untappedSwamps);
+                    for (int i = 0; i < nb; i++) {
+                        game.tapLandForMana(SWAMP, B);
+                    }
+                    untappedSwamps -= nb;
+                    toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
+                } else if (!landed && xProducer != null) {
                     game.land(xProducer).tapLandForMana(xProducer, X);
                     toPay = toPay.minus(X);
                     landed = true;

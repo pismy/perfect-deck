@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.ToString;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
+import java.io.PrintStream;
+
 @Getter
 @ToString(exclude = "library")
 public class Game {
@@ -28,13 +30,14 @@ public class Game {
     private Cards tapped = Cards.none();
     private Mana pool = Mana.zero();
 
-    private final StringBuilder logs;
+    private final PrintStream logs;
 
-    Game(boolean log) {
-        this.logs = log ? new StringBuilder() : null;
+    Game(PrintStream logs) {
+        this.logs = logs;
     }
 
     void start(boolean onThePlay) {
+        this.onThePlay = onThePlay;
         log("=====================");
         log("=== New Game: " + (onThePlay ? "OTP" : "OTD") + " ===");
         log("=====================");
@@ -434,7 +437,7 @@ public class Game {
     public String putOnBottomOfLibraryOneOf(String... cards) {
         String selected = getHand().hasOne(cards);
         if (selected != null) {
-            discard(selected);
+            putOnBottomOfLibrary(selected);
         }
         return selected;
     }
@@ -443,16 +446,10 @@ public class Game {
         if (logs == null) {
             return;
         }
-        logs.append(message);
-        logs.append('\n');
+        logs.println(message);
     }
 
     public boolean isLogging() {
         return logs != null;
     }
-
-    public String getLogs() {
-        return logs == null ? null : logs.toString();
-    }
-
 }

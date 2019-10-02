@@ -16,7 +16,7 @@ public class Mana {
         return new Mana(0, 0, 0, 0, 0, 0);
     }
 
-    static Mana of(String mana) {
+    public static Mana of(String mana) {
         int b = 0, u = 0, g = 0, r = 0, w = 0;
         StringBuilder colorless = new StringBuilder();
         for (char c : mana.toCharArray()) {
@@ -61,15 +61,15 @@ public class Mana {
         return of(b, u, g, r, w, colorless.length() == 0 ? 0 : Integer.parseInt(colorless.toString()));
     }
 
-    static Mana of(int b, int u, int g, int r, int w, int x) {
+    public static Mana of(int b, int u, int g, int r, int w, int x) {
         return new Mana(b, u, g, r, w, x);
     }
 
-    int ccm() {
+    public int ccm() {
         return B + U + G + R + W + X;
     }
 
-    boolean contains(Mana other) {
+    public boolean contains(Mana other) {
         return B >= other.B
                 && U >= other.U
                 && G >= other.G
@@ -78,11 +78,11 @@ public class Mana {
                 && X >= other.X + other.B - B + other.U - U + other.G - G + other.R - R + other.W - W;
     }
 
-    Mana plus(Mana other) {
+    public Mana plus(Mana other) {
         return new Mana(B + other.B, U + other.U, G + other.G, R + other.R, W + other.W, X + other.X);
     }
 
-    Mana minus(Mana other) {
+    public Mana minus(Mana other) {
         return new Mana(
                 Math.max(0, B - other.B),
                 Math.max(0, U - other.U),
@@ -94,7 +94,7 @@ public class Mana {
 
     @Override
     public String toString() {
-        if(isEmpty()) {
+        if (isEmpty()) {
             return "0";
         }
         return new StringBuilder()

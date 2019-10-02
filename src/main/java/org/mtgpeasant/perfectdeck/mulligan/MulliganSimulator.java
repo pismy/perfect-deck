@@ -26,6 +26,8 @@ public class MulliganSimulator {
     final int draw = 7;
     @Builder.Default
     final int iterations = 50000;
+    @Builder.Default
+    final boolean verbose = false;
 
     final MulliganRules rules;
 
@@ -77,14 +79,21 @@ public class MulliganSimulator {
     public DeckMatches simulate(Deck deck) {
         DeckMatches deckMatches = DeckMatches.builder().deck(deck).iterations(iterations).build();
         // TODO: reduce applicable rules (exclude all rules that don't match the entire deck)
+        // will not work with negative rules ?
         for (int it = 0; it < iterations; it++) {
             Cards hand = deck.getMain().shuffle().draw(draw);
             Optional<Matchers.NamedMatcher> matching = rules.firstMatch(hand);
             if (matching.isPresent()) {
                 // increment match count
                 deckMatches.addMatch(matching.get());
+                if (verbose) {
+                    System.out.println(hand + " matches: " + matching.get().getName());
+                }
             } else {
                 deckMatches.addNoMatch();
+                if (verbose) {
+                    System.out.println(hand + " rejected (no match)");
+                }
             }
         }
         return deckMatches;
