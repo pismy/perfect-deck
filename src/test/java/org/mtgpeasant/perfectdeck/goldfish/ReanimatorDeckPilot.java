@@ -38,17 +38,16 @@ public class ReanimatorDeckPilot extends DeckPilot {
     }
 
     @Override
-    public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
-        if (mulligans >= 3) {
+    public boolean keepHand(Cards hand) {
+        if (game.getMulligans() >= 3) {
             return true;
         }
         return rules.firstMatch(hand).isPresent();
     }
 
     @Override
-    public void startGame(int mulligans, Game game) {
-        super.startGame(mulligans, game);
-        getRid(mulligans);
+    public void start() {
+        getRid(game.getMulligans());
     }
 
     @Override
@@ -58,6 +57,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
     }
 
     private boolean play() {
+        // whichever the situation, if I have a probe in hand: play it
+        if (game.getHand().contains(GITAXIAN_PROBE)) {
+            // play it: we'll maybe find what we miss
+            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero()).draw(1);
+            return true;
+        }
+
         Cards monstersInGy = game.getGraveyard().select(CREATURES);
         Cards monstersInHand = game.getHand().select(CREATURES);
         if (!monstersInGy.isEmpty()) {
@@ -75,10 +81,6 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 game.move(monstersInGy.getFirst(), Game.Area.graveyard, Game.Area.board);
                 // done
                 return false;
-            } else if (game.getHand().contains(GITAXIAN_PROBE)) {
-                // play it: we'll maybe find what we miss
-                game.castNonPermanent(GITAXIAN_PROBE, Mana.zero()).draw(1);
-                return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 pay(R);
                 game
@@ -104,10 +106,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
             }
         } else if (monstersInHand.isEmpty()) {
             // no monster in hand: can I look for one ?
-            if (game.getHand().contains(GITAXIAN_PROBE)) {
-                game.castNonPermanent(GITAXIAN_PROBE, Mana.zero()).draw(1);
-                return true;
-            } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
+            if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 pay(R);
                 game
                         .castNonPermanent(FAITHLESS_LOOTING, R)
@@ -172,6 +171,9 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
         if (!game.isLanded() && landsProduction.getR() == 0 && game.getHand().contains(MOUNTAIN)) {
             game.land(MOUNTAIN);
+        }
+        if (!game.isLanded() && landsProduction.ccm() < 3 && game.getHand().count(CRUMBLING_VESTIGE) >= 2) {
+            game.land(CRUMBLING_VESTIGE);
         }
         // cast imp if none
         if (!game.getBoard().contains(PUTRID_IMP) && game.getHand().contains(PUTRID_IMP) && canPay(B)) {
@@ -354,7 +356,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
         while (!toPay.isEmpty()) {
             if (toPay.getB() > 0) {
-                if (!landed && game.getHand().hasOne(CRUMBLING_VESTIGE, SWAMP) != null) {
+                if (!landed && game.getHand().hasOne(SWAMP, CRUMBLING_VESTIGE) != null) {
                     toPay = toPay.minus(B);
                     landed = true;
                 } else if (petalsInHand > 0) {
@@ -366,7 +368,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     return false;
                 }
             } else if (toPay.getR() > 0) {
-                if (!landed && game.getHand().hasOne(CRUMBLING_VESTIGE, MOUNTAIN) != null) {
+                if (!landed && game.getHand().hasOne(MOUNTAIN, CRUMBLING_VESTIGE) != null) {
                     toPay = toPay.minus(R);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -408,7 +410,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         if (toPay.getX() > 0 && untappedVestiges > 0) {
             int nb = Math.min(toPay.getX(), untappedVestiges);
             for (int i = 0; i < nb; i++) {
-                game.tap(CRUMBLING_VESTIGE).add(X);
+                game.tapLandForMana(CRUMBLING_VESTIGE, X);
             }
             untappedVestiges -= nb;
             toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
@@ -418,7 +420,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         if (toPay.getB() > 0 && untappedSwamps > 0) {
             int nb = Math.min(toPay.getB(), untappedSwamps);
             for (int i = 0; i < nb; i++) {
-                game.tap(SWAMP).add(B);
+                game.tapLandForMana(SWAMP, B);
             }
             untappedSwamps -= nb;
             toPay = toPay.minus(Mana.of(nb, 0, 0, 0, 0, 0));
@@ -428,7 +430,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         if (toPay.getR() > 0 && untappedMountains > 0) {
             int nb = Math.min(toPay.getR(), untappedMountains);
             for (int i = 0; i < nb; i++) {
-                game.tap(MOUNTAIN).add(R);
+                game.tapLandForMana(MOUNTAIN, R);
             }
             untappedMountains -= nb;
             toPay = toPay.minus(Mana.of(0, 0, 0, nb, 0, 0));
@@ -441,9 +443,9 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
         while (!toPay.isEmpty()) {
             if (toPay.getB() > 0) {
-                String blackProducer = game.getHand().hasOne(CRUMBLING_VESTIGE, SWAMP);
+                String blackProducer = game.getHand().hasOne(SWAMP, CRUMBLING_VESTIGE);
                 if (!landed && blackProducer != null) {
-                    game.land(blackProducer).tap(blackProducer).add(B);
+                    game.land(blackProducer).tapLandForMana(blackProducer, B);
                     toPay = toPay.minus(B);
                     landed = true;
                 } else if (petalsInHand > 0) {
@@ -458,9 +460,9 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     throw new RuntimeException("Couldn't pay " + toPay);
                 }
             } else if (toPay.getR() > 0) {
-                String redProducer = game.getHand().hasOne(CRUMBLING_VESTIGE, MOUNTAIN);
+                String redProducer = game.getHand().hasOne(MOUNTAIN, CRUMBLING_VESTIGE);
                 if (!landed && redProducer != null) {
-                    game.land(redProducer).tap(redProducer).add(R);
+                    game.land(redProducer).tapLandForMana(redProducer, R);
                     toPay = toPay.minus(R);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -484,7 +486,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
             } else if (toPay.getX() > 0) {
                 String xProducer = game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
                 if (!landed && xProducer != null) {
-                    game.land(xProducer).tap(xProducer).add(X);
+                    game.land(xProducer).tapLandForMana(xProducer, X);
                     toPay = toPay.minus(X);
                     landed = true;
                 } else if (simiansInHand > 0) {

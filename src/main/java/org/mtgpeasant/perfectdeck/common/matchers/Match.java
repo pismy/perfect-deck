@@ -3,6 +3,7 @@ package org.mtgpeasant.perfectdeck.common.matchers;
 import lombok.Builder;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.common.utils.UnorderedCollections;
 
 @Builder
 @Value
@@ -14,18 +15,16 @@ public class Match {
         return Match.builder().remaining(cards).selected(Cards.none()).build();
     }
 
-    public boolean has(String card) {
-        return remaining.contains(card);
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        Match match = (Match) other;
+        return UnorderedCollections.equals(this.selected, match.selected) && UnorderedCollections.equals(this.remaining, match.remaining);
     }
 
-    public Match select(String card) {
-        Cards newRemaining = remaining.clone();
-        newRemaining.remove(card);
-        Cards newSelected = selected.clone();
-        newSelected.add(card);
-        return Match.builder()
-                .remaining(newRemaining)
-                .selected(newSelected)
-                .build();
+    @Override
+    public int hashCode() {
+        return UnorderedCollections.hashCode(selected) + 31 * UnorderedCollections.hashCode(remaining);
     }
 }

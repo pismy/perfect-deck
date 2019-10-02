@@ -94,6 +94,9 @@ public class Mana {
 
     @Override
     public String toString() {
+        if(isEmpty()) {
+            return "0";
+        }
         return new StringBuilder()
                 .append(X == 0 ? "" : X)
                 .append(Strings.repeat("B", B))

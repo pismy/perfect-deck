@@ -27,6 +27,8 @@ public class GoldfishSimulator {
     final int iterations = 50000;
     @Builder.Default
     final int maxTurns = 20;
+    @Builder.Default
+    final boolean log = false;
 
     final DeckPilot pilot;
 
@@ -167,27 +169,38 @@ public class GoldfishSimulator {
         return DeckStats.builder().deck(deck).iterations(iterations).results(results).build();
     }
 
-    private GameResult simulateGame(Deck deck, boolean onThePlay) {
+    GameResult simulateGame(Deck deck, boolean onThePlay) {
+        Game game = new Game(log);
+        pilot.setGame(game);
+
         // 1: select hand
-        int mulligans = -1;
-        Cards library;
-        Cards hand;
-        do {
-            mulligans++;
-            library = deck.getMain().shuffle();
-            hand = library.draw(draw);
-        } while (!pilot.keepHand(onThePlay, mulligans, hand));
+        game.start(onThePlay);
+        while (true) {
+            Cards library = deck.getMain().shuffle();
+            Cards hand = library.draw(draw);
+            if (pilot.keepHand(hand)) {
+                game.keepHandAndStart(library, hand);
+                break;
+            }
+            game.rejectHand(hand);
+        }
+        // 2: start and check mulligans have been taken
+        pilot.start();
 
-        Game game = new Game(library, hand);
-        pilot.startGame(mulligans, game);
-
-        if (game.getHand().size() > draw - mulligans) {
-            throw new IllegalStateException("You shouldn't have " + game.getHand().size() + " cards in hand after " + mulligans + " mulligans.");
+        if (game.getHand().size() > draw - game.getMulligans()) {
+            throw new IllegalStateException("You shouldn't have " + game.getHand().size() + " cards in hand after " + game.getMulligans() + " mulligans.");
         }
 
-        // 2: simulate a game
+        return runGame(game);
+    }
+
+    GameResult runGame(Game game) {
+        pilot.setGame(game);
         try {
             while (game.getCurrentTurn() <= maxTurns) {
+                // start next turn
+                game.startNextTurn();
+
                 // untap
                 pilot.untapPhase();
 
@@ -195,7 +208,7 @@ public class GoldfishSimulator {
                 pilot.upkeepPhase();
 
                 // draw (unless first turn on the play)
-                if (!onThePlay || game.getCurrentTurn() > 1) {
+                if (!game.isOnThePlay() || game.getCurrentTurn() > 1) {
                     pilot.drawPhase();
                 }
 
@@ -224,30 +237,30 @@ public class GoldfishSimulator {
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
                     return GameResult.builder()
-                            .onThePlay(onThePlay)
-                            .mulligans(mulligans)
+                            .onThePlay(game.isOnThePlay())
+                            .mulligans(game.getMulligans())
                             .outcome(GameResult.Outcome.WON)
                             .endTurn(game.getCurrentTurn())
                             .reason(winReason)
+                            .logs(game.getLogs())
                             .build();
                 }
-
-                // init next turn
-                game.startNextTurn();
             }
             return GameResult.builder()
-                    .onThePlay(onThePlay)
-                    .mulligans(mulligans)
+                    .onThePlay(game.isOnThePlay())
+                    .mulligans(game.getMulligans())
                     .outcome(GameResult.Outcome.TIMEOUT)
                     .endTurn(maxTurns + 1)
+                    .logs(game.getLogs())
                     .build();
         } catch (GameLostException gle) {
             return GameResult.builder()
-                    .onThePlay(onThePlay)
-                    .mulligans(mulligans)
+                    .onThePlay(game.isOnThePlay())
+                    .mulligans(game.getMulligans())
                     .outcome(GameResult.Outcome.LOST)
                     .endTurn(game.getCurrentTurn())
                     .reason(gle.getMessage())
+                    .logs(game.getLogs())
                     .build();
         }
     }
@@ -262,5 +275,6 @@ public class GoldfishSimulator {
         final Outcome outcome;
         final int endTurn;
         final String reason;
+        final String logs;
     }
 }

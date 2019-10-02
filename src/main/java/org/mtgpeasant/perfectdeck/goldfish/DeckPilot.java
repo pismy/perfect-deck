@@ -3,28 +3,28 @@ package org.mtgpeasant.perfectdeck.goldfish;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 public class DeckPilot {
-    public Game game;
+    protected Game game;
+
+    void setGame(Game game) {
+        this.game = game;
+    }
 
     /**
      * Determines whether the given hand should be kept
      *
-     * @param onThePlay whether you are on the play or on the drawPhase
-     * @param mulligans mulligans counts (0 for first drawPhase)
-     * @param hand      opening hand
+     * @param hand opening hand
      * @return {@code true} if the hand should be kept
      */
-    public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
+    public boolean keepHand(Cards hand) {
         return true;
     }
 
     /**
      * Starts a game
-     *
-     * @param mulligans number of mulligans taken - therefore that number of cards should be sent at the bottom of the library
-     * @param game      game
+     * <p>
+     * Mulligans taken shall be applied (N cards sent on the bottom of the library)
      */
-    public void startGame(int mulligans, Game game) {
-        this.game = game;
+    public void start() {
     }
 
     public void untapPhase() {

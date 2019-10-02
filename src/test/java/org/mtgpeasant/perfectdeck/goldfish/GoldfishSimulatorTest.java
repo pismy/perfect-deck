@@ -1,6 +1,7 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.junit.Test;
+import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 
@@ -11,6 +12,46 @@ import java.util.function.Predicate;
 
 public class GoldfishSimulatorTest {
     private static final DecimalFormat PERCENT = new DecimalFormat("#.##");
+
+    @Test
+    public void specific_reanimator_hand_with_logs() throws IOException {
+        Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-deck2.txt")));
+        MulliganRules rules = MulliganRules.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-rules.txt")));
+        Cards hand = Cards.from("gitaxian probe", "crumbling vestige", "gitaxian probe", "crumbling vestige", "animate dead", "ulamog's crusher", "simian spirit guide");
+        Cards library = deck.getMain().shuffle();
+        library.removeAll(hand);
+
+        GoldfishSimulator simulator = GoldfishSimulator.builder()
+                .iterations(1)
+                .maxTurns(15)
+                .log(true)
+                .start(GoldfishSimulator.Start.RANDOM)
+                .pilot(new ReanimatorDeckPilot(rules))
+                .build();
+
+        Game game = new Game(true);
+        game.keepHandAndStart(library, hand);
+
+        GoldfishSimulator.GameResult result = simulator.runGame(game);
+        System.out.println(result.getLogs());
+    }
+
+    @Test
+    public void random_reanimator_hand_with_logs() throws IOException {
+        Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-deck2.txt")));
+        MulliganRules rules = MulliganRules.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-rules.txt")));
+
+        GoldfishSimulator simulator = GoldfishSimulator.builder()
+                .iterations(1)
+                .maxTurns(15)
+                .log(true)
+                .start(GoldfishSimulator.Start.RANDOM)
+                .pilot(new ReanimatorDeckPilot(rules))
+                .build();
+
+        GoldfishSimulator.GameResult result = simulator.simulateGame(deck, false);
+        System.out.println(result.getLogs());
+    }
 
     @Test
     public void reanimator_deck_goldfish() throws IOException {

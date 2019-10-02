@@ -31,7 +31,7 @@ class AndMatcher extends Matcher {
     }
 
     @Override
-    public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
         for (Matcher matcher : matchers) {
             stream = matcher.matches(stream, context);
         }

@@ -2,7 +2,8 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.hand;
+import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;
 
 /**
  * See: https://www.channelfireball.com/articles/frank-analysis-finding-the-optimal-aggro-deck-via-computer-simulation/
@@ -23,11 +24,11 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
      * Also, keep any 2-card hand.
      */
     @Override
-    public boolean keepHand(boolean onThePlay, int mulligans, Cards hand) {
+    public boolean keepHand(Cards hand) {
         int lands = hand.count(LAND);
         int onedrops = hand.count(LIONS, BOLT);
         int twodrops = hand.count(LEECH);
-        switch (mulligans) {
+        switch (game.getMulligans()) {
             case 0:
                 return lands >= 2 && lands <= 5 && (onedrops + twodrops >= 1);
             case 1:
@@ -42,10 +43,9 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
     }
 
     @Override
-    public void startGame(int mulligans, Game game) {
-        super.startGame(mulligans, game);
+    public void start() {
         // place one card on the bottom of the library for each mulligan
-        for (int i = 0; i < mulligans; i++) {
+        for (int i = 0; i < game.getMulligans(); i++) {
             int lands = game.getHand().count(LAND);
             if (lands > 2) {
                 game.move(LAND, hand, library, Game.Side.bottom);
@@ -70,14 +70,14 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
     @Override
     public void combatPhase() {
         // attack with all creatures on board
-        game.getBoard().select(LIONS).forEach(crea -> game.tap(LIONS).damageOpponent(2));
-        game.getBoard().select(LEECH).forEach(crea -> game.tap(LEECH).damageOpponent(4));
+        game.getBoard().select(LIONS).forEach(crea -> game.tapForAttack(LIONS, 2));
+        game.getBoard().select(LEECH).forEach(crea -> game.tapForAttack(LEECH, 4));
     }
 
     @Override
     public void secondMainPhase() {
         // draw all mana
-        game.getBoard().select(LAND).forEach(land -> game.tap(LAND).add(ONE));
+        game.getBoard().select(LAND).forEach(land -> game.tapLandForMana(LAND, ONE));
 
         int castableBolts = Math.min(game.getPool().ccm(), game.getHand().count(BOLT));
         if (castableBolts * 3 >= game.getOpponentLife()) {

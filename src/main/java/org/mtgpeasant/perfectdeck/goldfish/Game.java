@@ -7,28 +7,49 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 @Getter
 @ToString(exclude = "library")
 public class Game {
-    public enum Area {hand, library, board, exile, graveyard}
 
-    public enum Side {top, bottom}
 
-    private int currentTurn = 1;
+    public enum Area {hand, library, board, exile, graveyard;}
+
+    public enum Side {top, bottom;}
+
+    private boolean onThePlay;
+    private int mulligans = 0;
+    private int currentTurn = 0;
     private int opponentLife = 20;
     private int opponentPoisonCounters = 0;
     private boolean landed = false;
-
     private Cards library;
     private Cards hand;
+
     private Cards board = Cards.none();
     private Cards exile = Cards.none();
     private Cards graveyard = Cards.none();
-
-    Game(Cards library, Cards hand) {
-        this.library = library;
-        this.hand = hand;
-    }
-
     private Cards tapped = Cards.none();
     private Mana pool = Mana.zero();
+
+    private final StringBuilder logs;
+
+    Game(boolean log) {
+        this.logs = log ? new StringBuilder() : null;
+    }
+
+    void start(boolean onThePlay) {
+        log("=====================");
+        log("=== New Game: " + (onThePlay ? "OTP" : "OTD") + " ===");
+        log("=====================");
+    }
+
+    void keepHandAndStart(Cards library, Cards hand) {
+        this.library = library;
+        this.hand = hand;
+        log("hand #" + mulligans + " " + hand + " kept");
+    }
+
+    void rejectHand(Cards hand) {
+        log("hand #" + mulligans + " " + hand + " rejected: take mulligan");
+        mulligans++;
+    }
 
     Cards area(Area area) {
         switch (area) {
@@ -51,6 +72,21 @@ public class Game {
         currentTurn++;
         landed = false;
         emptyPool();
+        if (isLogging()) {
+            log("=== Turn " + currentTurn + " ===");
+            log("> opponent life: " + opponentLife);
+            if (opponentPoisonCounters > 0) {
+                log("> opponent poison counters: " + opponentPoisonCounters);
+            }
+            log("> hand: " + hand);
+            log("> board: " + board);
+            if (!graveyard.isEmpty()) {
+                log("> graveyard: " + graveyard);
+            }
+            if (!exile.isEmpty()) {
+                log("> exile: " + exile);
+            }
+        }
         return this;
     }
 
@@ -59,17 +95,84 @@ public class Game {
         return this;
     }
 
+    private Game pay(Mana cost, boolean log) {
+        if (!has(cost)) {
+            throw new IllegalActionException("Can't pay " + cost + ": not enough mana in pool (" + pool + ")");
+        }
+        if (log) {
+            log("- pay " + cost);
+        }
+        pool = pool.minus(cost);
+        return this;
+    }
+
+    private Game add(Mana mana, boolean log) {
+        if (log) {
+            log("- add " + mana + " to mana pool");
+        }
+        pool = pool.plus(mana);
+        return this;
+    }
+
+    private Game tap(String cardName, boolean log) {
+        int countOnBoard = board.count(cardName);
+        if (countOnBoard == 0) {
+            throw new IllegalActionException("Can't tap [" + cardName + "]: not on board");
+        }
+        int countTapped = tapped.count(cardName);
+        if (countTapped >= countOnBoard) {
+            throw new IllegalActionException("Can't tap [" + cardName + "]: all tapped");
+        }
+        if (log) {
+            log("- tap [" + cardName + "]");
+        }
+        tapped.add(cardName);
+        return this;
+    }
+
+    private Game untap(String cardName, boolean log) {
+        if (!board.contains(cardName)) {
+            throw new IllegalActionException("Can't untap [" + cardName + "]: not on board");
+        }
+        if (log) {
+            log("- tap [" + cardName + "]");
+        }
+        tapped.remove(cardName);
+        return this;
+    }
+
+    private Game damageOpponent(int damage, boolean log) {
+        opponentLife -= damage;
+        if (log) {
+            log("- damage: " + damage + " (remains: " + opponentLife + ")");
+        }
+        return this;
+    }
+
+    private Game move(String cardName, Area from, Area to, Side side, boolean log) {
+        Cards fromArea = area(from);
+        if (!fromArea.contains(cardName)) {
+            throw new IllegalActionException("Can't move [" + cardName + "]: not in " + from);
+        }
+        if (log) {
+            log("- move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
+        }
+        fromArea.remove(cardName);
+        if (side == Side.top) {
+            area(to).addFirst(cardName);
+        } else {
+            area(to).addLast(cardName);
+        }
+        return this;
+    }
+
     /**
      * Pay the given mana from mana pool
      *
-     * @param mana mana to pay
+     * @param cost mana cost
      */
-    public Game pay(Mana mana) {
-        if (!has(mana)) {
-            throw new IllegalMoveException("Can't pay " + mana + ": not enough mana in pool (" + pool + ")");
-        }
-        pool = pool.minus(mana);
-        return this;
+    public Game pay(Mana cost) {
+        return pay(cost, true);
     }
 
     /**
@@ -78,17 +181,16 @@ public class Game {
      * @param mana mana to add
      */
     public Game add(Mana mana) {
-        pool = pool.plus(mana);
-        return this;
+        return add(mana, true);
     }
 
     /**
      * Checks whether we have given mana in pool
      *
-     * @param mana required mana
+     * @param cost mana cost
      */
-    public boolean has(Mana mana) {
-        return pool.contains(mana);
+    public boolean has(Mana cost) {
+        return pool.contains(cost);
     }
 
     /**
@@ -97,15 +199,32 @@ public class Game {
      * @param cardName card name
      */
     public Game tap(String cardName) {
-        int countOnBoard = board.count(cardName);
-        if (countOnBoard == 0) {
-            throw new IllegalMoveException("Can't tap [" + cardName + "]: not on board");
-        }
-        int countTapped = tapped.count(cardName);
-        if (countTapped >= countOnBoard) {
-            throw new IllegalMoveException("Can't tap [" + cardName + "]: already tapped");
-        }
-        tapped.add(cardName);
+        return tap(cardName, true);
+    }
+
+    /**
+     * Tap a land and produce mana
+     *
+     * @param cardName land name
+     * @param mana     produced mana
+     */
+    public Game tapLandForMana(String cardName, Mana mana) {
+        tap(cardName, false);
+        add(mana, false);
+        log("- tap [" + cardName + "] and add " + mana + " to mana pool");
+        return this;
+    }
+
+    /**
+     * Tap a creature to attack (damage the opponent)
+     *
+     * @param cardName creature name
+     * @param strength creature strength
+     */
+    public Game tapForAttack(String cardName, int strength) {
+        tap(cardName, false);
+        damageOpponent(strength, false);
+        log("- attack with [" + cardName + "] for " + strength);
         return this;
     }
 
@@ -115,17 +234,14 @@ public class Game {
      * @param cardName card name
      */
     public Game untap(String cardName) {
-        if (!board.contains(cardName)) {
-            throw new IllegalMoveException("Can't untap [" + cardName + "]: not on board");
-        }
-        tapped.remove(cardName);
-        return this;
+        return untap(cardName, true);
     }
 
     /**
      * Untap all permanents
      */
     public Game untapAll() {
+        log("- untap all");
         tapped.clear();
         return this;
     }
@@ -137,11 +253,12 @@ public class Game {
      */
     public Game land(String cardName) {
         if (!hand.contains(cardName)) {
-            throw new IllegalMoveException("Can't land [" + cardName + "]: not in hand");
+            throw new IllegalActionException("Can't land [" + cardName + "]: not in hand");
         }
         if (landed) {
-            throw new IllegalMoveException("Can't land [" + cardName + "]: can't land twice the same turn");
+            throw new IllegalActionException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
+        log("- land [" + cardName + "]");
         hand.remove(cardName);
         board.add(cardName);
         landed = true;
@@ -154,8 +271,7 @@ public class Game {
      * @param damage damage amount
      */
     public Game damageOpponent(int damage) {
-        opponentLife -= damage;
-        return this;
+        return damageOpponent(damage, true);
     }
 
     /**
@@ -165,6 +281,7 @@ public class Game {
      */
     public Game poisonOpponent(int counters) {
         opponentPoisonCounters += counters;
+        log("- poison: " + counters + " (total: " + opponentPoisonCounters + ")");
         return this;
     }
 
@@ -172,6 +289,7 @@ public class Game {
      * Shuffle the library
      */
     public Game shuffleLibrary() {
+        log("- shuffle library");
         library = library.shuffle();
         return this;
     }
@@ -185,10 +303,22 @@ public class Game {
         if (library.size() < cards) {
             throw new GameLostException("Can't draw [" + cards + "]: not enough cards");
         }
-        for (int i = 0; i < cards; i++) {
-            hand.add(library.draw());
-        }
+        Cards drawn = library.draw(cards);
+        log("- draw " + cards + ": " + drawn);
+        hand.addAll(drawn);
         return this;
+    }
+
+    /**
+     * Moves the given card from the given origin area to the given target area
+     *
+     * @param cardName name of the card to move
+     * @param from     origin area
+     * @param to       target area
+     * @param side     side of the target area
+     */
+    public Game move(String cardName, Area from, Area to, Side side) {
+        return move(cardName, from, to, side, true);
     }
 
     /**
@@ -203,28 +333,6 @@ public class Game {
     }
 
     /**
-     * Moves the given card from the given origin area to the given target area
-     *
-     * @param cardName name of the card to move
-     * @param from     origin area
-     * @param to       target area
-     * @param side     side of the target area
-     */
-    public Game move(String cardName, Area from, Area to, Side side) {
-        Cards fromArea = area(from);
-        if (!fromArea.contains(cardName)) {
-            throw new IllegalMoveException("Can't move [" + cardName + "]: not in " + from);
-        }
-        fromArea.remove(cardName);
-        if (side == Side.top) {
-            area(to).addFirst(cardName);
-        } else {
-            area(to).addLast(cardName);
-        }
-        return this;
-    }
-
-    /**
      * Cast the given spell
      *
      * @param cardName spell card name
@@ -233,11 +341,10 @@ public class Game {
      * @param cost     mana cost
      */
     public Game cast(String cardName, Area from, Area to, Mana cost) {
-        if (!has(cost)) {
-            throw new IllegalMoveException("Can't cast [" + cardName + "]: not enough cost");
-        }
-        pay(cost);
-        return move(cardName, from, to);
+        pay(cost, false);
+        move(cardName, from, to, Side.top, false);
+        log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
+        return this;
     }
 
     /**
@@ -266,7 +373,9 @@ public class Game {
      * @param cardName card name
      */
     public Game discard(String cardName) {
-        return move(cardName, Area.hand, Area.graveyard);
+        move(cardName, Area.hand, Area.graveyard, Side.top, false);
+        log("- discard [" + cardName + "]");
+        return this;
     }
 
     /**
@@ -290,7 +399,9 @@ public class Game {
      */
     public Game sacrifice(String cardName) {
         tapped.remove(cardName);
-        return move(cardName, Area.board, Area.graveyard);
+        move(cardName, Area.board, Area.graveyard, Side.top, false);
+        log("- discard [" + cardName + "]");
+        return this;
     }
 
     /**
@@ -300,7 +411,9 @@ public class Game {
      */
     public Game destroy(String cardName) {
         tapped.remove(cardName);
-        return move(cardName, Area.board, Area.graveyard);
+        move(cardName, Area.board, Area.graveyard, Side.top, false);
+        log("- destroy [" + cardName + "]");
+        return this;
     }
 
     /**
@@ -324,6 +437,22 @@ public class Game {
             discard(selected);
         }
         return selected;
+    }
+
+    public void log(String message) {
+        if (logs == null) {
+            return;
+        }
+        logs.append(message);
+        logs.append('\n');
+    }
+
+    public boolean isLogging() {
+        return logs != null;
+    }
+
+    public String getLogs() {
+        return logs == null ? null : logs.toString();
     }
 
 }

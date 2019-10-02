@@ -13,12 +13,13 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(library, hand);
+        Game ctx = new Game(false);
+        ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
-        Assertions.assertThatExceptionOfType(IllegalMoveException.class)
+        Assertions.assertThatExceptionOfType(IllegalActionException.class)
                 .isThrownBy(() -> ctx.castPermanent("ulamog's crusher", Mana.of("8")))
-                .withMessageEndingWith(": not in hand");
+                .withMessageStartingWith("Can't pay");
     }
 
     @Test
@@ -26,12 +27,13 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(library, hand);
+        Game ctx = new Game(false);
+        ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
-        Assertions.assertThatExceptionOfType(IllegalMoveException.class)
+        Assertions.assertThatExceptionOfType(IllegalActionException.class)
                 .isThrownBy(() -> ctx.castPermanent("putrid imp", Mana.of("B")))
-                .withMessageEndingWith(": not enough mana");
+                .withMessageStartingWith("Can't pay");
     }
 
     @Test
@@ -39,11 +41,12 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(library, hand);
+        Game ctx = new Game(false);
+        ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
         ctx.land("swamp");
-        Assertions.assertThatExceptionOfType(IllegalMoveException.class)
+        Assertions.assertThatExceptionOfType(IllegalActionException.class)
                 .isThrownBy(() -> ctx.land("mountain"))
                 .withMessageEndingWith(": can't land twice the same turn");
     }
@@ -53,7 +56,8 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "lotus petal", "simian spirit guide", "animate dead", "dragon breath", "ulamog's crusher", "faithless looting", "animate dead", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(library, hand);
+        Game ctx = new Game(false);
+        ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
         ctx

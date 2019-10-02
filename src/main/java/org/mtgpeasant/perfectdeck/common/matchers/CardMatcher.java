@@ -1,9 +1,8 @@
 package org.mtgpeasant.perfectdeck.common.matchers;
 
 import lombok.Value;
+import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.stream.Stream;
 
 @Value
@@ -23,15 +22,18 @@ class CardMatcher extends Matcher {
     }
 
     @Override
-    public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return stream.filter(match -> match.has(card)).map(match -> match.select(card));
-    }
-
-    public List<Match> matches(Match upstream, MatcherContext context) {
-        if (upstream.has(card)) {
-            return Collections.singletonList(upstream.select(card));
-        } else {
-            return Collections.emptyList();
-        }
+    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+        return stream
+                .filter(match -> match.getRemaining().contains(card))
+                .map(match -> {
+                    Cards newRemaining = match.getRemaining().clone();
+                    newRemaining.remove(card);
+                    Cards newSelected = match.getSelected().clone();
+                    newSelected.add(card);
+                    return Match.builder()
+                            .remaining(newRemaining)
+                            .selected(newSelected)
+                            .build();
+                });
     }
 }

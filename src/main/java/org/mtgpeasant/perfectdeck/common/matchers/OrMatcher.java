@@ -35,7 +35,7 @@ class OrMatcher extends Matcher {
     }
 
     @Override
-    public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
 //        return stream
 //                // TODO: can we optimize not to collect here ? (Stream all way down)
 //                .map(match -> matchers.stream().map(matcher -> matcher.matches(match, context)).collect(Collectors.toList()))
@@ -44,6 +44,7 @@ class OrMatcher extends Matcher {
         List<Match> upstreamMatches = stream.collect(Collectors.toList());
         return matchers.stream()
                 .map(matcher -> matcher.matches(upstreamMatches.stream(), context).collect(Collectors.toList()))
-                .flatMap(Collection::stream);
+                .flatMap(Collection::stream)
+                .distinct();
     }
 }

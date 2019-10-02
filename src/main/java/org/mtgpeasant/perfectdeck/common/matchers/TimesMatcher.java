@@ -21,7 +21,7 @@ class TimesMatcher extends Matcher {
     }
 
     @Override
-    public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
         for (int i = 0; i < times; i++) {
             stream = matcher.matches(stream, context);
         }

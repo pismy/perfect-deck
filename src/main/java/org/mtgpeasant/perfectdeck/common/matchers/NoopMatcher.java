@@ -16,7 +16,7 @@ class NoopMatcher extends Matcher {
     }
 
     @Override
-    public Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
         return stream;
     }
 }
