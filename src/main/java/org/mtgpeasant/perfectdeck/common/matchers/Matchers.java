@@ -68,6 +68,10 @@ public class Matchers {
         }
     }
 
+    public static Matcher not(Matcher matcher) {
+        return new NotMatcher(matcher);
+    }
+
     public static Matcher or(List<Matcher> matchers) {
         if (matchers.isEmpty()) {
             return noop();

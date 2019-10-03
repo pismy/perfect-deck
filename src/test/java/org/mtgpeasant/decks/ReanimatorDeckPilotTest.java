@@ -22,10 +22,10 @@ public class ReanimatorDeckPilotTest {
 
         Game game = GameMock.mock(
                 true,
-                Cards.from("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
+                Cards.of("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
                 deck.getMain().shuffle(),
-                Cards.from("faithless looting"),
-                Cards.from("mountain", "swamp"),
+                Cards.of("faithless looting"),
+                Cards.of("mountain", "swamp"),
                 Cards.none(),
                 pilot
         );
@@ -43,10 +43,10 @@ public class ReanimatorDeckPilotTest {
 
         Game game = GameMock.mock(
                 true,
-                Cards.from("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
+                Cards.of("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
                 deck.getMain().shuffle(),
-                Cards.from("faithless looting"),
-                Cards.from("mountain", "swamp"),
+                Cards.of("faithless looting"),
+                Cards.of("mountain", "swamp"),
                 Cards.none(),
                 pilot
         );

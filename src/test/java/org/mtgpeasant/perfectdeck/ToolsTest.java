@@ -34,7 +34,7 @@ public class ToolsTest {
         new Tools().goldfish(
                 new File("src/main/resources/reanimator-deck2.txt"),
                 ReanimatorDeckPilot.class.getName(),
-                50000,
+                100000,
                 GoldfishSimulator.Start.RANDOM,
                 15,
                 false,

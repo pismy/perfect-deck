@@ -73,14 +73,14 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
     @Override
     public void combatPhase() {
         // attack with all creatures on board
-        game.getBoard().select(LIONS).forEach(crea -> game.tapForAttack(LIONS, 2));
-        game.getBoard().select(LEECH).forEach(crea -> game.tapForAttack(LEECH, 4));
+        game.getBoard().findAll(LIONS).forEach(crea -> game.tapForAttack(LIONS, 2));
+        game.getBoard().findAll(LEECH).forEach(crea -> game.tapForAttack(LEECH, 4));
     }
 
     @Override
     public void secondMainPhase() {
         // draw all mana
-        game.getBoard().select(LAND).forEach(land -> game.tapLandForMana(LAND, ONE));
+        game.getBoard().findAll(LAND).forEach(land -> game.tapLandForMana(LAND, ONE));
 
         int castableBolts = Math.min(game.getPool().ccm(), game.getHand().count(BOLT));
         if (castableBolts * 3 >= game.getOpponentLife()) {

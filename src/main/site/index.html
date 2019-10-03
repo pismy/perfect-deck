@@ -190,11 +190,11 @@ SB: 2 Shenanigans</textarea>
             // add tab content
             $('#deck-tabs-content').append('<div class="tab-pane fade show" id="alt'+(newId)+'-deck" role="tabpanel" aria-labelledby="alt'+(newId)+'-tab"><div class="form-group"><textarea class="form-control code deck" rows="30"></textarea></div></div>');
 
-            // copy main deck content and select all
+            // copy main deck content and findAll all
             $("#alt"+(newId)+"-deck textarea").val("// ============================\n// === Alternate "+(nbDecks)+"\n// ============================\n"+$("#main-deck textarea").val());
-            // $("#alt"+(newId)+"-deck textarea").select();
+            // $("#alt"+(newId)+"-deck textarea").findAll();
 
-            // select new tab
+            // findAll new tab
             $("#alt"+(newId)+"-tab a").tab('show');
 
             // close tab callback
@@ -203,7 +203,7 @@ SB: 2 Shenanigans</textarea>
                 let tab = $(this).closest(".nav-item");
                 let id = tab.attr("id");
 
-                // if selected, select the tab just before
+                // if selected, findAll the tab just before
                 if($("#"+id+" a").hasClass("active")) {
                     let prevTab = $(tab).prev().find("a");
                     setTimeout(function () {

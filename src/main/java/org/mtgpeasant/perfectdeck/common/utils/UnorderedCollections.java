@@ -27,6 +27,7 @@ public class UnorderedCollections {
         if (collection1.size() != collection2.size()) {
             return false;
         }
+        // TODO: wrong (same cards but different numbers)
         for (Object o : collection1) {
             if (!collection2.contains(o)) {
                 return false;

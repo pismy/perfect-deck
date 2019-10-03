@@ -1,6 +1,6 @@
 # discard
 4 Faithless Looting
-4 Putrid Imp
+3 Putrid Imp
 
 # reanimation
 4 Animate Dead
@@ -15,15 +15,15 @@
 
 # mana
 #3 Dark Ritual
-3 Simian Spirit Guide
+2 Simian Spirit Guide
 4 Lotus Petal
 4 Crumbling Vestige
 5 Mountain
-9 Swamp
+10 Swamp
 
 # others
 3 Dragon Breath
-3 Gitaxian Probe
+4 Gitaxian Probe
 #2 Shred Memory
 
 # Sideboard:

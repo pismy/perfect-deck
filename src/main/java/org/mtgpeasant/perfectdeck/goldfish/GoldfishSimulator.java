@@ -131,7 +131,7 @@ public class GoldfishSimulator {
         Game game = new Game(verbose ? System.out : null);
         pilot.setGame(game);
 
-        // 1: select hand
+        // 1: findAll hand
         game.start(onThePlay);
         while (true) {
             Cards library = deck.getMain().shuffle();

@@ -12,7 +12,7 @@ public class GameTest {
     @Test
     public void shouldnt_cast_if_card_not_in_hand() {
         // GIVEN
-        Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
+        Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
         Game ctx = new Game(null);
         ctx.keepHandAndStart(library, hand);
@@ -26,7 +26,7 @@ public class GameTest {
     @Test
     public void shouldnt_cast_if_required_mana_not_in_pool() {
         // GIVEN
-        Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
+        Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
         Game ctx = new Game(null);
         ctx.keepHandAndStart(library, hand);
@@ -40,7 +40,7 @@ public class GameTest {
     @Test
     public void shouldnt_be_able_to_land_twice() {
         // GIVEN
-        Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
+        Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
         Game ctx = new Game(null);
         ctx.keepHandAndStart(library, hand);
@@ -55,7 +55,7 @@ public class GameTest {
     @Test
     public void should_work() {
         // GIVEN
-        Cards library = Cards.from(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "lotus petal", "simian spirit guide", "animate dead", "dragon breath", "ulamog's crusher", "faithless looting", "animate dead", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
+        Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "lotus petal", "simian spirit guide", "animate dead", "dragon breath", "ulamog's crusher", "faithless looting", "animate dead", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
         Game ctx = new Game(null);
         ctx.keepHandAndStart(library, hand);

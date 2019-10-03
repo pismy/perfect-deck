@@ -45,6 +45,7 @@ class OrMatcher extends Matcher {
         return matchers.stream()
                 .map(matcher -> matcher.matches(upstreamMatches.stream(), context).collect(Collectors.toList()))
                 .flatMap(Collection::stream)
-                .distinct();
+//                .distinct()
+                ;
     }
 }

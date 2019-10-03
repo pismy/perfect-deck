@@ -6,6 +6,7 @@ import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 import java.io.PrintStream;
+import java.util.Optional;
 
 @Getter
 @ToString(exclude = "library")
@@ -388,11 +389,9 @@ public class Game {
      * @param cards cards to discard, ordered by preference
      * @return discarded card name, or {@code null} if none
      */
-    public String discardOneOf(String... cards) {
-        String selected = getHand().hasOne(cards);
-        if (selected != null) {
-            discard(selected);
-        }
+    public Optional<String> discardOneOf(String... cards) {
+        Optional<String> selected = getHand().findFirst(cards);
+        selected.ifPresent(this::discard);
         return selected;
     }
 
@@ -435,11 +434,9 @@ public class Game {
      * @param cards cards to ret rid of, ordered by preference
      * @return discarded card name, or {@code null} if none
      */
-    public String putOnBottomOfLibraryOneOf(String... cards) {
-        String selected = getHand().hasOne(cards);
-        if (selected != null) {
-            putOnBottomOfLibrary(selected);
-        }
+    public Optional<String> putOnBottomOfLibraryOneOf(String... cards) {
+        Optional<String> selected = getHand().findFirst(cards);
+        selected.ifPresent(this::putOnBottomOfLibrary);
         return selected;
     }
 

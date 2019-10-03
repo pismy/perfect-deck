@@ -8,6 +8,7 @@ import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Optional;
 
 public class ReanimatorDeckPilot extends DeckPilot {
 //    boolean firstCreaKilled = false;
@@ -37,7 +38,8 @@ public class ReanimatorDeckPilot extends DeckPilot {
     public static final String DRAGON_BREATH = "dragon breath";
 
     private static String[] REANIMATORS_1B = new String[]{EXHUME, ANIMATE_DEAD};
-    private static String[] CREATURES = new String[]{HAND_OF_EMRAKUL, GREATER_SANDWURM, PATHRAZER_OF_ULAMOG, ULAMOG_S_CRUSHER};
+    // ordered by power / interest to discard
+    private static String[] CREATURES = new String[]{PATHRAZER_OF_ULAMOG, ULAMOG_S_CRUSHER, HAND_OF_EMRAKUL, GREATER_SANDWURM};
 
     private final MulliganRules rules;
 
@@ -73,11 +75,11 @@ public class ReanimatorDeckPilot extends DeckPilot {
             return true;
         }
 
-        Cards monstersInGy = game.getGraveyard().select(CREATURES);
-        Cards monstersInHand = game.getHand().select(CREATURES);
+        Cards monstersInGy = game.getGraveyard().findAll(CREATURES);
+        Cards monstersInHand = game.getHand().findAll(CREATURES);
         if (!monstersInGy.isEmpty()) {
             // I have a monster in the graveyard: I must now reanimate
-            Cards reanimators = game.getHand().select(REANIMATORS_1B);
+            Cards reanimators = game.getHand().findAll(REANIMATORS_1B);
             if (game.getHand().contains(REANIMATE) && canPay(B)) {
                 pay(B);
                 game.castNonPermanent(REANIMATE, B);
@@ -204,43 +206,43 @@ public class ReanimatorDeckPilot extends DeckPilot {
     void getRid(int number) {
         for (int i = 0; i < number; i++) {
             // extra creatures
-            Cards creatures = game.getHand().select(CREATURES);
+            Cards creatures = game.getHand().findAll(CREATURES);
             if (creatures.size() > 1) {
                 game.putOnBottomOfLibrary(creatures.getFirst());
                 continue;
             }
             // dragon breath
-            if (game.putOnBottomOfLibraryOneOf(DRAGON_BREATH) != null) {
+            if (game.putOnBottomOfLibraryOneOf(DRAGON_BREATH).isPresent()) {
                 continue;
             }
             // extra reanimator spells
-            Cards reanimators = game.getHand().select(ANIMATE_DEAD, EXHUME, REANIMATE);
+            Cards reanimators = game.getHand().findAll(ANIMATE_DEAD, EXHUME, REANIMATE);
             if (reanimators.size() > 1) {
                 game.putOnBottomOfLibrary(reanimators.getFirst());
                 continue;
             }
             // extra lands and/or mana
-            Cards redProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
+            Cards redProducersInHand = game.getHand().findAll(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
             if (redProducersInHand.size() > 2) {
                 game.putOnBottomOfLibrary(redProducersInHand.getFirst());
                 continue;
             }
-            Cards blackProducersInHand = game.getHand().select(CRUMBLING_VESTIGE, SWAMP);
+            Cards blackProducersInHand = game.getHand().findAll(CRUMBLING_VESTIGE, SWAMP);
             if (blackProducersInHand.size() > 2) {
                 game.putOnBottomOfLibrary(blackProducersInHand.getFirst());
                 continue;
             }
             // gitaxian
-            if (game.putOnBottomOfLibraryOneOf(GITAXIAN_PROBE) != null) {
+            if (game.putOnBottomOfLibraryOneOf(GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
-            Cards discarders = game.getHand().select(PUTRID_IMP, FAITHLESS_LOOTING);
+            Cards discarders = game.getHand().findAll(PUTRID_IMP, FAITHLESS_LOOTING);
             if (discarders.size() > 2) {
                 game.putOnBottomOfLibrary(discarders.getFirst());
                 continue;
             }
             // guide
-            if (game.putOnBottomOfLibraryOneOf(SIMIAN_SPIRIT_GUIDE, LOTUS_PETAL, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE) != null) {
+            if (game.putOnBottomOfLibraryOneOf(SIMIAN_SPIRIT_GUIDE, LOTUS_PETAL, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
                 continue;
             }
             System.out.println("Didn't find any suitable card to get rid of");
@@ -251,21 +253,21 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
     void discard(int number) {
         for (int i = 0; i < number; i++) {
-            Cards monstersInGy = game.getGraveyard().select(CREATURES);
+            Cards monstersInGy = game.getGraveyard().findAll(CREATURES);
             // 1st: discard a creature
-            if (monstersInGy.isEmpty() && maybeDiscard(CREATURES)) {
+            if (monstersInGy.isEmpty() && game.discardOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // 2nd: discard a dragon breath
-            if (maybeDiscard(DRAGON_BREATH)) {
+            if (game.discardOneOf(DRAGON_BREATH).isPresent()) {
                 continue;
             }
             // 3rd: discard any additional creature in hand
-            if (maybeDiscard(CREATURES)) {
+            if (game.discardOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // 4th: discard probe
-            if (maybeDiscard(GITAXIAN_PROBE)) {
+            if (game.discardOneOf(GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
             // now: lands, free mana, discard or reanimator spells
@@ -274,13 +276,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
             int redProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
             if (redProducersInHand > 0 && landsProduction.getR() + redProducersInHand > 1) {
                 // I can discard a red source
-                maybeDiscard(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN);
+                game.discardOneOf(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN).isPresent();
                 continue;
             }
             int blackProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, SWAMP);
             if (blackProducersInHand > 0 && landsProduction.getB() + blackProducersInHand > 1) {
                 // I can discard a black source
-                maybeDiscard(CRUMBLING_VESTIGE, SWAMP);
+                game.discardOneOf(CRUMBLING_VESTIGE, SWAMP).isPresent();
                 continue;
             }
 //            if (landsProduction.ccm() >= 3) {
@@ -295,34 +297,30 @@ public class ReanimatorDeckPilot extends DeckPilot {
 //                }
 //            }
             // discard extra reanimator spells
-            Cards reanimators = game.getHand().select(ANIMATE_DEAD, EXHUME, REANIMATE);
+            Cards reanimators = game.getHand().findAll(ANIMATE_DEAD, EXHUME, REANIMATE);
             if (reanimators.size() > 1) {
                 game.discard(reanimators.getFirst());
                 continue;
             }
-            if (landsProduction.getR() == 0 && maybeDiscard(FAITHLESS_LOOTING)) {
+            if (landsProduction.getR() == 0 && game.discardOneOf(FAITHLESS_LOOTING).isPresent()) {
                 continue;
             }
-            if (landsProduction.getB() == 0 && maybeDiscard(PUTRID_IMP)) {
+            if (landsProduction.getB() == 0 && game.discardOneOf(PUTRID_IMP).isPresent()) {
                 continue;
             }
-            if (maybeDiscard(FAITHLESS_LOOTING)) {
+            if (game.discardOneOf(FAITHLESS_LOOTING).isPresent()) {
                 continue;
             }
-            if (maybeDiscard(PUTRID_IMP)) {
+            if (game.discardOneOf(PUTRID_IMP).isPresent()) {
                 continue;
             }
 //            System.out.println("Didn't find any suitable card to discard");
 //            System.out.println(game.getHand());
-            if (maybeDiscard(GITAXIAN_PROBE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL)) {
+            if (game.discardOneOf(GITAXIAN_PROBE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL).isPresent()) {
                 continue;
             }
             game.discard(game.getHand().getFirst());
         }
-    }
-
-    boolean maybeDiscard(String... cards) {
-        return game.discardOneOf(cards) != null;
     }
 
     Mana landsProduction(boolean untapped) {
@@ -365,7 +363,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
         while (!toPay.isEmpty()) {
             if (toPay.getB() > 0) {
-                if (!landed && game.getHand().hasOne(SWAMP, CRUMBLING_VESTIGE) != null) {
+                if (!landed && game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE).isPresent()) {
                     toPay = toPay.minus(B);
                     landed = true;
                 } else if (petalsInHand > 0) {
@@ -377,7 +375,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     return false;
                 }
             } else if (toPay.getR() > 0) {
-                if (!landed && game.getHand().hasOne(MOUNTAIN, CRUMBLING_VESTIGE) != null) {
+                if (!landed && game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE).isPresent()) {
                     toPay = toPay.minus(R);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -401,7 +399,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     int nb = Math.min(toPay.getX(), untappedSwamps);
                     untappedSwamps -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
-                } else if (!landed && game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE) != null) {
+                } else if (!landed && game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
                     toPay = toPay.minus(X);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -460,9 +458,9 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
         while (!toPay.isEmpty()) {
             if (toPay.getB() > 0) {
-                String blackProducer = game.getHand().hasOne(SWAMP, CRUMBLING_VESTIGE);
-                if (!landed && blackProducer != null) {
-                    game.land(blackProducer).tapLandForMana(blackProducer, B);
+                Optional<String> blackProducer = game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE);
+                if (!landed && blackProducer.isPresent()) {
+                    game.land(blackProducer.get()).tapLandForMana(blackProducer.get(), B);
                     toPay = toPay.minus(B);
                     landed = true;
                 } else if (petalsInHand > 0) {
@@ -477,9 +475,9 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     throw new RuntimeException("Couldn't pay " + toPay);
                 }
             } else if (toPay.getR() > 0) {
-                String redProducer = game.getHand().hasOne(MOUNTAIN, CRUMBLING_VESTIGE);
-                if (!landed && redProducer != null) {
-                    game.land(redProducer).tapLandForMana(redProducer, R);
+                Optional<String> redProducer = game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE);
+                if (!landed && redProducer.isPresent()) {
+                    game.land(redProducer.get()).tapLandForMana(redProducer.get(), R);
                     toPay = toPay.minus(R);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -501,7 +499,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     throw new RuntimeException("Couldn't pay " + toPay);
                 }
             } else if (toPay.getX() > 0) {
-                String xProducer = game.getHand().hasOne(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
+                Optional<String> xProducer = game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
                 if (untappedMountains > 0) {
                     int nb = Math.min(toPay.getX(), untappedMountains);
                     for (int i = 0; i < nb; i++) {
@@ -516,8 +514,8 @@ public class ReanimatorDeckPilot extends DeckPilot {
                     }
                     untappedSwamps -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
-                } else if (!landed && xProducer != null) {
-                    game.land(xProducer).tapLandForMana(xProducer, X);
+                } else if (!landed && xProducer.isPresent()) {
+                    game.land(xProducer.get()).tapLandForMana(xProducer.get(), X);
                     toPay = toPay.minus(X);
                     landed = true;
                 } else if (simiansInHand > 0) {
@@ -546,10 +544,10 @@ public class ReanimatorDeckPilot extends DeckPilot {
     public String checkWin() {
         super.checkWin();
         // consider I won as soon as I have a monster on the board
-        Cards monstersOnBoard = game.getBoard().select(CREATURES);
+        Cards monstersOnBoard = game.getBoard().findAll(CREATURES);
 //        if (!monstersOnBoard.isEmpty() && !firstCreaKilled) {
 //            // kill first creature
-//            game.destroy(monstersOnBoard.removeFirst());
+//            game.destroy(monstersOnBoard.draw());
 //            firstCreaKilled = true;
 //        }
         if (!monstersOnBoard.isEmpty()) {
