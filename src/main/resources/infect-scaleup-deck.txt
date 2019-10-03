@@ -1,0 +1,32 @@
+// lands
+14 Forest
+1 Pendelhaven
+
+// creatures
+4 Ichorclaw Myr
+4 Blight Mamba
+4 Glistener Elf
+
+// boosts
+3 Mutagenic Growth
+4 Seal of Strength
+3 Vines of Vastwood
+4 Scale Up
+4 Rancor
+// TODO 4 Groundswell
+4 Giant Growth
+1 Seal of Strength
+
+// others
+4 Gitaxian Probe
+4 Lotus Petal
+// TODO 1 Simian Spirit Guide
+2 Apostle's Blessing
+
+SB: 2 Ranger's Guile
+SB: 3 Moment's Peace
+SB: 1 Mutagenic Growth
+SB: 2 Spider Umbra
+SB: 2 Apostle's Blessing
+SB: 1 Vines of Vastwood
+SB: 4 Gut Shot

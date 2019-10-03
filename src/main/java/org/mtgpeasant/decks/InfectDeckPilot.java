@@ -24,6 +24,7 @@ public class InfectDeckPilot extends DeckPilot {
     public static final String BLIGHT_MAMBA = "blight mamba";
 
     // BOOSTS
+    public static final String SCALE_UP = "scale up";
     public static final String VINES_OF_VASTWOOD = "vines of vastwood";
     public static final String GIANT_GROWTH = "giant growth";
     public static final String SEAL_OF_STRENGTH = "seal of strength";
@@ -41,7 +42,6 @@ public class InfectDeckPilot extends DeckPilot {
     public static final String APOSTLE_S_BLESSING = "apostle's blessing";
 
     private static String[] MANA_PRODUCERS = new String[]{PENDELHAVEN, FOREST, LOTUS_PETAL};
-    //    private static String[] CREA_CCM2 = new String[]{ICHORCLAW_MYR, BLIGHT_MAMBA};
     private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA};
 
     private final MulliganRules rules;
@@ -52,7 +52,10 @@ public class InfectDeckPilot extends DeckPilot {
 
     @Override
     public boolean keepHand(Cards hand) {
-        return true;
+        if (game.getMulligans() >= 3) {
+            return true;
+        }
+        return rules.firstMatch(hand).isPresent();
     }
 
     @Override
@@ -77,7 +80,7 @@ public class InfectDeckPilot extends DeckPilot {
 
         // play all petals
         while (game.getHand().contains(LOTUS_PETAL)) {
-            game.castNonPermanent(LOTUS_PETAL, Mana.zero());
+            game.castPermanent(LOTUS_PETAL, Mana.zero());
         }
     }
 
@@ -90,7 +93,14 @@ public class InfectDeckPilot extends DeckPilot {
         }
         // play all mutagenic
         while (game.getHand().contains(MUTAGENIC_GROWTH)) {
-            game.castNonPermanent(RANCOR, Mana.zero()).poisonOpponent(2);
+            game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero()).poisonOpponent(2);
+        }
+        // play all scale up
+        int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
+        while (castableScaleUp > 0 && canPay(G)) {
+            pay(G);
+            game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
+            castableScaleUp--;
         }
         // play all rancors
         while (game.getHand().contains(RANCOR) && canPay(G)) {
@@ -160,7 +170,7 @@ public class InfectDeckPilot extends DeckPilot {
 
         // cast extra creatures
         for (String crea : game.getHand().findAll(CREATURES)) {
-            Mana cost = crea.equals(GLISTENER_ELF) ? G : G1;
+            Mana cost = crea.equals(GLISTENER_ELF) ? G : crea.equals(BLIGHT_MAMBA) ? G1 : TWO;
             if (canPay(cost)) {
                 pay(cost);
                 game.castPermanent(crea, cost);
@@ -181,11 +191,11 @@ public class InfectDeckPilot extends DeckPilot {
                 continue;
             }
             // discard extra lands
-            if (game.getBoard().count(MANA_PRODUCERS) + game.getHand().count(MANA_PRODUCERS) > 3 && game.putOnBottomOfLibraryOneOf(MANA_PRODUCERS).isPresent()) {
+            if (game.getHand().count(MANA_PRODUCERS) > 2 && game.putOnBottomOfLibraryOneOf(MANA_PRODUCERS).isPresent()) {
                 continue;
             }
             // discard extra creatures
-            if (game.getBoard().count(CREATURES) + game.getHand().count(CREATURES) > 2 && game.putOnBottomOfLibraryOneOf(CREATURES).isPresent()) {
+            if (game.getHand().count(CREATURES) > 2 && game.putOnBottomOfLibraryOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // TODO: choose better

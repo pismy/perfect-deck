@@ -2,7 +2,7 @@
 13 Forest
 2 Pendelhaven
 
-/ creatures
+// creatures
 4 Ichorclaw Myr
 4 Glistener Elf
 4 Blight Mamba
