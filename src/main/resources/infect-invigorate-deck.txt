@@ -1,0 +1,28 @@
+// lands
+13 Forest
+2 Pendelhaven
+
+/ creatures
+4 Ichorclaw Myr
+4 Glistener Elf
+4 Blight Mamba
+
+// boosts
+4 Invigorate
+4 Vines of Vastwood
+4 Seal of Strength
+4 Rancor
+2 Larger Than Life
+
+// others
+3 Mental Misstep
+4 Lotus Petal
+4 Gitaxian Probe
+4 Apostle's Blessing
+
+SB: 1 Vitality Charm
+SB: 2 Relic of Progenitus
+SB: 4 Nature's Claim
+SB: 2 Mutagenic Growth
+SB: 4 Gut Shot
+SB: 2 Fog

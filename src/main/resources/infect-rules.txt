@@ -1,0 +1,13 @@
+# ============
+# === Matchers
+# ============
+<X>: [Forest] | [Pendelhaven] | [Lotus Petal]
+<creature>: [Glistener Elf] | [Ichorclaw Myr] | [Blight Mamba]
+<boost>: [Invigorate] | [Vines of Vastwood] | [Seal of Strength] | [Rancor] | [Larger Than Life] | [Mutagenic Growth] | [Giant Growth]
+
+# ======================
+# === Hand keeping rules
+# ======================
+<<two mana, a crea and a boost>>: 2 <X> & <creature> & <boost>
+
+<<one mana, a glistener and a boost>>: <X> & [Glistener Elf] & <boost>

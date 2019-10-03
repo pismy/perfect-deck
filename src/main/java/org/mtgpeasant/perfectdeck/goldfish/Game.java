@@ -403,7 +403,7 @@ public class Game {
     public Game sacrifice(String cardName) {
         tapped.remove(cardName);
         move(cardName, Area.board, Area.graveyard, Side.top, false);
-        log("- discard [" + cardName + "]");
+        log("- sacrifice [" + cardName + "]");
         return this;
     }
 

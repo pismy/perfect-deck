@@ -1,6 +1,7 @@
 package org.mtgpeasant.perfectdeck;
 
 import org.junit.Test;
+import org.mtgpeasant.decks.InfectDeckPilot;
 import org.mtgpeasant.decks.KarstenAggroDeck1Pilot;
 import org.mtgpeasant.decks.ReanimatorDeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
@@ -30,6 +31,18 @@ public class ToolsTest {
     }
 
     @Test
+    public void infect_deck_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+        new Tools().goldfish(
+                new File("src/main/resources/infect-invigorate-deck.txt"),
+                InfectDeckPilot.class.getName(),
+                100000,
+                GoldfishSimulator.Start.RANDOM,
+                15,
+                false,
+                false);
+    }
+
+    @Test
     public void reanimator_deck_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/reanimator-deck2.txt"),
@@ -51,6 +64,18 @@ public class ToolsTest {
                 15,
                 false,
                 false);
+    }
+
+    @Test
+    public void infect_deck_observe() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+        new Tools().goldfish(
+                new File("src/main/resources/infect-invigorate-deck.txt"),
+                InfectDeckPilot.class.getName(),
+                3,
+                GoldfishSimulator.Start.RANDOM,
+                15,
+                true,
+                true);
     }
 
     @Test
