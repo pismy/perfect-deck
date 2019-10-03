@@ -12,7 +12,7 @@ import java.io.IOException;
 public class ToolsTest {
     @Test
     public void reanimator_deck1_mulligans() throws IOException {
-        new Tools().hands(
+        new Tools().mulligans(
                 new File("src/main/resources/reanimator-deck.txt"),
                 new File("src/main/resources/reanimator-rules.txt"),
                 50000,
@@ -22,7 +22,7 @@ public class ToolsTest {
 
     @Test
     public void reanimator_deck2_mulligans() throws IOException {
-        new Tools().hands(
+        new Tools().mulligans(
                 new File("src/main/resources/reanimator-deck2.txt"),
                 new File("src/main/resources/reanimator-rules.txt"),
                 50000,

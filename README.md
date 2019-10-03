@@ -23,7 +23,7 @@ Once in the tool shell, you can use the following:
 help
 
 # help on commands
-help hands
+help mulligans
 help goldfish
 
 # exit shell
@@ -33,7 +33,7 @@ exit
 You can run the mulligans simulator with a predefined deck and rules with:
 
 ```bash
-hands -D src/main/resources/reanimator-deck2.txt -R src/main/resources/reanimator-rules.txt -I 50000
+mulligans -D src/main/resources/reanimator-deck2.txt -R src/main/resources/reanimator-rules.txt -I 50000
 ```
 
 You can run the goldfish simulator with a predefined deck and rules with:

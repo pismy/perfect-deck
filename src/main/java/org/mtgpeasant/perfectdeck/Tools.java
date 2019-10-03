@@ -31,8 +31,8 @@ public class Tools {
         return String.format("%.2f", number);
     }
 
-    @ShellMethod("Simulates hundreds of hand draws and computes statistics about matching criterion")
-    public void hands(
+    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
+    public void mulligans(
             @ShellOption(value = {"-D", "--deck"}, help = "the deck to test") File deckFile,
             @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules") File matchersFile,
             @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000") int iterations,
