@@ -1,10 +1,12 @@
 package org.mtgpeasant.perfectdeck;
 
+import com.google.common.base.Strings;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.common.matchers.Validation;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
+import org.mtgpeasant.perfectdeck.common.utils.TableFormatter;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 import org.mtgpeasant.perfectdeck.mulligan.MulliganSimulator;
@@ -15,16 +17,16 @@ import org.springframework.shell.standard.ShellOption;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @ShellComponent
 public class Tools {
 
-    private static final DecimalFormat PERCENT = new DecimalFormat("#.##");
-
     private static String percent(long count, long total) {
-        return count + "/" + total + " (" + PERCENT.format(100f * (float) count / (float) total) + "%)";
+        return String.format("%.2f%%", (100f * (float) count / (float) total));
     }
 
     private static String f3d(double number) {
@@ -99,7 +101,7 @@ public class Tools {
             @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false") boolean noStats,
             @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
 
-    ) throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
+    ) throws IOException, ClassNotFoundException {
         Class<? extends DeckPilot> pilotClass = (Class<? extends DeckPilot>) Class.forName(pilotClassName);
 
         Deck deck = Deck.parse(new FileReader(deckFile));
@@ -128,50 +130,96 @@ public class Tools {
         // dump stats
         if (!noStats) {
             System.out.println("=== STATS (elapsed " + (System.currentTimeMillis() - startTime) + "ms) ===");
-            Predicate<GoldfishSimulator.GameResult> isWin = result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON;
 
-            stats.getMulligans().forEach(nbMulligans -> {
-                Predicate<GoldfishSimulator.GameResult> thisMull = result -> result.getMulligans() == nbMulligans;
-                long totalGames = stats.count(thisMull);
-                Predicate<GoldfishSimulator.GameResult> winWithMull = result -> result.getMulligans() == nbMulligans && result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON;
-                if (moreThanOnePercent(totalGames, stats.getIterations())) {
-                    System.out.println("stats with " + nbMulligans + " mulligans (" + percent(totalGames, stats.getIterations()) + "):" +
-                            "\n   wins   : " + percent(stats.count(winWithMull), totalGames) +
-                            "\n     with avg win turn: " + f3d(stats.getAverageWinTurn(winWithMull)) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation(winWithMull)) + ")" +
-                            "\n   timeout: " + percent(stats.count(result -> result.getMulligans() == nbMulligans && result.getOutcome() == GoldfishSimulator.GameResult.Outcome.TIMEOUT), totalGames) +
-                            "\n   lost   : " + percent(stats.count(result -> result.getMulligans() == nbMulligans && result.getOutcome() == GoldfishSimulator.GameResult.Outcome.LOST), totalGames));
+            List<Integer> representativeWinTurns = stats.getWinTurns(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON)
+                    .stream()
+                    .filter(turn -> {
+                        long count = stats.count(result -> result.getEndTurn() == turn);
+                        return moreThanOnePercent(count, stats.getIterations());
+                    })
+                    .collect(Collectors.toList());
+
+            TableFormatter.TableFormatterBuilder table = TableFormatter.builder().column("mulligans taken");
+            representativeWinTurns.forEach(turn -> table.column("win turn " + turn));
+
+            // add a row OTP | OTD if both
+            if (start == GoldfishSimulator.Start.BOTH) {
+                List<String> row = new ArrayList<>(representativeWinTurns.size() + 1);
+                row.add("");
+                representativeWinTurns.forEach(turn -> {
+                    row.add("OTP    | OTD   ");
+                });
+                table.row(row);
+            }
+
+            // rows are for mulligans taken
+            stats.getMulligans().forEach(mulligansTaken -> {
+                long totalGamesWithThisNumberOfMulligans = stats.count(result -> result.getMulligans() == mulligansTaken);
+                if (moreThanOnePercent(totalGamesWithThisNumberOfMulligans, stats.getIterations())) {
+                    List<String> row = new ArrayList<>(representativeWinTurns.size() + 1);
+                    row.add(mulligansTaken + " mulligans (" + percent(totalGamesWithThisNumberOfMulligans, stats.getIterations()) + ")");
+
+                    // one column per win turn
+                    representativeWinTurns.forEach(turn -> {
+                        String cell = "";
+                        if (start != GoldfishSimulator.Start.OTD) {
+                            long count = stats.count(result -> result.getMulligans() == mulligansTaken && result.getEndTurn() == turn && result.isOnThePlay());
+                            long total = start == GoldfishSimulator.Start.BOTH ? totalGamesWithThisNumberOfMulligans / 2 : totalGamesWithThisNumberOfMulligans;
+                            cell += Strings.padEnd(percent(count, total), 6, ' ');
+                        }
+                        if (start == GoldfishSimulator.Start.BOTH) {
+                            cell += " | ";
+                        }
+                        if (start != GoldfishSimulator.Start.OTP) {
+                            long count = stats.count(result -> result.getMulligans() == mulligansTaken && result.getEndTurn() == turn && !result.isOnThePlay());
+                            long total = start == GoldfishSimulator.Start.BOTH ? totalGamesWithThisNumberOfMulligans / 2 : totalGamesWithThisNumberOfMulligans;
+                            cell += Strings.padEnd(percent(count, total), 6, ' ');
+                        }
+                        row.add(cell);
+                    });
+
+                    table.row(row);
                 }
             });
 
-            stats.getWinTurns(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON).forEach(turn -> {
-                long count = stats.count(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && result.getEndTurn() == turn);
-                if (moreThanOnePercent(count, stats.getIterations())) {
-                    System.out.println("win turn " + turn + ":");
-                    if (start == GoldfishSimulator.Start.BOTH) {
-                        System.out.println("   global: " + percent(count, stats.getIterations()));
-                    }
-                    if (start != GoldfishSimulator.Start.OTD) {
-                        long countOtp = stats.count(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && result.getEndTurn() == turn && result.isOnThePlay());
-                        System.out.println("   OTP   : " + percent(countOtp, stats.getIterations() / 2));
-                    }
-                    if (start != GoldfishSimulator.Start.OTP) {
-                        long countOtd = stats.count(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && result.getEndTurn() == turn && !result.isOnThePlay());
-                        System.out.println("   OTD   : " + percent(countOtd, stats.getIterations() / 2));
-                    }
+            // last row is global
+            List<String> row = new ArrayList<>(representativeWinTurns.size() + 1);
+            row.add("global");
+
+            // one column per win turn
+            representativeWinTurns.forEach(turn -> {
+                String cell = "";
+                if (start != GoldfishSimulator.Start.OTD) {
+                    long count = stats.count(result -> result.getEndTurn() == turn && result.isOnThePlay());
+                    long total = start == GoldfishSimulator.Start.BOTH ? stats.getIterations() / 2 : stats.getIterations();
+                    cell += Strings.padEnd(percent(count, total), 6, ' ');
                 }
+                if (start == GoldfishSimulator.Start.BOTH) {
+                    cell += " | ";
+                }
+                if (start != GoldfishSimulator.Start.OTP) {
+                    long count = stats.count(result -> result.getEndTurn() == turn && !result.isOnThePlay());
+                    long total = start == GoldfishSimulator.Start.BOTH ? stats.getIterations() / 2 : stats.getIterations();
+                    cell += Strings.padEnd(percent(count, total), 6, ' ');
+                }
+                row.add(cell);
             });
+            table.row(row);
+
+            // dump
+            System.out.println(table.build().render());
 
             System.out.println("Average win turn:");
-            if (start == GoldfishSimulator.Start.BOTH) {
-                System.out.println("   global: " + f3d(stats.getAverageWinTurn()) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation()) + ")");
-            }
             if (start != GoldfishSimulator.Start.OTD) {
                 Predicate<GoldfishSimulator.GameResult> otpFilter = result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && result.isOnThePlay();
-                System.out.println("   OTP   : " + f3d(stats.getAverageWinTurn(otpFilter)) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation(otpFilter)) + ")");
+                System.out.println("   OTP   : " + f3d(stats.getAverageWinTurn(otpFilter)) + " (±" + f3d(stats.getWinTurnStdDerivation(otpFilter)) + ")");
             }
             if (start != GoldfishSimulator.Start.OTP) {
                 Predicate<GoldfishSimulator.GameResult> otdFilter = result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && !result.isOnThePlay();
-                System.out.println("   OTD   : " + f3d(stats.getAverageWinTurn(otdFilter)) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation(otdFilter)) + ")");
+                System.out.println("   OTD   : " + f3d(stats.getAverageWinTurn(otdFilter)) + " (±" + f3d(stats.getWinTurnStdDerivation(otdFilter)) + ")");
+            }
+            if (start == GoldfishSimulator.Start.BOTH) {
+                System.out.println("   global: " + f3d(stats.getAverageWinTurn()) + " (±" + f3d(stats.getWinTurnStdDerivation()) + ")");
             }
         }
     }

@@ -80,10 +80,12 @@ public class GoldfishSimulator {
             double avg = getAverageWinTurn(filter);
             double distanceSum = results.stream()
                     .filter(filter)
-                    .map(r -> ((double) r.getEndTurn() - avg) * ((double) r.getEndTurn() - avg))
+                    .map(r -> Math.abs(avg - r.getEndTurn()))
+//                    .map(r -> ((double) r.getEndTurn() - avg) * ((double) r.getEndTurn() - avg))
                     .collect(Collectors.summingDouble(Double::doubleValue));
             long count = count(filter);
-            return Math.sqrt(distanceSum / (double) count);
+//            return Math.sqrt(distanceSum / (double) count);
+            return distanceSum / (double) count;
         }
 
         /**
@@ -197,7 +199,7 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
-                    output.write("===> WIN: " + winReason+"\n");
+                    output.write("===> WIN: " + winReason + "\n");
                     return GameResult.builder()
                             .onThePlay(game.isOnThePlay())
                             .mulligans(game.getMulligans())
@@ -215,7 +217,7 @@ public class GoldfishSimulator {
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (GameLostException gle) {
-            output.write("===> LOST: " + gle.getMessage()+"\n");
+            output.write("===> LOST: " + gle.getMessage() + "\n");
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())
@@ -224,9 +226,9 @@ public class GoldfishSimulator {
                     .reason(gle.getMessage())
                     .build();
         } catch (Exception e) {
-            throw new GameInternalError("An unexpected error occurred in a game\n\n"+output.toString(), e);
+            throw new GameInternalError("An unexpected error occurred in a game\n\n" + output.toString(), e);
         } finally {
-            if(verbose) {
+            if (verbose) {
                 System.out.println(output.toString());
             }
         }

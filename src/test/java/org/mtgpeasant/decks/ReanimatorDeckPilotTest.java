@@ -93,7 +93,7 @@ public class ReanimatorDeckPilotTest {
 //    }
 
     @Test
-    public void reanimator_deck2_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void reanimator_deck2_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/reanimator-deck2.txt"),
                 ReanimatorDeckPilot.class.getName(),
@@ -105,7 +105,7 @@ public class ReanimatorDeckPilotTest {
     }
 
     @Test
-    public void reanimator_deck_observe() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void reanimator_deck_observe() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/reanimator-deck2.txt"),
                 ReanimatorDeckPilot.class.getName(),
