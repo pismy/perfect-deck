@@ -1,0 +1,2 @@
+15 mountain
+45 lava spike

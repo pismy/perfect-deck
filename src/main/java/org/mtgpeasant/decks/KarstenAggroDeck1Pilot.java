@@ -99,7 +99,7 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
             }
             // finally cast as many bolts as we can
             while (game.getPool().ccm() >= 1 && game.getHand().contains(BOLT)) {
-                game.castNonPermanent(BOLT, ONE);
+                game.castNonPermanent(BOLT, ONE).damageOpponent(3);
             }
         }
     }

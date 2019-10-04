@@ -13,8 +13,7 @@
 3 Vines of Vastwood
 4 Scale Up
 4 Rancor
-// TODO 4 Groundswell
-4 Giant Growth
+4 Groundswell
 1 Seal of Strength
 
 // others

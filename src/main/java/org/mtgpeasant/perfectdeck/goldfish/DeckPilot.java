@@ -24,8 +24,14 @@ public abstract class DeckPilot {
      * Starts a game
      * <p>
      * Mulligans taken must be applied (N cards sent on the bottom of the library)
+     * <p>
+     * Default implementation puts random cards on bottom of library
      */
-    public abstract void start();
+    public void start() {
+        for (int i = 0; i < game.getMulligans(); i++) {
+            game.putOnBottomOfLibrary(game.getHand().getFirst());
+        }
+    }
 
     /**
      * Untap phase
@@ -96,12 +102,14 @@ public abstract class DeckPilot {
     /**
      * Ending phase
      * <p>
-     * Default implementation does nothing
+     * Default implementation discards random cards until 7 in hand
      * <p>
      * Override if necessary
      */
     public void endingPhase() {
-
+        while (game.getHand().size() > 7) {
+            game.discard(game.getHand().getFirst());
+        }
     }
 
     /**

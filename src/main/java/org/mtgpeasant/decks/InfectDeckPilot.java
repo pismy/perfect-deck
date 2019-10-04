@@ -32,6 +32,7 @@ public class InfectDeckPilot extends DeckPilot {
     public static final String LARGER_THAN_LIFE = "larger than life";
     public static final String INVIGORATE = "invigorate";
     public static final String MUTAGENIC_GROWTH = "mutagenic growth";
+    public static final String GROUNDSWELL = "groundswell";
 
     // FREE MANA
     public static final String LOTUS_PETAL = "lotus petal";
@@ -113,6 +114,13 @@ public class InfectDeckPilot extends DeckPilot {
                 game.castNonPermanent(INVIGORATE, Mana.zero()).poisonOpponent(4).damageOpponent(-3);
             }
         }
+        // play all groundswell (if landed)
+        if(game.isLanded()) {
+            while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
+                pay(G);
+                game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(4);
+            }
+        }
         // play all growths
         while (game.getHand().contains(GIANT_GROWTH) && canPay(G)) {
             pay(G);
@@ -132,6 +140,13 @@ public class InfectDeckPilot extends DeckPilot {
         while (game.getHand().contains(VINES_OF_VASTWOOD) && canPay(G1)) {
             pay(G1);
             game.castNonPermanent(VINES_OF_VASTWOOD, G1).poisonOpponent(4);
+        }
+        // play all groundswell (if not landed)
+        if(!game.isLanded()) {
+            while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
+                pay(G);
+                game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(2);
+            }
         }
 
         // sacrifice all seals

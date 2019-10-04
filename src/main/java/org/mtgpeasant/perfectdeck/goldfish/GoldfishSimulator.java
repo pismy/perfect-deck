@@ -17,12 +17,12 @@ import java.util.stream.StreamSupport;
 @Builder
 @Value
 public class GoldfishSimulator {
-    public enum Start {OTP, OTD, RANDOM}
+    public enum Start {OTP, OTD, BOTH}
 
     @Builder.Default
     final int draw = 7;
     @Builder.Default
-    final Start start = Start.RANDOM;
+    final Start start = Start.BOTH;
     @Builder.Default
     final int iterations = 50000;
     @Builder.Default
@@ -119,7 +119,7 @@ public class GoldfishSimulator {
             if (verbose) {
                 System.out.println();
             }
-            if (start == Start.RANDOM) {
+            if (start == Start.BOTH) {
                 // change every game
                 onThePlay = !onThePlay;
             }

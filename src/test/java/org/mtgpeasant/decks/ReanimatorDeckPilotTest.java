@@ -1,12 +1,15 @@
 package org.mtgpeasant.decks;
 
 import org.junit.Test;
+import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.GameMock;
 import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -57,5 +60,61 @@ public class ReanimatorDeckPilotTest {
         // THEN
         assertThat(game.getBoard()).containsExactlyInAnyOrder("mountain", "swamp");
         assertThat(game.getTapped()).containsExactlyInAnyOrder("mountain", "swamp");
+    }
+
+    @Test
+    public void reanimator_deck1_mulligans() throws IOException {
+        new Tools().mulligans(
+                new File("src/main/resources/reanimator-deck.txt"),
+                new File("src/main/resources/reanimator-rules.txt"),
+                50000,
+                false,
+                false);
+    }
+
+    @Test
+    public void reanimator_deck2_mulligans() throws IOException {
+        new Tools().mulligans(
+                new File("src/main/resources/reanimator-deck2.txt"),
+                new File("src/main/resources/reanimator-rules.txt"),
+                50000,
+                false,
+                false);
+    }
+
+//    @Test
+//    public void reanimator_deck1_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+//        new Tools().goldfish(
+//                new File("src/main/resources/reanimator-deck.txt"),
+//                ReanimatorDeckPilot.class.getName(),
+//                100000,
+//                GoldfishSimulator.Start.BOTH,
+//                15,
+//                false,
+//                false);
+//    }
+
+    @Test
+    public void reanimator_deck2_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+        new Tools().goldfish(
+                new File("src/main/resources/reanimator-deck2.txt"),
+                ReanimatorDeckPilot.class.getName(),
+                100000,
+                GoldfishSimulator.Start.BOTH,
+                15,
+                false,
+                false);
+    }
+
+    @Test
+    public void reanimator_deck_observe() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+        new Tools().goldfish(
+                new File("src/main/resources/reanimator-deck2.txt"),
+                ReanimatorDeckPilot.class.getName(),
+                3,
+                GoldfishSimulator.Start.BOTH,
+                15,
+                true,
+                true);
     }
 }
