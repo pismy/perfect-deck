@@ -137,7 +137,7 @@ public class Tools {
                 if (moreThanOnePercent(totalGames, stats.getIterations())) {
                     System.out.println("stats with " + nbMulligans + " mulligans (" + percent(totalGames, stats.getIterations()) + "):" +
                             "\n   wins   : " + percent(stats.count(winWithMull), totalGames) +
-                            "\n     with avg kill: " + f3d(stats.getAverageWinTurn(winWithMull)) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation(winWithMull)) + ")" +
+                            "\n     with avg win turn: " + f3d(stats.getAverageWinTurn(winWithMull)) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation(winWithMull)) + ")" +
                             "\n   timeout: " + percent(stats.count(result -> result.getMulligans() == nbMulligans && result.getOutcome() == GoldfishSimulator.GameResult.Outcome.TIMEOUT), totalGames) +
                             "\n   lost   : " + percent(stats.count(result -> result.getMulligans() == nbMulligans && result.getOutcome() == GoldfishSimulator.GameResult.Outcome.LOST), totalGames));
                 }
@@ -146,7 +146,7 @@ public class Tools {
             stats.getWinTurns(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON).forEach(turn -> {
                 long count = stats.count(result -> result.getOutcome() == GoldfishSimulator.GameResult.Outcome.WON && result.getEndTurn() == turn);
                 if (moreThanOnePercent(count, stats.getIterations())) {
-                    System.out.println("kill turn " + turn + ":");
+                    System.out.println("win turn " + turn + ":");
                     if (start == GoldfishSimulator.Start.BOTH) {
                         System.out.println("   global: " + percent(count, stats.getIterations()));
                     }
@@ -161,7 +161,7 @@ public class Tools {
                 }
             });
 
-            System.out.println("Average kill:");
+            System.out.println("Average win turn:");
             if (start == GoldfishSimulator.Start.BOTH) {
                 System.out.println("   global: " + f3d(stats.getAverageWinTurn()) + " (std derivation: " + f3d(stats.getWinTurnStdDerivation()) + ")");
             }

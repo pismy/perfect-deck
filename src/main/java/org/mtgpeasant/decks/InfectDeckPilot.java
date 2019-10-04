@@ -83,8 +83,8 @@ public class InfectDeckPilot extends DeckPilot {
         }
 
         // land
-        // pendelhaven if no vines in hand and no forest on board
-        if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(VINES_OF_VASTWOOD) || game.getBoard().contains(FOREST))) {
+        // pendelhaven if no invigorate in hand and no forest on board
+        if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(INVIGORATE) || game.getBoard().contains(FOREST))) {
             game.land(PENDELHAVEN);
         } else if (game.getHand().contains(FOREST)) {
             game.land(FOREST);
@@ -107,6 +107,12 @@ public class InfectDeckPilot extends DeckPilot {
         while (game.getHand().contains(MUTAGENIC_GROWTH)) {
             game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero()).poisonOpponent(2);
         }
+        // play all invigorates (if forest)
+        if (game.getBoard().contains(FOREST)) {
+            while (game.getHand().contains(INVIGORATE)) {
+                game.castNonPermanent(INVIGORATE, Mana.zero()).poisonOpponent(4).damageOpponent(-3);
+            }
+        }
         // play all scale up
         int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
         while (castableScaleUp > 0 && canPay(G)) {
@@ -114,16 +120,11 @@ public class InfectDeckPilot extends DeckPilot {
             game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
             castableScaleUp--;
         }
+        // TODO: can I close the game with +3 boosts ?
         // play all rancors
         while (game.getHand().contains(RANCOR) && canPay(G)) {
             preparePool(G);
             game.castPermanent(RANCOR, G);
-        }
-        // play all invigorates (if forest)
-        if (game.getBoard().contains(FOREST)) {
-            while (game.getHand().contains(INVIGORATE)) {
-                game.castNonPermanent(INVIGORATE, Mana.zero()).poisonOpponent(4).damageOpponent(-3);
-            }
         }
         // play all groundswell (if landed)
         if (game.isLanded()) {
