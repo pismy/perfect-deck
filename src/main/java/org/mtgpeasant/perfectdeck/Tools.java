@@ -147,7 +147,7 @@ public class Tools {
                 List<String> row = new ArrayList<>(representativeWinTurns.size() + 1);
                 row.add("");
                 representativeWinTurns.forEach(turn -> {
-                    row.add("OTP    | OTD   ");
+                    row.add("   OTP |    OTD");
                 });
                 table.row(row);
             }
@@ -165,7 +165,7 @@ public class Tools {
                         if (start != GoldfishSimulator.Start.OTD) {
                             long count = stats.count(result -> result.getMulligans() == mulligansTaken && result.getEndTurn() == turn && result.isOnThePlay());
                             long total = start == GoldfishSimulator.Start.BOTH ? totalGamesWithThisNumberOfMulligans / 2 : totalGamesWithThisNumberOfMulligans;
-                            cell += Strings.padEnd(percent(count, total), 6, ' ');
+                            cell += Strings.padStart(percent(count, total), 6, ' ');
                         }
                         if (start == GoldfishSimulator.Start.BOTH) {
                             cell += " | ";
@@ -173,7 +173,7 @@ public class Tools {
                         if (start != GoldfishSimulator.Start.OTP) {
                             long count = stats.count(result -> result.getMulligans() == mulligansTaken && result.getEndTurn() == turn && !result.isOnThePlay());
                             long total = start == GoldfishSimulator.Start.BOTH ? totalGamesWithThisNumberOfMulligans / 2 : totalGamesWithThisNumberOfMulligans;
-                            cell += Strings.padEnd(percent(count, total), 6, ' ');
+                            cell += Strings.padStart(percent(count, total), 6, ' ');
                         }
                         row.add(cell);
                     });
@@ -192,7 +192,7 @@ public class Tools {
                 if (start != GoldfishSimulator.Start.OTD) {
                     long count = stats.count(result -> result.getEndTurn() == turn && result.isOnThePlay());
                     long total = start == GoldfishSimulator.Start.BOTH ? stats.getIterations() / 2 : stats.getIterations();
-                    cell += Strings.padEnd(percent(count, total), 6, ' ');
+                    cell += Strings.padStart(percent(count, total), 6, ' ');
                 }
                 if (start == GoldfishSimulator.Start.BOTH) {
                     cell += " | ";
@@ -200,7 +200,7 @@ public class Tools {
                 if (start != GoldfishSimulator.Start.OTP) {
                     long count = stats.count(result -> result.getEndTurn() == turn && !result.isOnThePlay());
                     long total = start == GoldfishSimulator.Start.BOTH ? stats.getIterations() / 2 : stats.getIterations();
-                    cell += Strings.padEnd(percent(count, total), 6, ' ');
+                    cell += Strings.padStart(percent(count, total), 6, ' ');
                 }
                 row.add(cell);
             });
