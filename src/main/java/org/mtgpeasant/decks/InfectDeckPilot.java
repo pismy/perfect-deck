@@ -110,13 +110,13 @@ public class InfectDeckPilot extends DeckPilot {
         // play all scale up
         int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
         while (castableScaleUp > 0 && canPay(G)) {
-            pay(G);
+            preparePool(G);
             game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
             castableScaleUp--;
         }
         // play all rancors
         while (game.getHand().contains(RANCOR) && canPay(G)) {
-            pay(G);
+            preparePool(G);
             game.castPermanent(RANCOR, G);
         }
         // play all invigorates (if forest)
@@ -128,34 +128,34 @@ public class InfectDeckPilot extends DeckPilot {
         // play all groundswell (if landed)
         if (game.isLanded()) {
             while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
-                pay(G);
+                preparePool(G);
                 game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(4);
             }
         }
         // play all growths
         while (game.getHand().contains(GIANT_GROWTH) && canPay(G)) {
-            pay(G);
+            preparePool(G);
             game.castNonPermanent(GIANT_GROWTH, G).poisonOpponent(3);
         }
         // play all seals
         while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
-            pay(G);
+            preparePool(G);
             game.castPermanent(SEAL_OF_STRENGTH, G);
         }
         // play all larger
         while (game.getHand().contains(LARGER_THAN_LIFE) && canPay(G1)) {
-            pay(G1);
+            preparePool(G1);
             game.castNonPermanent(LARGER_THAN_LIFE, G1).poisonOpponent(4);
         }
         // play all vines
         while (game.getHand().contains(VINES_OF_VASTWOOD) && canPay(G1)) {
-            pay(G1);
+            preparePool(G1);
             game.castNonPermanent(VINES_OF_VASTWOOD, G1).poisonOpponent(4);
         }
         // play all groundswell (if not landed)
         if (!game.isLanded()) {
             while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
-                pay(G);
+                preparePool(G);
                 game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(2);
             }
         }
@@ -177,20 +177,20 @@ public class InfectDeckPilot extends DeckPilot {
         // cast 1 creature if none on board
         if (game.getBoard().count(CREATURES) == 0) {
             if (game.getHand().contains(GLISTENER_ELF) && canPay(G)) {
-                pay(G);
+                preparePool(G);
                 game.castPermanent(GLISTENER_ELF, G);
             } else if (game.getHand().contains(BLIGHT_MAMBA) && canPay(G1)) {
-                pay(G1);
+                preparePool(G1);
                 game.castPermanent(BLIGHT_MAMBA, G1);
             } else if (game.getHand().contains(ICHORCLAW_MYR) && canPay(TWO)) {
-                pay(G1);
+                preparePool(TWO);
                 game.castPermanent(ICHORCLAW_MYR, TWO);
             }
         }
 
         // play all seals
         while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
-            pay(G);
+            preparePool(G);
             game.castPermanent(SEAL_OF_STRENGTH, G);
         }
 
@@ -198,7 +198,7 @@ public class InfectDeckPilot extends DeckPilot {
         for (String crea : game.getHand().findAll(CREATURES)) {
             Mana cost = crea.equals(GLISTENER_ELF) ? G : crea.equals(BLIGHT_MAMBA) ? G1 : TWO;
             if (canPay(cost)) {
-                pay(cost);
+                preparePool(cost);
                 game.castPermanent(crea, cost);
             }
         }
@@ -250,11 +250,11 @@ public class InfectDeckPilot extends DeckPilot {
     boolean canPay(Mana cost) {
         // potential mana pool is current pool + untapped lands + petals on board
         Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, game.getBoard().count(MANA_PRODUCERS) - game.getTapped().count(MANA_PRODUCERS), 0, 0, 0));
+                .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
         return potentialPool.contains(cost);
     }
 
-    void pay(Mana cost) {
+    void preparePool(Mana cost) {
         while (!game.canPay(cost)) {
             Optional<String> producer = game.findFirstUntapped(FOREST, PENDELHAVEN, LOTUS_PETAL);
             if (producer.isPresent()) {
@@ -265,7 +265,7 @@ public class InfectDeckPilot extends DeckPilot {
                     game.tapLandForMana(producer.get(), G);
                 }
             } else {
-                // can't pay !!!
+                // can't preparePool !!!
                 return;
             }
         }
