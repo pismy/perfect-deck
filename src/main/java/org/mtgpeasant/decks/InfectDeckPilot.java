@@ -4,9 +4,11 @@ import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Optional;
 
 public class InfectDeckPilot extends DeckPilot {
 
@@ -45,10 +47,19 @@ public class InfectDeckPilot extends DeckPilot {
     private static String[] MANA_PRODUCERS = new String[]{PENDELHAVEN, FOREST, LOTUS_PETAL};
     private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA};
 
-    private final MulliganRules rules;
+    private static MulliganRules rules;
 
-    public InfectDeckPilot() throws IOException {
-        this.rules = MulliganRules.parse(new InputStreamReader(getClass().getResourceAsStream("/infect-rules.txt")));
+    static {
+        try {
+            rules = MulliganRules.parse(new InputStreamReader(InfectDeckPilot.class.getResourceAsStream("/infect-rules.txt")));
+        } catch (IOException e) {
+            rules = null;
+            System.err.println(e);
+        }
+    }
+
+    public InfectDeckPilot(Game game) {
+        super(game);
     }
 
     @Override
@@ -115,7 +126,7 @@ public class InfectDeckPilot extends DeckPilot {
             }
         }
         // play all groundswell (if landed)
-        if(game.isLanded()) {
+        if (game.isLanded()) {
             while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
                 pay(G);
                 game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(4);
@@ -142,7 +153,7 @@ public class InfectDeckPilot extends DeckPilot {
             game.castNonPermanent(VINES_OF_VASTWOOD, G1).poisonOpponent(4);
         }
         // play all groundswell (if not landed)
-        if(!game.isLanded()) {
+        if (!game.isLanded()) {
             while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
                 pay(G);
                 game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(2);
@@ -236,34 +247,25 @@ public class InfectDeckPilot extends DeckPilot {
         }
     }
 
-    Mana landsProduction(boolean untapped) {
-        if (untapped) {
-            // untapped lands only
-            return Mana.of(0, 0, game.getBoard().count(MANA_PRODUCERS) - game.getTapped().count(MANA_PRODUCERS), 0, 0, 0);
-        } else {
-            // total lands production
-            return Mana.of(0, 0, game.getBoard().count(MANA_PRODUCERS), 0, 0, 0);
-        }
+    boolean canPay(Mana cost) {
+        // potential mana pool is current pool + untapped lands + petals on board
+        Mana potentialPool = game.getPool()
+                .plus(Mana.of(0, 0, game.getBoard().count(MANA_PRODUCERS) - game.getTapped().count(MANA_PRODUCERS), 0, 0, 0));
+        return potentialPool.contains(cost);
     }
 
-    boolean canPay(Mana toPay) {
-        return landsProduction(true).contains(toPay);
-    }
-
-    void pay(Mana toPay) {
-        if (toPay.isEmpty()) {
-            return;
-        }
-        Cards activableProducers = game.getBoard().findAll(MANA_PRODUCERS).clone();
-        activableProducers.removeAll(game.getTapped().findAll(MANA_PRODUCERS));
-
-        for (String producer : activableProducers) {
-            if (producer.equals(LOTUS_PETAL)) {
-                game.sacrifice(LOTUS_PETAL).add(G);
+    void pay(Mana cost) {
+        while (!game.canPay(cost)) {
+            Optional<String> producer = game.findFirstUntapped(FOREST, PENDELHAVEN, LOTUS_PETAL);
+            if (producer.isPresent()) {
+                if (producer.get().equals(LOTUS_PETAL)) {
+                    game.sacrifice(LOTUS_PETAL).add(G);
+                } else {
+                    // a land
+                    game.tapLandForMana(producer.get(), G);
+                }
             } else {
-                game.tapLandForMana(producer, G);
-            }
-            if (toPay.isEmpty()) {
+                // can't pay !!!
                 return;
             }
         }

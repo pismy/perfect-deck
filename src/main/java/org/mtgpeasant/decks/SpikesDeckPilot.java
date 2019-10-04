@@ -3,6 +3,7 @@ package org.mtgpeasant.decks;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 /**
  * A deck made of mountains and lava spikes
@@ -11,6 +12,10 @@ public class SpikesDeckPilot extends DeckPilot {
     public static final Mana R = Mana.of("R");
     private static String BOLT = "lava spike";
     private static String LAND = "mountain";
+
+    public SpikesDeckPilot(Game game) {
+        super(game);
+    }
 
     /**
      * OTD, premier mulligan si on a 0, 1, 4, 5, 6 ou 7 terrains
@@ -93,7 +98,7 @@ public class SpikesDeckPilot extends DeckPilot {
         game.getBoard().findAll(LAND).forEach(land -> game.tapLandForMana(LAND, R));
 
         // cast all bolts
-        while (game.getHand().contains(BOLT) && game.has(R)) {
+        while (game.getHand().contains(BOLT) && game.canPay(R)) {
             game.castNonPermanent(BOLT, R).damageOpponent(3);
         }
     }

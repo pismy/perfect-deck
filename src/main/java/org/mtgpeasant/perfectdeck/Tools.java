@@ -100,7 +100,7 @@ public class Tools {
             @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
 
     ) throws IOException, IllegalAccessException, InstantiationException, ClassNotFoundException {
-        DeckPilot pilot = (DeckPilot) Class.forName(pilotClassName).newInstance();
+        Class<? extends DeckPilot> pilotClass = (Class<? extends DeckPilot>) Class.forName(pilotClassName);
 
         Deck deck = Deck.parse(new FileReader(deckFile));
 
@@ -114,7 +114,7 @@ public class Tools {
         long startTime = System.currentTimeMillis();
         GoldfishSimulator simulator = GoldfishSimulator.builder()
                 .iterations(iterations)
-                .pilot(pilot)
+                .pilotClass(pilotClass)
                 .start(start)
                 .maxTurns(maxTurns)
                 .verbose(verbose)

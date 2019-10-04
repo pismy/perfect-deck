@@ -6,9 +6,9 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
  * The abstract class you have to extend to implement your own goldfish player.
  */
 public abstract class DeckPilot {
-    protected Game game;
+    protected final Game game;
 
-    void setGame(Game game) {
+    public DeckPilot(Game game) {
         this.game = game;
     }
 

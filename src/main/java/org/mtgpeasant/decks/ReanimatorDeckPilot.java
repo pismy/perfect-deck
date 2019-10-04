@@ -41,10 +41,19 @@ public class ReanimatorDeckPilot extends DeckPilot {
     // ordered by power / interest to discard
     private static String[] CREATURES = new String[]{PATHRAZER_OF_ULAMOG, ULAMOG_S_CRUSHER, HAND_OF_EMRAKUL, GREATER_SANDWURM};
 
-    private final MulliganRules rules;
+    private static MulliganRules rules;
 
-    public ReanimatorDeckPilot() throws IOException {
-        this.rules = MulliganRules.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-rules.txt")));
+    static {
+        try {
+            rules = MulliganRules.parse(new InputStreamReader(ReanimatorDeckPilot.class.getResourceAsStream("/reanimator-rules.txt")));
+        } catch (IOException e) {
+            rules = null;
+            System.err.println(e);
+        }
+    }
+
+    public ReanimatorDeckPilot(Game game) {
+        super(game);
     }
 
     @Override

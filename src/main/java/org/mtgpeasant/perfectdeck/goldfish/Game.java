@@ -5,7 +5,7 @@ import lombok.ToString;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
-import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.Optional;
 
 @Getter
@@ -32,9 +32,9 @@ public class Game {
     private Cards tapped = Cards.none();
     private Mana pool = Mana.zero();
 
-    private final PrintStream logs;
+    private final PrintWriter logs;
 
-    Game(PrintStream logs) {
+    Game(PrintWriter logs) {
         this.logs = logs;
     }
 
@@ -77,21 +77,22 @@ public class Game {
         currentTurn++;
         landed = false;
         emptyPool();
-        if (isLogging()) {
-            log("=== Turn " + currentTurn + " ===");
-            log("> opponent life: " + opponentLife);
-            if (opponentPoisonCounters > 0) {
-                log("> opponent poison counters: " + opponentPoisonCounters);
-            }
-            log("> hand: " + hand);
-            log("> board: " + board);
-            if (!graveyard.isEmpty()) {
-                log("> graveyard: " + graveyard);
-            }
-            if (!exile.isEmpty()) {
-                log("> exile: " + exile);
-            }
+
+        // log
+        log("=== Turn " + currentTurn + " ===");
+        log("> opponent life: " + opponentLife);
+        if (opponentPoisonCounters > 0) {
+            log("> opponent poison counters: " + opponentPoisonCounters);
         }
+        log("> hand: " + hand);
+        log("> board: " + board);
+        if (!graveyard.isEmpty()) {
+            log("> graveyard: " + graveyard);
+        }
+        if (!exile.isEmpty()) {
+            log("> exile: " + exile);
+        }
+
         return this;
     }
 
@@ -101,7 +102,7 @@ public class Game {
     }
 
     private Game pay(Mana cost, boolean log) {
-        if (!has(cost)) {
+        if (!canPay(cost)) {
             throw new IllegalActionException("Can't pay " + cost + ": not enough mana in pool (" + pool + ")");
         }
         if (log) {
@@ -168,6 +169,9 @@ public class Game {
         } else {
             area(to).addLast(cardName);
         }
+        if (from == Area.board) {
+            tapped.remove(cardName);
+        }
         return this;
     }
 
@@ -194,7 +198,7 @@ public class Game {
      *
      * @param cost mana cost
      */
-    public boolean has(Mana cost) {
+    public boolean canPay(Mana cost) {
         return pool.contains(cost);
     }
 
@@ -214,9 +218,9 @@ public class Game {
      * @param mana     produced mana
      */
     public Game tapLandForMana(String cardName, Mana mana) {
+        log("- tap [" + cardName + "] and add " + mana + " to mana pool");
         tap(cardName, false);
         add(mana, false);
-        log("- tap [" + cardName + "] and add " + mana + " to mana pool");
         return this;
     }
 
@@ -227,9 +231,9 @@ public class Game {
      * @param strength creature strength
      */
     public Game tapForAttack(String cardName, int strength) {
+        log("- attack with [" + cardName + "] for " + strength);
         tap(cardName, false);
         damageOpponent(strength, false);
-        log("- attack with [" + cardName + "] for " + strength);
         return this;
     }
 
@@ -249,6 +253,41 @@ public class Game {
         log("- untap all");
         tapped.clear();
         return this;
+    }
+
+    /**
+     * Returns all untapped cards on the board matching the card names
+     *
+     * @param cards cards to select
+     */
+    public Cards getUntapped(String... cards) {
+        Cards all = board.findAll(cards);
+        tapped.forEach(all::remove);
+        return all;
+    }
+
+    /**
+     * Counts all untapped cards on the board matching the card names
+     *
+     * @param cards cards to select
+     */
+    public int countUntapped(String... cards) {
+        return getUntapped(cards).size();
+    }
+
+    /**
+     * Looks for the first untapped card matching one of the given names
+     *
+     * @param cards card names to look for
+     * @return found card, or {@code null} if none was found
+     */
+    public Optional<String> findFirstUntapped(String... cards) {
+        for (String card : cards) {
+            if (board.count(card) > tapped.count(card)) {
+                return Optional.of(card);
+            }
+        }
+        return Optional.empty();
     }
 
     /**
@@ -346,9 +385,9 @@ public class Game {
      * @param cost     mana cost
      */
     public Game cast(String cardName, Area from, Area to, Mana cost) {
+        log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
         pay(cost, false);
         move(cardName, from, to, Side.top, false);
-        log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
         return this;
     }
 
@@ -378,8 +417,8 @@ public class Game {
      * @param cardName card name
      */
     public Game discard(String cardName) {
-        move(cardName, Area.hand, Area.graveyard, Side.top, false);
         log("- discard [" + cardName + "]");
+        move(cardName, Area.hand, Area.graveyard, Side.top, false);
         return this;
     }
 
@@ -401,9 +440,8 @@ public class Game {
      * @param cardName permanent name
      */
     public Game sacrifice(String cardName) {
-        tapped.remove(cardName);
-        move(cardName, Area.board, Area.graveyard, Side.top, false);
         log("- sacrifice [" + cardName + "]");
+        move(cardName, Area.board, Area.graveyard, Side.top, false);
         return this;
     }
 
@@ -413,9 +451,8 @@ public class Game {
      * @param cardName permanent name
      */
     public Game destroy(String cardName) {
-        tapped.remove(cardName);
-        move(cardName, Area.board, Area.graveyard, Side.top, false);
         log("- destroy [" + cardName + "]");
+        move(cardName, Area.board, Area.graveyard, Side.top, false);
         return this;
     }
 
@@ -445,9 +482,5 @@ public class Game {
             return;
         }
         logs.println(message);
-    }
-
-    public boolean isLogging() {
-        return logs != null;
     }
 }

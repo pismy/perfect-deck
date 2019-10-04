@@ -2,11 +2,11 @@ package org.mtgpeasant.decks;
 
 import org.junit.Test;
 import org.mtgpeasant.perfectdeck.Tools;
+import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.GameMock;
-import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
 import java.io.File;
@@ -19,7 +19,6 @@ public class ReanimatorDeckPilotTest {
     @Test
     public void can_pay_should_be_true() throws IOException {
         // GIVEN
-        ReanimatorDeckPilot pilot = new ReanimatorDeckPilot();
 
         Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-deck2.txt")));
 
@@ -29,9 +28,9 @@ public class ReanimatorDeckPilotTest {
                 deck.getMain().shuffle(),
                 Cards.of("faithless looting"),
                 Cards.of("mountain", "swamp"),
-                Cards.none(),
-                pilot
+                Cards.none()
         );
+        ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);
 
         // WHEN / THEN
         assertThat(pilot.canPay(Mana.of("2"))).isTrue();
@@ -40,7 +39,6 @@ public class ReanimatorDeckPilotTest {
     @Test
     public void pay_should_work() throws IOException {
         // GIVEN
-        ReanimatorDeckPilot pilot = new ReanimatorDeckPilot();
 
         Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-deck2.txt")));
 
@@ -50,9 +48,9 @@ public class ReanimatorDeckPilotTest {
                 deck.getMain().shuffle(),
                 Cards.of("faithless looting"),
                 Cards.of("mountain", "swamp"),
-                Cards.none(),
-                pilot
+                Cards.none()
         );
+        ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);
 
         // WHEN
         pilot.pay(Mana.of("2"));

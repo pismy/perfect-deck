@@ -7,6 +7,8 @@ import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -30,7 +32,7 @@ public class GoldfishSimulator {
     @Builder.Default
     final boolean verbose = false;
 
-    final DeckPilot pilot;
+    final Class<? extends DeckPilot> pilotClass;
 
     /**
      * TODO:
@@ -128,8 +130,14 @@ public class GoldfishSimulator {
     }
 
     GameResult simulateGame(Deck deck, boolean onThePlay) {
-        Game game = new Game(verbose ? System.out : null);
-        pilot.setGame(game);
+        StringWriter output = new StringWriter();
+        Game game = new Game(new PrintWriter(output));
+        DeckPilot pilot = null;
+        try {
+            pilot = pilotClass.getConstructor(Game.class).newInstance(game);
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't instantiate pilot", e);
+        }
 
         // 1: findAll hand
         game.start(onThePlay);
@@ -189,9 +197,7 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
-                    if (verbose) {
-                        System.out.println("===> WIN: " + winReason);
-                    }
+                    output.write("===> WIN: " + winReason+"\n");
                     return GameResult.builder()
                             .onThePlay(game.isOnThePlay())
                             .mulligans(game.getMulligans())
@@ -201,9 +207,7 @@ public class GoldfishSimulator {
                             .build();
                 }
             }
-            if (verbose) {
-                System.out.println("===> MAX TURNS REACHED");
-            }
+            output.write("===> MAX TURNS REACHED\n");
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())
@@ -211,9 +215,7 @@ public class GoldfishSimulator {
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (GameLostException gle) {
-            if (verbose) {
-                System.out.println("===> LOST: " + gle.getMessage());
-            }
+            output.write("===> LOST: " + gle.getMessage()+"\n");
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())
@@ -221,6 +223,12 @@ public class GoldfishSimulator {
                     .endTurn(game.getCurrentTurn())
                     .reason(gle.getMessage())
                     .build();
+        } catch (Exception e) {
+            throw new GameInternalError("An unexpected error occurred in a game\n\n"+output.toString(), e);
+        } finally {
+            if(verbose) {
+                System.out.println(output.toString());
+            }
         }
     }
 

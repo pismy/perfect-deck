@@ -21,6 +21,10 @@ public class KarstenAggroDeck1Pilot extends DeckPilot {
     private static String BOLT = "lightning bolt";
     private static String LAND = "city of brass";
 
+    public KarstenAggroDeck1Pilot(Game game) {
+        super(game);
+    }
+
     /**
      * The simple idea is that we're keeping a hand if it contains between 2 and 5 lands and at least one spell of 3 mana or less.
      * <p>
