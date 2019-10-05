@@ -151,6 +151,7 @@ public class Tools {
                 });
                 table.row(row);
             }
+            table.row(TableFormatter.SEPARATOR);
 
             // rows are for mulligans taken
             stats.getMulligans().forEach(mulligansTaken -> {
@@ -183,6 +184,7 @@ public class Tools {
             });
 
             // last row is global
+            table.row(TableFormatter.SEPARATOR);
             List<String> row = new ArrayList<>(representativeWinTurns.size() + 1);
             row.add("global");
 

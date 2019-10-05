@@ -121,10 +121,26 @@ public class InfectDeckPilot extends DeckPilot {
             castableScaleUp--;
         }
         // TODO: can I close the game with +3 boosts ?
-        // play all rancors
-        while (game.getHand().contains(RANCOR) && canPay(G)) {
-            preparePool(G);
-            game.castPermanent(RANCOR, G);
+        int poisonWithBoosts = 0;
+        Mana potentialPool = game.getPool()
+                .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
+        if (game.isLanded()) {
+            int nb = Math.min(game.getHand().count(GROUNDSWELL), potentialPool.ccm());
+            poisonWithBoosts += nb * 4;
+            potentialPool = potentialPool.minus(Mana.of(0, 0, nb, 0, 0, 0));
+        }
+        int nb = Math.min(game.getHand().count(GIANT_GROWTH, SEAL_OF_STRENGTH), potentialPool.ccm());
+        poisonWithBoosts += nb * 3;
+        potentialPool = potentialPool.minus(Mana.of(0, 0, nb, 0, 0, 0));
+
+        boolean canKillWithBoosts = game.getOpponentPoisonCounters() + poisonWithBoosts >= 10;
+
+        // play all rancors (if can't kill wth boosts)
+        if(!canKillWithBoosts) {
+            while (game.getHand().contains(RANCOR) && canPay(G)) {
+                preparePool(G);
+                game.castPermanent(RANCOR, G);
+            }
         }
         // play all groundswell (if landed)
         if (game.isLanded()) {
@@ -170,7 +186,8 @@ public class InfectDeckPilot extends DeckPilot {
         // add rancors
         game.getBoard().findAll(RANCOR).forEach(card -> game.tap(card).poisonOpponent(2));
 
-        // TODO: use pendlhaven to boost
+        // use pendelhavens to boost
+        game.getUntapped(PENDELHAVEN).forEach(card -> game.tap(card).poisonOpponent(1));
     }
 
     @Override
@@ -193,6 +210,14 @@ public class InfectDeckPilot extends DeckPilot {
         while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
             preparePool(G);
             game.castPermanent(SEAL_OF_STRENGTH, G);
+        }
+
+        // play rancors
+        if(game.getBoard().count(CREATURES) > 0) {
+            while (game.getHand().contains(RANCOR) && canPay(G)) {
+                preparePool(G);
+                game.castPermanent(RANCOR, G);
+            }
         }
 
         // cast extra creatures

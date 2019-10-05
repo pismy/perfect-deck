@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Singular;
 import lombok.Value;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -14,6 +15,8 @@ import java.util.stream.IntStream;
 @Builder
 @Getter
 public class TableFormatter {
+
+    public static final List<String> SEPARATOR = Collections.singletonList("---");
 
     @Builder.Default
     private final boolean padding = true;
@@ -43,20 +46,23 @@ public class TableFormatter {
             }
         }
         table.append("|\n");
-        table.append(separator);
         // rows
         for (List<?> row : rows) {
-            for (int col = 0; col < columns.size(); col++) {
-                table.append('|');
-                if (padding) {
-                    table.append(' ');
+            if(row == SEPARATOR) {
+                table.append(separator);
+            } else {
+                for (int col = 0; col < columns.size(); col++) {
+                    table.append('|');
+                    if (padding) {
+                        table.append(' ');
+                    }
+                    table.append(Strings.padEnd(cell(row, col), widths[col], ' '));
+                    if (padding) {
+                        table.append(' ');
+                    }
                 }
-                table.append(Strings.padEnd(cell(row, col), widths[col], ' '));
-                if (padding) {
-                    table.append(' ');
-                }
+                table.append("|\n");
             }
-            table.append("|\n");
         }
         table.append(separator);
 
@@ -75,12 +81,12 @@ public class TableFormatter {
     }
 
     private int width(int col) {
-        Optional<Integer> maxRowWidth = rows.stream().map(row -> cell(row, col).length()).max(Integer::compareTo);
+        Optional<Integer> maxRowWidth = rows.stream().filter(row -> row != SEPARATOR).map(row -> cell(row, col).length()).max(Integer::compareTo);
         return Math.max(columns.get(col).length(), maxRowWidth.orElse(0));
     }
 
     private String cell(List<?> row, int col) {
-        return row == null || col > rows.size() || row.get(col) == null ? "-" : String.valueOf(row.get(col));
+        return row == null || col > row.size() || row.get(col) == null ? "-" : String.valueOf(row.get(col));
     }
 }
 

@@ -216,15 +216,6 @@ public class GoldfishSimulator {
                     .outcome(GameResult.Outcome.TIMEOUT)
                     .endTurn(maxTurns + 1)
                     .build();
-        } catch (GameLostException gle) {
-            output.write("===> LOST: " + gle.getMessage() + "\n");
-            return GameResult.builder()
-                    .onThePlay(game.isOnThePlay())
-                    .mulligans(game.getMulligans())
-                    .outcome(GameResult.Outcome.LOST)
-                    .endTurn(game.getCurrentTurn())
-                    .reason(gle.getMessage())
-                    .build();
         } catch (Exception e) {
             throw new GameInternalError("An unexpected error occurred in a game\n\n" + output.toString(), e);
         } finally {
@@ -237,7 +228,7 @@ public class GoldfishSimulator {
     @Builder
     @Value
     public static class GameResult {
-        public enum Outcome {WON, LOST, TIMEOUT}
+        public enum Outcome {WON, TIMEOUT}
 
         final boolean onThePlay;
         final int mulligans;

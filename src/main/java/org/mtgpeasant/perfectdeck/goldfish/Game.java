@@ -344,9 +344,6 @@ public class Game {
      * @param cards number of cards to draw
      */
     public Game draw(int cards) {
-        if (library.size() < cards) {
-            throw new GameLostException("Can't draw [" + cards + "]: not enough cards");
-        }
         Cards drawn = library.draw(cards);
         log("- draw " + cards + ": " + drawn);
         hand.addAll(drawn);
