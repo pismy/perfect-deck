@@ -76,7 +76,7 @@ public class GoldfishSimulator {
         /**
          * Ecart type
          */
-        public double getWinTurnStdDerivation(Predicate<GameResult> filter) {
+        public double getWinTurnAvgDistance(Predicate<GameResult> filter) {
             double avg = getAverageWinTurn(filter);
             double distanceSum = results.stream()
                     .filter(filter)
@@ -91,8 +91,8 @@ public class GoldfishSimulator {
         /**
          * Ecart type
          */
-        public double getWinTurnStdDerivation() {
-            return getWinTurnStdDerivation(r -> r.getOutcome() == GameResult.Outcome.WON);
+        public double getWinTurnAvgDistance() {
+            return getWinTurnAvgDistance(r -> r.getOutcome() == GameResult.Outcome.WON);
         }
 
         public List<Integer> getMulligans(Predicate<GameResult> filter) {

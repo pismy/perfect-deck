@@ -8,13 +8,13 @@
 4 Glistener Elf
 
 // boosts
-3 Mutagenic Growth
+4 Mutagenic Growth
 4 Seal of Strength
 3 Vines of Vastwood
 4 Scale Up
 4 Rancor
-4 Groundswell
-1 Seal of Strength
+// 4 Groundswell
+4 Giant Growth
 
 // others
 4 Gitaxian Probe
