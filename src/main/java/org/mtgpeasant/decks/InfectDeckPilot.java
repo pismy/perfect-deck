@@ -120,8 +120,13 @@ public class InfectDeckPilot extends DeckPilot {
             game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
             castableScaleUp--;
         }
-        // TODO: can I close the game with +3 boosts ?
+        // --- can I close the game with +3 boosts ?
         int poisonWithBoosts = 0;
+        poisonWithBoosts += 3 * game.getBoard().count(SEAL_OF_STRENGTH);
+        poisonWithBoosts += 1 * game.getBoard().count(CREATURES);
+        poisonWithBoosts += 2 * game.getBoard().count(RANCOR);
+        // pendelhaven
+
         Mana potentialPool = game.getPool()
                 .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
         if (game.isLanded()) {
@@ -136,7 +141,7 @@ public class InfectDeckPilot extends DeckPilot {
         boolean canKillWithBoosts = game.getOpponentPoisonCounters() + poisonWithBoosts >= 10;
 
         // play all rancors (if can't kill wth boosts)
-        if(!canKillWithBoosts) {
+        if (!canKillWithBoosts) {
             while (game.getHand().contains(RANCOR) && canPay(G)) {
                 preparePool(G);
                 game.castPermanent(RANCOR, G);
@@ -213,7 +218,7 @@ public class InfectDeckPilot extends DeckPilot {
         }
 
         // play rancors
-        if(game.getBoard().count(CREATURES) > 0) {
+        if (game.getBoard().count(CREATURES) > 0) {
             while (game.getHand().contains(RANCOR) && canPay(G)) {
                 preparePool(G);
                 game.castPermanent(RANCOR, G);
