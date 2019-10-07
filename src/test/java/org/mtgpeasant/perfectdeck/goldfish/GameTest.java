@@ -14,7 +14,7 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(null);
+        Game ctx = new Game(true, null);
         ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
@@ -28,7 +28,7 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(null);
+        Game ctx = new Game(true, null);
         ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
@@ -42,7 +42,7 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "swamp", "mountain", "animate dead", "dragon breath", "faithless looting", "animate dead", "ulamog's crusher", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(null);
+        Game ctx = new Game(true, null);
         ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN
@@ -57,7 +57,7 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "lotus petal", "simian spirit guide", "animate dead", "dragon breath", "ulamog's crusher", "faithless looting", "animate dead", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(null);
+        Game ctx = new Game(true, null);
         ctx.keepHandAndStart(library, hand);
 
         // WHEN / THEN

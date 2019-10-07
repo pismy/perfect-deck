@@ -2,6 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import com.google.common.base.Predicates;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -11,8 +12,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
 
@@ -45,6 +48,12 @@ public class GoldfishSimulator {
         final List<GameResult> results;
         final int iterations;
 
+        /**
+         * Lists all win turns matching the given predicate
+         *
+         * @param filter predicate
+         * @return ordered list of win turns
+         */
         public List<Integer> getWinTurns(Predicate<GameResult> filter) {
             return results.stream()
                     .filter(filter)
@@ -54,47 +63,66 @@ public class GoldfishSimulator {
                     .collect(Collectors.toList());
         }
 
+        /**
+         * Counts the number of game results matching the given predicate
+         *
+         * @param filter predicate
+         * @return total count of games matching the predicate
+         */
         public long count(Predicate<GameResult> filter) {
             return results.stream()
                     .filter(filter)
-                    .count();
+                    .mapToInt(GameResult::getCount)
+                    .sum();
         }
 
+        /**
+         * Computes average win turn among game results matching the given predicate
+         *
+         * @param filter predicate
+         * @return average win turn
+         */
         public double getAverageWinTurn(Predicate<GameResult> filter) {
             long sum = results.stream()
                     .filter(filter)
-                    .map(GameResult::getEndTurn)
-                    .collect(Collectors.summingLong(Integer::longValue));
+                    .mapToLong(result -> result.getEndTurn() * result.getCount())
+                    .sum();
             long count = count(filter);
             return (double) sum / (double) count;
         }
 
-        public double getAverageWinTurn() {
-            return getAverageWinTurn(r -> r.getOutcome() == GameResult.Outcome.WON);
-        }
-
         /**
-         * Ecart type
+         * <a href="https://en.wikipedia.org/wiki/Average_absolute_deviation">Mean absolute deviation</a> around average win turn
          */
-        public double getWinTurnAvgDistance(Predicate<GameResult> filter) {
+        public double getWinTurnMAD(Predicate<GameResult> filter) {
             double avg = getAverageWinTurn(filter);
             double distanceSum = results.stream()
                     .filter(filter)
-                    .map(r -> Math.abs(avg - r.getEndTurn()))
-//                    .map(r -> ((double) r.getEndTurn() - avg) * ((double) r.getEndTurn() - avg))
-                    .collect(Collectors.summingDouble(Double::doubleValue));
+                    .mapToDouble(result -> Math.abs(avg - result.getEndTurn()) * result.getCount())
+                    .sum();
             long count = count(filter);
-//            return Math.sqrt(distanceSum / (double) count);
             return distanceSum / (double) count;
         }
 
         /**
-         * Ecart type
+         * <a href="https://en.wikipedia.org/wiki/Standard_deviation">Standard deviation</a> around average win turn
          */
-        public double getWinTurnAvgDistance() {
-            return getWinTurnAvgDistance(r -> r.getOutcome() == GameResult.Outcome.WON);
+        public double getWinTurnSD(Predicate<GameResult> filter) {
+            double avg = getAverageWinTurn(filter);
+            double distanceSum = results.stream()
+                    .filter(filter)
+                    .mapToDouble(result -> ((double) result.getEndTurn() - avg) * ((double) result.getEndTurn() - avg) * result.getCount())
+                    .sum();
+            long count = count(filter);
+            return Math.sqrt(distanceSum / (double) count);
         }
 
+        /**
+         * Lists all mulligans taken matching the given predicate
+         *
+         * @param filter predicate
+         * @return ordered list of mulligans taken
+         */
         public List<Integer> getMulligans(Predicate<GameResult> filter) {
             return results.stream()
                     .filter(filter)
@@ -109,6 +137,7 @@ public class GoldfishSimulator {
         }
     }
 
+
     public List<DeckStats> simulate(Iterable<Deck> decksProvider) {
         return StreamSupport.stream(decksProvider.spliterator(), false)
                 .map(deck -> simulate(deck))
@@ -116,24 +145,43 @@ public class GoldfishSimulator {
     }
 
     public DeckStats simulate(Deck deck) {
-        List<GameResult> results = new ArrayList<>(iterations);
-        boolean onThePlay = start == Start.OTD ? false : true;
-        for (int it = 0; it < iterations; it++) {
-            results.add(simulateGame(deck, onThePlay));
-            if (verbose) {
-                System.out.println();
-            }
-            if (start == Start.BOTH) {
-                // change every game
-                onThePlay = !onThePlay;
-            }
-        }
+        List<GameResult> results = IntStream.range(0, iterations)
+                // simulate a game
+                .mapToObj(idx -> simulateGame(deck, onThePlay(start, idx)))
+                // aggregate results
+                .collect(Collectors.groupingBy(Function.identity()))
+                .entrySet().stream()
+                .map(entry -> GameResult.builder()
+                        .mulligans(entry.getKey().mulligans)
+                        .onThePlay(entry.getKey().onThePlay)
+                        .outcome(entry.getKey().outcome)
+                        .endTurn(entry.getKey().endTurn)
+                        .count(entry.getValue().size())
+                        .build()
+                )
+                .collect(Collectors.toList());
         return DeckStats.builder().deck(deck).iterations(iterations).results(results).build();
     }
 
+    private boolean onThePlay(Start start, int idx) {
+        switch (start) {
+            case OTP:
+                return true;
+            case OTD:
+                return false;
+            case BOTH:
+            default:
+                return idx % 2 == 0;
+        }
+    }
+
     GameResult simulateGame(Deck deck, boolean onThePlay) {
+        // instantiate new game
         StringWriter output = new StringWriter();
-        Game game = new Game(new PrintWriter(output));
+        PrintWriter writer = new PrintWriter(output);
+        Game game = new Game(onThePlay, writer);
+
+        // instantiate deck pilot (from class)
         DeckPilot pilot = null;
         try {
             pilot = pilotClass.getConstructor(Game.class).newInstance(game);
@@ -141,8 +189,11 @@ public class GoldfishSimulator {
             throw new RuntimeException("Couldn't instantiate pilot", e);
         }
 
-        // 1: findAll hand
-        game.start(onThePlay);
+        writer.println("=====================");
+        writer.println("=== New Game: " + (onThePlay ? "OTP" : "OTD") + " ===");
+        writer.println("=====================");
+
+        // 1: select opening hand
         while (true) {
             Cards library = deck.getMain().shuffle();
             Cards hand = library.draw(draw);
@@ -199,17 +250,17 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
-                    output.write("===> WIN: " + winReason + "\n");
+                    writer.println("===> WIN: " + winReason);
                     return GameResult.builder()
                             .onThePlay(game.isOnThePlay())
                             .mulligans(game.getMulligans())
                             .outcome(GameResult.Outcome.WON)
                             .endTurn(game.getCurrentTurn())
-                            .reason(winReason)
+//                            .reason(winReason)
                             .build();
                 }
             }
-            output.write("===> MAX TURNS REACHED\n");
+            writer.println("===> MAX TURNS REACHED");
             return GameResult.builder()
                     .onThePlay(game.isOnThePlay())
                     .mulligans(game.getMulligans())
@@ -221,10 +272,12 @@ public class GoldfishSimulator {
         } finally {
             if (verbose) {
                 System.out.println(output.toString());
+                System.out.println();
             }
         }
     }
 
+    @EqualsAndHashCode(exclude = "count")
     @Builder
     @Value
     public static class GameResult {
@@ -234,6 +287,7 @@ public class GoldfishSimulator {
         final int mulligans;
         final Outcome outcome;
         final int endTurn;
-        final String reason;
+        @Builder.Default
+        final int count = 1;
     }
 }

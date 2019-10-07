@@ -17,7 +17,7 @@ public class Game {
 
     public enum Side {top, bottom;}
 
-    private boolean onThePlay;
+    private final boolean onThePlay;
     private int mulligans = 0;
     private int currentTurn = 0;
     private int opponentLife = 20;
@@ -34,15 +34,9 @@ public class Game {
 
     private final PrintWriter logs;
 
-    Game(PrintWriter logs) {
-        this.logs = logs;
-    }
-
-    void start(boolean onThePlay) {
+    Game(boolean onThePlay, PrintWriter logs) {
         this.onThePlay = onThePlay;
-        log("=====================");
-        log("=== New Game: " + (onThePlay ? "OTP" : "OTD") + " ===");
-        log("=====================");
+        this.logs = logs;
     }
 
     void keepHandAndStart(Cards library, Cards hand) {

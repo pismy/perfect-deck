@@ -189,20 +189,20 @@ public class Tools {
         String avg = "";
         if (start != GoldfishSimulator.Start.OTD) {
             Predicate<GoldfishSimulator.GameResult> otpFilter = gamesFilter.and(result -> result.isOnThePlay());
-            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otpFilter)) + " ±" + f2d(stats.getWinTurnAvgDistance(otpFilter)), 10, ' ');
+            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otpFilter)) + " ±" + f2d(stats.getWinTurnMAD(otpFilter)), 10, ' ');
         }
         if (start == GoldfishSimulator.Start.BOTH) {
             avg += " | ";
         }
         if (start != GoldfishSimulator.Start.OTP) {
             Predicate<GoldfishSimulator.GameResult> otdFilter = gamesFilter.and(result -> !result.isOnThePlay());
-            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otdFilter)) + " ±" + f2d(stats.getWinTurnAvgDistance(otdFilter)), 10, ' ');
+            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otdFilter)) + " ±" + f2d(stats.getWinTurnMAD(otdFilter)), 10, ' ');
         }
 //        if (start == GoldfishSimulator.Start.BOTH) {
 //            avg += " | ";
 //        }
 //        if (start == GoldfishSimulator.Start.BOTH) {
-//            avg += Strings.padStart(f2d(stats.getAverageWinTurn(gamesFilter)) + " ±" + f2d(stats.getWinTurnAvgDistance(gamesFilter)),10, ' ');
+//            avg += Strings.padStart(f2d(stats.getAverageWinTurn(gamesFilter)) + " ±" + f2d(stats.getWinTurnMAD(gamesFilter)),10, ' ');
 //        }
         row.add(avg);
 
