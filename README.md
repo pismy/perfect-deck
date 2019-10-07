@@ -13,7 +13,7 @@ mvn clean package -DskipTests
 Then start the tool by running:
 
 ```bash
-java -jar target/perfect-hand-1.0.0-SNAPSHOT.jar
+java -jar target/perfect-deck-1.0.0-SNAPSHOT.jar
 ```
 
 Once in the tool shell, you can use the following:
