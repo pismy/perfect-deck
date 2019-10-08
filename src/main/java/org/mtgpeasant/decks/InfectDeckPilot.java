@@ -1,19 +1,28 @@
 package org.mtgpeasant.decks;
 
+import lombok.Builder;
+import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
+import org.mtgpeasant.perfectdeck.common.utils.Permutations;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class InfectDeckPilot extends DeckPilot {
 
     public static final Mana G = Mana.of("G");
-    public static final Mana G1 = Mana.of("G1");
+    public static final Mana G1 = Mana.of("1G");
+    public static final Mana GG = Mana.of("GG");
     public static final Mana TWO = Mana.of("2");
 
     // LANDS
@@ -26,15 +35,18 @@ public class InfectDeckPilot extends DeckPilot {
     public static final String BLIGHT_MAMBA = "blight mamba";
 
     // BOOSTS
-    public static final String SCALE_UP = "scale up";
-    public static final String VINES_OF_VASTWOOD = "vines of vastwood";
+    public static final String RANCOR = "rancor"; //
+    public static final String SEAL_OF_STRENGTH = "seal of strength"; // (enchant) G: sacrifice: +3/+3
+    public static final String SCALE_UP = "scale up"; // G: crea become 6/4
+    public static final String VINES_OF_VASTWOOD = "vines of vastwood"; // (instant) GG: +4/+4
     public static final String GIANT_GROWTH = "giant growth";
-    public static final String SEAL_OF_STRENGTH = "seal of strength";
-    public static final String RANCOR = "rancor";
-    public static final String LARGER_THAN_LIFE = "larger than life";
-    public static final String INVIGORATE = "invigorate";
-    public static final String MUTAGENIC_GROWTH = "mutagenic growth";
-    public static final String GROUNDSWELL = "groundswell";
+    public static final String LARGER_THAN_LIFE = "larger than life"; // 1G: +4/+4
+    public static final String INVIGORATE = "invigorate"; // (free if forest on board) +4/+4
+    public static final String MUTAGENIC_GROWTH = "mutagenic growth"; // (-2 life): +2/+2
+    public static final String GROUNDSWELL = "groundswell"; // G: +2/+2; landfall: +4/+4
+    public static final String RANGER_S_GUILE = "ranger's guile"; // G: +1/+1
+    public static final String MIGHT_OF_OLD_KROSA = "might of old krosa"; // G: +4/+4 on your turn
+    public static final String BLOSSOMING_DEFENSE = "blossoming defense"; // G: +2/+2
 
     // FREE MANA
     public static final String LOTUS_PETAL = "lotus petal";
@@ -103,82 +115,113 @@ public class InfectDeckPilot extends DeckPilot {
         if (creatures.isEmpty()) {
             return;
         }
+
+        // first start by playing all free spells
+
         // play all mutagenic
         while (game.getHand().contains(MUTAGENIC_GROWTH)) {
             game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero()).poisonOpponent(2);
         }
+
         // play all invigorates (if forest)
         if (game.getBoard().contains(FOREST)) {
             while (game.getHand().contains(INVIGORATE)) {
                 game.castNonPermanent(INVIGORATE, Mana.zero()).poisonOpponent(4).damageOpponent(-3);
             }
         }
-        // play all scale up
+
+        // play all possible scale up
         int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
         while (castableScaleUp > 0 && canPay(G)) {
             preparePool(G);
             game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
             castableScaleUp--;
         }
-        // --- can I close the game with +3 boosts ?
-        int poisonWithBoosts = 0;
-        poisonWithBoosts += 3 * game.getBoard().count(SEAL_OF_STRENGTH);
-        poisonWithBoosts += 1 * game.getBoard().count(CREATURES);
-        poisonWithBoosts += 2 * game.getBoard().count(RANCOR);
-        // pendelhaven
+
+        // is there an optimal order to play my spells to kill this turn ?
+        int poisonCounters = game.getOpponentPoisonCounters();
+        poisonCounters += 3 * game.getBoard().count(SEAL_OF_STRENGTH);
+        poisonCounters += 1 * game.getBoard().count(CREATURES);
+        poisonCounters += 2 * game.getBoard().count(RANCOR);
+
+        Collection<String> boostsToPlay = game.isLanded() ?
+                game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GROUNDSWELL, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
+                : game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
 
         Mana potentialPool = game.getPool()
                 .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
-        if (game.isLanded()) {
-            int nb = Math.min(game.getHand().count(GROUNDSWELL), potentialPool.ccm());
-            poisonWithBoosts += nb * 4;
-            potentialPool = potentialPool.minus(Mana.of(0, 0, nb, 0, 0, 0));
-        }
-        int nb = Math.min(game.getHand().count(GIANT_GROWTH, SEAL_OF_STRENGTH), potentialPool.ccm());
-        poisonWithBoosts += nb * 3;
-        potentialPool = potentialPool.minus(Mana.of(0, 0, nb, 0, 0, 0));
+        Stream<Stream<String>> allBoostsOrderCombinations = Permutations.of(new ArrayList<>(boostsToPlay));
+        Optional<Sim> bestOrder = allBoostsOrderCombinations
+                .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
+                .sorted(Comparator.reverseOrder())
+                .findFirst();
 
-        boolean canKillWithBoosts = game.getOpponentPoisonCounters() + poisonWithBoosts >= 10;
+        if (bestOrder.isPresent() && bestOrder.get().getCounters() + poisonCounters >= 10) {
+            // I can kill now
+//            if (simulate(potentialPool, boostsToPlay).getCounters() + poisonCounters < 10) {
+//                // I have a
+//                System.out.println("I can rush with " + bestOrder.get().boosts + " instead of " + boostsToPlay);
+//            }
+            boostsToPlay = bestOrder.get().boosts;
+        }
 
-        // play all rancors (if can't kill wth boosts)
-        if (!canKillWithBoosts) {
-            while (game.getHand().contains(RANCOR) && canPay(G)) {
-                preparePool(G);
-                game.castPermanent(RANCOR, G);
-            }
-        }
-        // play all groundswell (if landed)
-        if (game.isLanded()) {
-            while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
-                preparePool(G);
-                game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(4);
-            }
-        }
-        // play all growths
-        while (game.getHand().contains(GIANT_GROWTH) && canPay(G)) {
-            preparePool(G);
-            game.castNonPermanent(GIANT_GROWTH, G).poisonOpponent(3);
-        }
-        // play all seals
-        while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
-            preparePool(G);
-            game.castPermanent(SEAL_OF_STRENGTH, G);
-        }
-        // play all larger
-        while (game.getHand().contains(LARGER_THAN_LIFE) && canPay(G1)) {
-            preparePool(G1);
-            game.castNonPermanent(LARGER_THAN_LIFE, G1).poisonOpponent(4);
-        }
-        // play all vines
-        while (game.getHand().contains(VINES_OF_VASTWOOD) && canPay(G1)) {
-            preparePool(G1);
-            game.castNonPermanent(VINES_OF_VASTWOOD, G1).poisonOpponent(4);
-        }
-        // play all groundswell (if not landed)
-        if (!game.isLanded()) {
-            while (game.getHand().contains(GROUNDSWELL) && canPay(G)) {
-                preparePool(G);
-                game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(2);
+        // now play boosts in optimal order (if I can kill) or fallback order (rancors first)
+        for (String boost : boostsToPlay) {
+            switch (boost) {
+                case RANCOR:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castPermanent(RANCOR, G);
+                    }
+                    break;
+                case MIGHT_OF_OLD_KROSA:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castNonPermanent(MIGHT_OF_OLD_KROSA, G).poisonOpponent(4);
+                    }
+                    break;
+                case GROUNDSWELL:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(game.isLanded() ? 4 : 2);
+                    }
+                    break;
+                case GIANT_GROWTH:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castNonPermanent(GIANT_GROWTH, G).poisonOpponent(3);
+                    }
+                    break;
+                case SEAL_OF_STRENGTH:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castPermanent(SEAL_OF_STRENGTH, G);
+                    }
+                    break;
+                case BLOSSOMING_DEFENSE:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castNonPermanent(BLOSSOMING_DEFENSE, G).poisonOpponent(2);
+                    }
+                    break;
+                case LARGER_THAN_LIFE:
+                    if (canPay(G1)) {
+                        preparePool(G1);
+                        game.castNonPermanent(LARGER_THAN_LIFE, G1).poisonOpponent(4);
+                    }
+                    break;
+                case VINES_OF_VASTWOOD:
+                    if (canPay(GG)) {
+                        preparePool(GG);
+                        game.castNonPermanent(VINES_OF_VASTWOOD, GG).poisonOpponent(4);
+                    }
+                    break;
+                case RANGER_S_GUILE:
+                    if (canPay(G)) {
+                        preparePool(G);
+                        game.castNonPermanent(RANGER_S_GUILE, G).poisonOpponent(1);
+                    }
+                    break;
             }
         }
 
@@ -191,8 +234,78 @@ public class InfectDeckPilot extends DeckPilot {
         // add rancors
         game.getBoard().findAll(RANCOR).forEach(card -> game.tap(card).poisonOpponent(2));
 
-        // use pendelhavens to boost
+        // use one untapped pendelhaven to boost
         game.getUntapped(PENDELHAVEN).forEach(card -> game.tap(card).poisonOpponent(1));
+    }
+
+    private Sim simulate(Mana potentialPool, Collection<String> boosts) {
+        int counters = 0;
+        for (String boost : boosts) {
+            switch (boost) {
+                case RANCOR:
+                    if (potentialPool.contains(G)) {
+                        counters += 2;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+                case MIGHT_OF_OLD_KROSA:
+                    if (potentialPool.contains(G)) {
+                        counters += 4;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+                case GROUNDSWELL:
+                    if (potentialPool.contains(G)) {
+                        counters += game.isLanded() ? 4 : 2;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+                case GIANT_GROWTH:
+                case SEAL_OF_STRENGTH:
+                    if (potentialPool.contains(G)) {
+                        counters += 3;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+                case BLOSSOMING_DEFENSE:
+                    if (potentialPool.contains(G)) {
+                        counters += 2;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+                case LARGER_THAN_LIFE:
+                    if (potentialPool.contains(G1)) {
+                        counters += 4;
+                        potentialPool = potentialPool.minus(G1);
+                    }
+                    break;
+                case VINES_OF_VASTWOOD:
+                    if (potentialPool.contains(GG)) {
+                        counters += 4;
+                        potentialPool = potentialPool.minus(GG);
+                    }
+                    break;
+                case RANGER_S_GUILE:
+                    if (potentialPool.contains(G)) {
+                        counters += 1;
+                        potentialPool = potentialPool.minus(G);
+                    }
+                    break;
+            }
+        }
+        return Sim.builder().counters(counters).boosts(boosts).build();
+    }
+
+    @Builder
+    @Value
+    private static class Sim implements Comparable<Sim> {
+        final int counters;
+        final Collection<String> boosts;
+
+        @Override
+        public int compareTo(Sim other) {
+            return counters - other.counters;
+        }
     }
 
     @Override
