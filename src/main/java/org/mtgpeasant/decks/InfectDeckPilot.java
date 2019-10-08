@@ -144,28 +144,28 @@ public class InfectDeckPilot extends DeckPilot {
         poisonCounters += 1 * game.getBoard().count(CREATURES);
         poisonCounters += 2 * game.getBoard().count(RANCOR);
 
-        Collection<String> boostsToPlay = game.isLanded() ?
-                game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GROUNDSWELL, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
-                : game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
-
         Mana potentialPool = game.getPool()
                 .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
-        Stream<Stream<String>> allBoostsOrderCombinations = Permutations.of(new ArrayList<>(boostsToPlay));
-        Optional<Sim> bestOrder = allBoostsOrderCombinations
-                .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
-                .sorted(Comparator.reverseOrder())
-                .findFirst();
 
-        if (bestOrder.isPresent() && bestOrder.get().getCounters() + poisonCounters >= 10) {
-            // I can kill now
-//            if (simulate(potentialPool, boostsToPlay).getCounters() + poisonCounters < 10) {
-//                // I have a
+        Collection<String> boostsToPlay = game.isLanded() ?
+                game.getHand().findAll(RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
+                : game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
+
+        if (simulate(potentialPool, boostsToPlay).getCounters() + poisonCounters < 10) {
+            // I can't kill with default order (rancors first): is there another order to play my boosts that can kill this turn ?
+            Stream<Stream<String>> allBoostsOrderCombinations = Permutations.of(new ArrayList<>(boostsToPlay));
+            Optional<Sim> bestOrder = allBoostsOrderCombinations
+                    .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
+                    .sorted(Comparator.reverseOrder())
+                    .findFirst();
+
+            if (bestOrder.isPresent() && bestOrder.get().getCounters() + poisonCounters >= 10) {
 //                System.out.println("I can rush with " + bestOrder.get().boosts + " instead of " + boostsToPlay);
-//            }
-            boostsToPlay = bestOrder.get().boosts;
+                boostsToPlay = bestOrder.get().boosts;
+            }
         }
 
-        // now play boosts in optimal order (if I can kill) or fallback order (rancors first)
+        // now play boosts in optimal order (if I can kill) or fallback order (rancors first) if not
         for (String boost : boostsToPlay) {
             switch (boost) {
                 case RANCOR:
