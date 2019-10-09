@@ -146,6 +146,7 @@ public class GoldfishSimulator {
 
     public DeckStats simulate(Deck deck) {
         List<GameResult> results = IntStream.range(0, iterations)
+                .parallel()
                 // simulate a game
                 .mapToObj(idx -> simulateGame(deck, onThePlay(start, idx)))
                 // aggregate results
