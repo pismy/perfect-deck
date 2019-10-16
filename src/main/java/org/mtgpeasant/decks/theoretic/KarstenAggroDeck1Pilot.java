@@ -1,4 +1,4 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.theoretic;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
@@ -13,7 +13,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;
  * <p>
  * https://pastebin.com/rXGLDind
  */
-public class KarstenAggroDeck1Pilot extends DeckPilot {
+public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
     public static final Mana ONE = Mana.of("1");
     public static final Mana TWO = Mana.of("2");
     private static String LIONS = "savannah lions";

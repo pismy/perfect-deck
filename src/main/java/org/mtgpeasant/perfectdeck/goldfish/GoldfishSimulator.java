@@ -10,7 +10,8 @@ import org.mtgpeasant.perfectdeck.common.cards.Deck;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -180,14 +181,26 @@ public class GoldfishSimulator {
         // instantiate new game
         StringWriter output = new StringWriter();
         PrintWriter writer = new PrintWriter(output);
-        Game game = new Game(onThePlay, writer);
+
+        // instantiate game (from class)
+//        Game game = new Game(onThePlay, writer);
+        Class<? extends Game> gameClass = (Class) ((ParameterizedType) pilotClass.getGenericSuperclass()).getActualTypeArguments()[0];
+        Game game = null;
+        try {
+            Constructor<? extends Game> constructor = gameClass.getConstructor(Boolean.TYPE, PrintWriter.class);
+            constructor.setAccessible(true);
+            game = constructor.newInstance(onThePlay, writer);
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't instantiate game of type " + gameClass.getSimpleName(), e);
+        }
+
 
         // instantiate deck pilot (from class)
         DeckPilot pilot = null;
         try {
-            pilot = pilotClass.getConstructor(Game.class).newInstance(game);
+            pilot = pilotClass.getConstructor(gameClass).newInstance(game);
         } catch (Exception e) {
-            throw new RuntimeException("Couldn't instantiate pilot", e);
+            throw new RuntimeException("Couldn't instantiate pilot of type " + pilotClass.getSimpleName(), e);
         }
 
         writer.println("=====================");
@@ -215,32 +228,33 @@ public class GoldfishSimulator {
             while (game.getCurrentTurn() <= maxTurns) {
                 // start next turn
                 game.startNextTurn();
+                game.startPhase(Game.Phase.beginning);
 
                 // untap
-                pilot.untapPhase();
+                pilot.untapStep();
 
                 // upkeep
-                pilot.upkeepPhase();
+                pilot.upkeepStep();
 
                 // draw (unless first turn on the play)
                 if (!game.isOnThePlay() || game.getCurrentTurn() > 1) {
-                    pilot.drawPhase();
+                    pilot.drawStep();
                 }
 
                 // first main phase
-                game.emptyPool();
+                game.startPhase(Game.Phase.first_main);
                 pilot.firstMainPhase();
 
                 // combat phase
-                game.emptyPool();
+                game.startPhase(Game.Phase.combat);
                 pilot.combatPhase();
 
                 // second main phase
-                game.emptyPool();
+                game.startPhase(Game.Phase.second_main);
                 pilot.secondMainPhase();
 
                 // end phase
-                game.emptyPool();
+                game.startPhase(Game.Phase.ending);
                 pilot.endingPhase();
 
                 // check no more than 7 cards in hand

@@ -57,7 +57,7 @@ public class Cards extends ArrayDeque<String> {
      */
     public Cards draw(int number) {
         if (number > size()) {
-            throw new IllegalArgumentException("Can't draw cards than size");
+            throw new IllegalArgumentException("Can't draw more cards than available (" + number + ">" + size() + ")");
         }
         Cards selected = new Cards();
         for (int i = 0; i < number; i++) {

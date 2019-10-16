@@ -1,6 +1,7 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.infect;
 
 import org.junit.Test;
+import org.mtgpeasant.decks.infect.InfectDeckPilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 

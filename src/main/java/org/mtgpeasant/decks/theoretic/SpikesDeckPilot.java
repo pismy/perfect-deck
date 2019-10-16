@@ -1,4 +1,4 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.theoretic;
 
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -8,7 +8,7 @@ import org.mtgpeasant.perfectdeck.goldfish.Game;
 /**
  * A deck made of mountains and lava spikes
  */
-public class SpikesDeckPilot extends DeckPilot {
+public class SpikesDeckPilot extends DeckPilot<Game> {
     public static final Mana R = Mana.of("R");
     private static String BOLT = "lava spike";
     private static String LAND = "mountain";

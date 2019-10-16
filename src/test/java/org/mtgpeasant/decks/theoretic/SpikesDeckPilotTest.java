@@ -1,6 +1,7 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.theoretic;
 
 import org.junit.Test;
+import org.mtgpeasant.decks.theoretic.SpikesDeckPilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 

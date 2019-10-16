@@ -39,13 +39,13 @@ mulligans -D src/main/resources/reanimator-deck2.txt -R src/main/resources/reani
 You can run the goldfish simulator with a predefined deck and rules with:
 
 ```bash
-goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.ReanimatorDeckPilot -I 50000
+goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot -I 50000
 ```
 
 You can run and follow 5 goldfish games with a predefined deck and rules with:
 
 ```bash
-goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.ReanimatorDeckPilot -I 5 -n -v
+goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot -I 5 -n -v
 ```
 
 ## Deck format

@@ -5,10 +5,10 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 /**
  * The abstract class you have to extend to implement your own goldfish player.
  */
-public abstract class DeckPilot {
-    protected final Game game;
+public abstract class DeckPilot<T extends Game> {
+    protected final T game;
 
-    public DeckPilot(Game game) {
+    public DeckPilot(T game) {
         this.game = game;
     }
 
@@ -34,35 +34,35 @@ public abstract class DeckPilot {
     }
 
     /**
-     * Untap phase
+     * Untap step (in beginning phase)
      * <p>
      * Default implementation untaps all permanents
      * <p>
      * Override if necessary
      */
-    public void untapPhase() {
+    public void untapStep() {
         game.untapAll();
     }
 
     /**
-     * Upkeep phase
+     * Upkeep step (in beginning phase)
      * <p>
      * Default implementation does nothing
      * <p>
      * Override if necessary
      */
-    public void upkeepPhase() {
+    public void upkeepStep() {
 
     }
 
     /**
-     * Upkeep phase
+     * Draw step (in beginning phase)
      * <p>
      * Default implementation draws one card
      * <p>
      * Override if necessary
      */
-    public void drawPhase() {
+    public void drawStep() {
         game.draw(1);
     }
 

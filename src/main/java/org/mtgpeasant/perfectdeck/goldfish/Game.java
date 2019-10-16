@@ -6,23 +6,31 @@ import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Getter
 @ToString(exclude = "library")
 public class Game {
 
+    public enum Phase {beginning, first_main, combat, second_main, ending}
 
-    public enum Area {hand, library, board, exile, graveyard;}
+    public enum Area {hand, library, board, exile, graveyard}
 
-    public enum Side {top, bottom;}
+    public enum Side {top, bottom}
 
+    public enum CardType {artifact, creature, enchantment, instant, land, planeswalker, sorcery}
+
+    // game state
     private final boolean onThePlay;
+    private final PrintWriter logs;
     private int mulligans = 0;
     private int currentTurn = 0;
     private int opponentLife = 20;
     private int opponentPoisonCounters = 0;
-    private boolean landed = false;
+
     private Cards library;
     private Cards hand;
 
@@ -30,27 +38,38 @@ public class Game {
     private Cards exile = Cards.none();
     private Cards graveyard = Cards.none();
     private Cards tapped = Cards.none();
+
+    private List<Counters> counters = new ArrayList<>();
+
+    // turn and phase state
+    private Phase currentPhase;
+    private boolean landed = false;
     private Mana pool = Mana.zero();
 
-    private final PrintWriter logs;
 
-    Game(boolean onThePlay, PrintWriter logs) {
+    protected Game(boolean onThePlay, PrintWriter logs) {
         this.onThePlay = onThePlay;
         this.logs = logs;
     }
 
-    void keepHandAndStart(Cards library, Cards hand) {
+    protected void keepHandAndStart(Cards library, Cards hand) {
         this.library = library;
         this.hand = hand;
         log("hand #" + mulligans + " " + hand + " kept");
     }
 
-    void rejectHand(Cards hand) {
+    protected void rejectHand(Cards hand) {
         log("hand #" + mulligans + " " + hand + " rejected: take mulligan");
         mulligans++;
     }
 
-    Cards area(Area area) {
+    /**
+     * Returns the cards releated to the given area
+     *
+     * @param area area
+     * @return cards
+     */
+    protected Cards area(Area area) {
         switch (area) {
             case hand:
                 return hand;
@@ -67,10 +86,10 @@ public class Game {
         }
     }
 
-    Game startNextTurn() {
+    protected Game startNextTurn() {
         currentTurn++;
         landed = false;
-        emptyPool();
+        _emptyPool();
 
         // log
         log("=== Turn " + currentTurn + " ===");
@@ -90,31 +109,31 @@ public class Game {
         return this;
     }
 
-    Game emptyPool() {
+    protected Game startPhase(Phase phase) {
+        _emptyPool();
+        currentPhase = phase;
+        return this;
+    }
+
+    protected Game _emptyPool() {
         pool = Mana.zero();
         return this;
     }
 
-    private Game pay(Mana cost, boolean log) {
+    protected Game _pay(Mana cost) {
         if (!canPay(cost)) {
             throw new IllegalActionException("Can't pay " + cost + ": not enough mana in pool (" + pool + ")");
-        }
-        if (log) {
-            log("- pay " + cost);
         }
         pool = pool.minus(cost);
         return this;
     }
 
-    private Game add(Mana mana, boolean log) {
-        if (log) {
-            log("- add " + mana + " to mana pool");
-        }
+    protected Game _add(Mana mana) {
         pool = pool.plus(mana);
         return this;
     }
 
-    private Game tap(String cardName, boolean log) {
+    protected Game _tap(String cardName) {
         int countOnBoard = board.count(cardName);
         if (countOnBoard == 0) {
             throw new IllegalActionException("Can't tap [" + cardName + "]: not on board");
@@ -123,39 +142,27 @@ public class Game {
         if (countTapped >= countOnBoard) {
             throw new IllegalActionException("Can't tap [" + cardName + "]: all tapped");
         }
-        if (log) {
-            log("- tap [" + cardName + "]");
-        }
         tapped.add(cardName);
         return this;
     }
 
-    private Game untap(String cardName, boolean log) {
+    protected Game _untap(String cardName) {
         if (!board.contains(cardName)) {
             throw new IllegalActionException("Can't untap [" + cardName + "]: not on board");
-        }
-        if (log) {
-            log("- tap [" + cardName + "]");
         }
         tapped.remove(cardName);
         return this;
     }
 
-    private Game damageOpponent(int damage, boolean log) {
+    protected Game _damageOpponent(int damage) {
         opponentLife -= damage;
-        if (log) {
-            log("- damage: " + damage + " (remains: " + opponentLife + ")");
-        }
         return this;
     }
 
-    private Game move(String cardName, Area from, Area to, Side side, boolean log) {
+    protected Game _move(String cardName, Area from, Area to, Side side) {
         Cards fromArea = area(from);
         if (!fromArea.contains(cardName)) {
             throw new IllegalActionException("Can't move [" + cardName + "]: not in " + from);
-        }
-        if (log) {
-            log("- move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
         }
         fromArea.remove(cardName);
         if (side == Side.top) {
@@ -170,12 +177,36 @@ public class Game {
     }
 
     /**
+     * Add a counter of the given type on the given cards
+     *
+     * @param type   counter type
+     * @param card   card name
+     * @param area   card area
+     * @param number number of counters
+     */
+    public Game addCounter(String type, String card, Area area, int number) {
+        counters.add(Counters.builder().type(type).card(card).area(area).number(number).build());
+        return this;
+    }
+
+    /**
+     * Returns all counters of the given type
+     *
+     * @param type counter type
+     * @return list of counters
+     */
+    public List<Counters> counters(String type) {
+        return counters.stream().filter(ct -> ct.getType().equals(type)).collect(Collectors.toList());
+    }
+
+    /**
      * Pay the given mana from mana pool
      *
      * @param cost mana cost
      */
     public Game pay(Mana cost) {
-        return pay(cost, true);
+        log("- pay " + cost);
+        return _pay(cost);
     }
 
     /**
@@ -184,7 +215,8 @@ public class Game {
      * @param mana mana to add
      */
     public Game add(Mana mana) {
-        return add(mana, true);
+        log("- add " + mana + " to mana pool");
+        return _add(mana);
     }
 
     /**
@@ -202,7 +234,8 @@ public class Game {
      * @param cardName card name
      */
     public Game tap(String cardName) {
-        return tap(cardName, true);
+        log("- tap [" + cardName + "]");
+        return _tap(cardName);
     }
 
     /**
@@ -213,8 +246,8 @@ public class Game {
      */
     public Game tapLandForMana(String cardName, Mana mana) {
         log("- tap [" + cardName + "] and add " + mana + " to mana pool");
-        tap(cardName, false);
-        add(mana, false);
+        _tap(cardName);
+        _add(mana);
         return this;
     }
 
@@ -225,9 +258,9 @@ public class Game {
      * @param strength creature strength
      */
     public Game tapForAttack(String cardName, int strength) {
-        log("- attack with [" + cardName + "] for " + strength);
-        tap(cardName, false);
-        damageOpponent(strength, false);
+        log("- attack with [" + cardName + "] for " + strength + " (" + opponentLife + "->" + (opponentLife - strength) + ")");
+        _damageOpponent(strength);
+        _tap(cardName);
         return this;
     }
 
@@ -237,7 +270,8 @@ public class Game {
      * @param cardName card name
      */
     public Game untap(String cardName) {
-        return untap(cardName, true);
+        log("- untap [" + cardName + "]");
+        return _untap(cardName);
     }
 
     /**
@@ -268,6 +302,24 @@ public class Game {
     public int countUntapped(String... cards) {
         return getUntapped(cards).size();
     }
+
+//    /**
+//     * Returns all tapped cards on the board matching the card names
+//     *
+//     * @param cards cards to select
+//     */
+//    public Cards getTapped(String... cards) {
+//        return tapped.findAll(cards);
+//    }
+//
+//    /**
+//     * Counts all tapped cards on the board matching the card names
+//     *
+//     * @param cards cards to select
+//     */
+//    public int countTapped(String... cards) {
+//        return tapped.count(cards);
+//    }
 
     /**
      * Looks for the first untapped card matching one of the given names
@@ -308,8 +360,19 @@ public class Game {
      *
      * @param damage damage amount
      */
+    public Game damageOpponent(int damage, String reason) {
+        log("- damage" + (reason == null ? "" : " (" + reason + ")") + ": " + damage + " (" + opponentLife + "->" + (opponentLife - damage) + ")");
+        _damageOpponent(damage);
+        return this;
+    }
+
+    /**
+     * Damage opponent
+     *
+     * @param damage damage amount
+     */
     public Game damageOpponent(int damage) {
-        return damageOpponent(damage, true);
+        return damageOpponent(damage, null);
     }
 
     /**
@@ -353,7 +416,8 @@ public class Game {
      * @param side     side of the target area
      */
     public Game move(String cardName, Area from, Area to, Side side) {
-        return move(cardName, from, to, side, true);
+        log("- move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
+        return _move(cardName, from, to, side);
     }
 
     /**
@@ -377,8 +441,8 @@ public class Game {
      */
     public Game cast(String cardName, Area from, Area to, Mana cost) {
         log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
-        pay(cost, false);
-        move(cardName, from, to, Side.top, false);
+        _pay(cost);
+        _move(cardName, from, to, Side.top);
         return this;
     }
 
@@ -409,7 +473,7 @@ public class Game {
      */
     public Game discard(String cardName) {
         log("- discard [" + cardName + "]");
-        move(cardName, Area.hand, Area.graveyard, Side.top, false);
+        _move(cardName, Area.hand, Area.graveyard, Side.top);
         return this;
     }
 
@@ -432,7 +496,7 @@ public class Game {
      */
     public Game sacrifice(String cardName) {
         log("- sacrifice [" + cardName + "]");
-        move(cardName, Area.board, Area.graveyard, Side.top, false);
+        _move(cardName, Area.board, Area.graveyard, Side.top);
         return this;
     }
 
@@ -443,7 +507,7 @@ public class Game {
      */
     public Game destroy(String cardName) {
         log("- destroy [" + cardName + "]");
-        move(cardName, Area.board, Area.graveyard, Side.top, false);
+        _move(cardName, Area.board, Area.graveyard, Side.top);
         return this;
     }
 

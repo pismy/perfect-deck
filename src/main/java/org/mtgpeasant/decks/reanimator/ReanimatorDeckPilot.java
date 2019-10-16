@@ -1,4 +1,4 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.reanimator;
 
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Optional;
 
-public class ReanimatorDeckPilot extends DeckPilot {
+public class ReanimatorDeckPilot extends DeckPilot<Game> {
 //    boolean firstCreaKilled = false;
 
     public static final Mana B = Mana.of("B");
@@ -66,7 +66,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
 
     @Override
     public void start() {
-        getRid(game.getMulligans());
+        putOnBottomOfLibrary(game.getMulligans());
 //        firstCreaKilled = false;
     }
 
@@ -90,19 +90,19 @@ public class ReanimatorDeckPilot extends DeckPilot {
             // I have a monster in the graveyard: I must now reanimate
             Cards reanimators = game.getHand().findAll(REANIMATORS_1B);
             if (game.getHand().contains(REANIMATE) && canPay(B)) {
-                pay(B);
+                produce(B);
                 game.castNonPermanent(REANIMATE, B);
                 String monster = monstersInGy.getFirst();
                 game.move(monster, Game.Area.graveyard, Game.Area.board);
                 return true;
             } else if (!reanimators.isEmpty() && canPay(B1)) {
-                pay(B1);
+                produce(B1);
                 game.castNonPermanent(reanimators.getFirst(), B1);
                 String monster = monstersInGy.getFirst();
                 game.move(monster, Game.Area.graveyard, Game.Area.board);
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                pay(R);
+                produce(R);
                 game
                         .castNonPermanent(FAITHLESS_LOOTING, R)
                         .draw(2);
@@ -110,13 +110,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
                 // cycle
-                pay(Mana.of("2"));
+                produce(Mana.of("2"));
                 game
                         .discard(GREATER_SANDWURM)
                         .draw(1);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                pay(R2);
+                produce(R2);
                 game
                         .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
                         .draw(2);
@@ -127,7 +127,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         } else if (monstersInHand.isEmpty()) {
             // no monster in hand: can I look for one ?
             if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                pay(R);
+                produce(R);
                 game
                         .castNonPermanent(FAITHLESS_LOOTING, R)
                         .draw(2);
@@ -135,7 +135,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 discard(2);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                pay(R2);
+                produce(R2);
                 game
                         .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
                         .draw(2);
@@ -150,14 +150,14 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 game.discard(monstersInHand.getFirst());
                 return true;
             } else if (game.getHand().contains(PUTRID_IMP) && canPay(B)) {
-                pay(B);
+                produce(B);
                 game
                         .castPermanent(PUTRID_IMP, B)
                         // discard a monster (any)
                         .discard(monstersInHand.getFirst());
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                pay(R);
+                produce(R);
                 game
                         .castNonPermanent(FAITHLESS_LOOTING, R)
                         .draw(2);
@@ -165,13 +165,13 @@ public class ReanimatorDeckPilot extends DeckPilot {
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
                 // cycle
-                pay(Mana.of("2"));
+                produce(Mana.of("2"));
                 game
                         .discard(GREATER_SANDWURM)
                         .draw(1);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                pay(R2);
+                produce(R2);
                 game
                         .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
                         .draw(2);
@@ -197,7 +197,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
         // cast imp if none
         if (!game.getBoard().contains(PUTRID_IMP) && game.getHand().contains(PUTRID_IMP) && canPay(B)) {
-            pay(B);
+            produce(B);
             game
                     .castPermanent(PUTRID_IMP, B);
         }
@@ -212,7 +212,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         }
     }
 
-    void getRid(int number) {
+    void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
             // extra creatures
             Cards creatures = game.getHand().findAll(CREATURES);
@@ -428,7 +428,7 @@ public class ReanimatorDeckPilot extends DeckPilot {
         return true;
     }
 
-    void pay(Mana toPay) {
+    void produce(Mana toPay) {
         // draw required X from Vestiges
         int untappedVestiges = game.getBoard().count(CRUMBLING_VESTIGE) - game.getTapped().count(CRUMBLING_VESTIGE);
         if (toPay.getX() > 0 && untappedVestiges > 0) {

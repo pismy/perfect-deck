@@ -1,0 +1,38 @@
+package org.mtgpeasant.decks.burn;
+
+public interface BurnCards {
+    // LANDS
+    String MOUNTAIN = "mountain";
+    String FORGOTTEN_CAVE = "forgotten cave";
+
+    // CREATURES
+    String MONASTERY_SWIFTSPEAR = "monastery swiftspear"; // R: haste; prowess +1/+1; 1/2
+    String THERMO_ALCHEMIST = "thermo-alchemist";
+    String KELDON_MARAUDERS = "keldon marauders";
+    String GHITU_LAVARUNNER = "ghitu lavarunner"; // R: 1/2; if 2 or more instant/sorcery in GY: haste and +1/+0
+    String ORCISH_HELLRAISER = "orcish hellraiser"; // 1R: 3/2; echo R; when dies: 2 damage to target player
+    String VIASHINO_PYROMANCER = "viashino pyromancer"; // 1R: 2/1; 2 damage when enters the board
+    String FIREBRAND_ARCHER = "firebrand archer"; // 1R: 2/1; 1 damage for each non-crea spell
+    String ELECTROSTATIC_FIELD = "electrostatic field"; // 1R: 0/4 wall; 1 damage for each instant or sorcery spell
+
+    // BURN
+    String RIFT_BOLT = "rift bolt"; // 2R: 3 damage; suspend 1: R
+    String FIREBLAST = "fireblast"; // sac 2 moutains: 4 damage
+    String LAVA_SPIKE = "lava spike"; // R: 3 damage
+    String LIGHTNING_BOLT = "lightning bolt"; // R: 3 damage
+    String SKEWER_THE_CRITICS = "skewer the critics"; // 2R: 3 damage; spectacle: R
+    String LAVA_DART = "lava dart"; // R: 1 damage; flashback: sac mountain
+    String LAVA_DART_FB = "lava dart - flashback"; // R: 1 damage; flashback: sac mountain
+    String NEEDLE_DROP = "needle drop"; // R: 3 damage
+    String CHAIN_LIGHTNING = "chain lightning"; // R: 3 damage
+    String FORKED_BOLT = "forked bolt"; // R: 2 damage
+    String SEARING_BLAZE = "searing blaze"; // RR: 1 damage to creature and controller; landfall: 3 damage instead
+    String MAGMA_JET = "magma jet"; // 1R: 2 damage, scry 2
+    String VOLCANIC_FALLOUT = "volcanic fallout"; // 1RR: 2 damage to each creature and player
+    String FLAME_RIFT = "flame rift"; // 1R: 4 damage to each player
+
+    // OTHERS
+    String CURSE_OF_THE_PIERCED_HEART = "curse of the pierced heart";
+    String GITAXIAN_PROBE = "gitaxian probe";
+    String LIGHT_UP_THE_STAGE = "light up the stage"; // 2R: exile 2 top card from library, can play until end of my next turn; spectacle: R
+}

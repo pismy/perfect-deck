@@ -15,11 +15,11 @@
 
 # mana
 #3 Dark Ritual
-2 Simian Spirit Guide
+3 Simian Spirit Guide
 4 Lotus Petal
 4 Crumbling Vestige
 5 Mountain
-10 Swamp
+9 Swamp
 
 # others
 3 Dragon Breath

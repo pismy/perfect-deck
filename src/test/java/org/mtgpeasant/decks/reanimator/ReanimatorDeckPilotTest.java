@@ -1,6 +1,7 @@
-package org.mtgpeasant.decks;
+package org.mtgpeasant.decks.reanimator;
 
 import org.junit.Test;
+import org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -53,7 +54,7 @@ public class ReanimatorDeckPilotTest {
         ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);
 
         // WHEN
-        pilot.pay(Mana.of("2"));
+        pilot.produce(Mana.of("2"));
 
         // THEN
         assertThat(game.getBoard()).containsExactlyInAnyOrder("mountain", "swamp");
