@@ -1,7 +1,6 @@
 package org.mtgpeasant.decks.reanimator;
 
 import org.junit.Test;
-import org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;

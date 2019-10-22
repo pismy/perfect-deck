@@ -187,7 +187,7 @@ public class GoldfishSimulator {
         Class<? extends Game> gameClass = (Class) ((ParameterizedType) pilotClass.getGenericSuperclass()).getActualTypeArguments()[0];
         Game game = null;
         try {
-            Constructor<? extends Game> constructor = gameClass.getConstructor(Boolean.TYPE, PrintWriter.class);
+            Constructor<? extends Game> constructor = gameClass.getDeclaredConstructor(Boolean.TYPE, PrintWriter.class);
             constructor.setAccessible(true);
             game = constructor.newInstance(onThePlay, writer);
         } catch (Exception e) {
@@ -198,7 +198,9 @@ public class GoldfishSimulator {
         // instantiate deck pilot (from class)
         DeckPilot pilot = null;
         try {
-            pilot = pilotClass.getConstructor(gameClass).newInstance(game);
+            Constructor<? extends DeckPilot> constructor = pilotClass.getDeclaredConstructor(gameClass);
+            constructor.setAccessible(true);
+            pilot = constructor.newInstance(game);
         } catch (Exception e) {
             throw new RuntimeException("Couldn't instantiate pilot of type " + pilotClass.getSimpleName(), e);
         }
