@@ -14,44 +14,43 @@ import java.util.Optional;
 public class StompyDeckPilot extends DeckPilot<Game> {
 
     private static final Mana ONE = Mana.of("1");
-    public static final Mana G = Mana.of("G");
-    public static final Mana G1 = Mana.of("1G");
-    public static final Mana G2 = Mana.of("2G");
-    public static final Mana GG = Mana.of("GG");
-    public static final Mana TWO = Mana.of("2");
+    private static final Mana G = Mana.of("G");
+    private static final Mana G1 = Mana.of("1G");
+    private static final Mana G2 = Mana.of("2G");
+    private static final Mana GG = Mana.of("GG");
 
     // LANDS
-    public static final String FOREST = "forest";
+    private static final String FOREST = "forest";
 
     // CREATURES
-    public static final String QUIRION_RANGER = "quirion ranger";
-    public static final String NETTLE_SENTINEL = "nettle sentinel";
-    public static final String SKARRGAN_PIT_SKULK = "skarrgan pit-skulk";
-    public static final String VAULT_SKIRGE = "vault skirge";
-    public static final String NEST_INVADER = "nest invader";
-    public static final String BURNING_TREE_EMISSARY = "burning-tree emissary";
-    public static final String SAFEHOLD_ELITE = "safehold elite";
-    public static final String SILHANA_LEDGEWALKER = "silhana ledgewalker";
-    public static final String YOUNG_WOLF = "young wolf";
-    public static final String RIVER_BOA = "river boa";
-    public static final String STRANGLEROOT_GEIST = "strangleroot geist";
-    public static final String LLANOWAR_ELVES = "llanowar elves";
-    public static final String FYNDHORN_ELVES = "fyndhorn elves";
-    public static final String ELDRAZI_SPAWN = "eldrazi spawn";
+    private static final String QUIRION_RANGER = "quirion ranger";
+    private static final String NETTLE_SENTINEL = "nettle sentinel";
+    private static final String SKARRGAN_PIT_SKULK = "skarrgan pit-skulk";
+    private static final String VAULT_SKIRGE = "vault skirge";
+    private static final String NEST_INVADER = "nest invader";
+    private static final String BURNING_TREE_EMISSARY = "burning-tree emissary";
+    private static final String SAFEHOLD_ELITE = "safehold elite";
+    private static final String SILHANA_LEDGEWALKER = "silhana ledgewalker";
+    private static final String YOUNG_WOLF = "young wolf";
+    private static final String RIVER_BOA = "river boa";
+    private static final String STRANGLEROOT_GEIST = "strangleroot geist";
+    private static final String LLANOWAR_ELVES = "llanowar elves";
+    private static final String FYNDHORN_ELVES = "fyndhorn elves";
+    private static final String ELDRAZI_SPAWN = "eldrazi spawn";
     private static final String[] CREATURES = {QUIRION_RANGER, NETTLE_SENTINEL, SKARRGAN_PIT_SKULK, VAULT_SKIRGE, NEST_INVADER, BURNING_TREE_EMISSARY, SAFEHOLD_ELITE, SILHANA_LEDGEWALKER, YOUNG_WOLF, RIVER_BOA, STRANGLEROOT_GEIST, LLANOWAR_ELVES, FYNDHORN_ELVES, ELDRAZI_SPAWN};
 
     // BOOSTS
-    public static final String RANCOR = "rancor";
-    public static final String VINES_OF_VASTWOOD = "vines of vastwood"; // (instant) GG: +4/+4
-    public static final String CURSE_OF_PREDATION = "curse of predation";
-    public static final String HUNGER_OF_THE_HOWLPACK = "hunger of the howlpack";
-    public static final String ASPECT_OF_HYDRA = "aspect of hydra";
-    public static final String SAVAGE_SWIPE = "savage swipe";
+    private static final String RANCOR = "rancor";
+    private static final String VINES_OF_VASTWOOD = "vines of vastwood"; // (instant) GG: +4/+4
+    private static final String CURSE_OF_PREDATION = "curse of predation";
+    private static final String HUNGER_OF_THE_HOWLPACK = "hunger of the howlpack";
+    private static final String ASPECT_OF_HYDRA = "aspect of hydra";
+    private static final String SAVAGE_SWIPE = "savage swipe";
 
     // OTHERS
-    public static final String GITAXIAN_PROBE = "gitaxian probe";
-    public static final String LAND_GRANT = "land grant";
-    public static final String DISMEMBER = "dismember";
+    private static final String GITAXIAN_PROBE = "gitaxian probe";
+    private static final String LAND_GRANT = "land grant";
+    private static final String DISMEMBER = "dismember";
 
     private static MulliganRules rules;
 

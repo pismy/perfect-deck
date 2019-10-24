@@ -20,41 +20,41 @@ import java.util.stream.Stream;
 
 public class InfectDeckPilot extends DeckPilot<Game> {
 
-    public static final Mana G = Mana.of("G");
-    public static final Mana G1 = Mana.of("1G");
-    public static final Mana GG = Mana.of("GG");
-    public static final Mana TWO = Mana.of("2");
+    private static final Mana G = Mana.of("G");
+    private static final Mana G1 = Mana.of("1G");
+    private static final Mana GG = Mana.of("GG");
+    private static final Mana TWO = Mana.of("2");
 
     // LANDS
-    public static final String FOREST = "forest";
-    public static final String PENDELHAVEN = "pendelhaven";
+    private static final String FOREST = "forest";
+    private static final String PENDELHAVEN = "pendelhaven";
 
     // CREATURES
-    public static final String ICHORCLAW_MYR = "ichorclaw myr";
-    public static final String GLISTENER_ELF = "glistener elf";
-    public static final String BLIGHT_MAMBA = "blight mamba";
+    private static final String ICHORCLAW_MYR = "ichorclaw myr";
+    private static final String GLISTENER_ELF = "glistener elf";
+    private static final String BLIGHT_MAMBA = "blight mamba";
 
     // BOOSTS
-    public static final String RANCOR = "rancor"; //
-    public static final String SEAL_OF_STRENGTH = "seal of strength"; // (enchant) G: sacrifice: +3/+3
-    public static final String SCALE_UP = "scale up"; // G: crea become 6/4
-    public static final String VINES_OF_VASTWOOD = "vines of vastwood"; // (instant) GG: +4/+4
-    public static final String GIANT_GROWTH = "giant growth";
-    public static final String LARGER_THAN_LIFE = "larger than life"; // 1G: +4/+4
-    public static final String INVIGORATE = "invigorate"; // (free if forest on board) +4/+4
-    public static final String MUTAGENIC_GROWTH = "mutagenic growth"; // (-2 life): +2/+2
-    public static final String GROUNDSWELL = "groundswell"; // G: +2/+2; landfall: +4/+4
-    public static final String RANGER_S_GUILE = "ranger's guile"; // G: +1/+1
-    public static final String MIGHT_OF_OLD_KROSA = "might of old krosa"; // G: +4/+4 on your turn
-    public static final String BLOSSOMING_DEFENSE = "blossoming defense"; // G: +2/+2
+    private static final String RANCOR = "rancor"; //
+    private static final String SEAL_OF_STRENGTH = "seal of strength"; // (enchant) G: sacrifice: +3/+3
+    private static final String SCALE_UP = "scale up"; // G: crea become 6/4
+    private static final String VINES_OF_VASTWOOD = "vines of vastwood"; // (instant) GG: +4/+4
+    private static final String GIANT_GROWTH = "giant growth";
+    private static final String LARGER_THAN_LIFE = "larger than life"; // 1G: +4/+4
+    private static final String INVIGORATE = "invigorate"; // (free if forest on board) +4/+4
+    private static final String MUTAGENIC_GROWTH = "mutagenic growth"; // (-2 life): +2/+2
+    private static final String GROUNDSWELL = "groundswell"; // G: +2/+2; landfall: +4/+4
+    private static final String RANGER_S_GUILE = "ranger's guile"; // G: +1/+1
+    private static final String MIGHT_OF_OLD_KROSA = "might of old krosa"; // G: +4/+4 on your turn
+    private static final String BLOSSOMING_DEFENSE = "blossoming defense"; // G: +2/+2
 
     // FREE MANA
-    public static final String LOTUS_PETAL = "lotus petal";
+    private static final String LOTUS_PETAL = "lotus petal";
 
     // OTHERS
-    public static final String GITAXIAN_PROBE = "gitaxian probe";
-    public static final String MENTAL_MISSTEP = "mental misstep";
-    public static final String APOSTLE_S_BLESSING = "apostle's blessing";
+    private static final String GITAXIAN_PROBE = "gitaxian probe";
+    private static final String MENTAL_MISSTEP = "mental misstep";
+    private static final String APOSTLE_S_BLESSING = "apostle's blessing";
 
     private static String[] MANA_PRODUCERS = new String[]{PENDELHAVEN, FOREST, LOTUS_PETAL};
     private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA};

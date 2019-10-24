@@ -13,29 +13,29 @@ import java.util.Optional;
 public class ReanimatorDeckPilot extends DeckPilot<Game> {
 //    boolean firstCreaKilled = false;
 
-    public static final Mana B = Mana.of("B");
-    public static final Mana B1 = Mana.of("1B");
-    public static final Mana R = Mana.of("R");
-    public static final Mana R2 = Mana.of("2R");
-    public static final Mana X = Mana.of("1");
+    private static final Mana B = Mana.of("B");
+    private static final Mana B1 = Mana.of("1B");
+    private static final Mana R = Mana.of("R");
+    private static final Mana R2 = Mana.of("2R");
+    private static final Mana X = Mana.of("1");
 
-    public static final String SWAMP = "swamp";
-    public static final String MOUNTAIN = "mountain";
-    public static final String CRUMBLING_VESTIGE = "crumbling vestige";
-    public static final String LOTUS_PETAL = "lotus petal";
-    public static final String DARK_RITUAL = "dark ritual";
-    public static final String SIMIAN_SPIRIT_GUIDE = "simian spirit guide";
-    public static final String EXHUME = "exhume";
-    public static final String ANIMATE_DEAD = "animate dead";
-    public static final String HAND_OF_EMRAKUL = "hand of emrakul";
-    public static final String GREATER_SANDWURM = "greater sandwurm";
-    public static final String PATHRAZER_OF_ULAMOG = "pathrazer of ulamog";
-    public static final String ULAMOG_S_CRUSHER = "ulamog's crusher";
-    public static final String PUTRID_IMP = "putrid imp";
-    public static final String FAITHLESS_LOOTING = "faithless looting";
-    public static final String REANIMATE = "reanimate";
-    public static final String GITAXIAN_PROBE = "gitaxian probe";
-    public static final String DRAGON_BREATH = "dragon breath";
+    private static final String SWAMP = "swamp";
+    private static final String MOUNTAIN = "mountain";
+    private static final String CRUMBLING_VESTIGE = "crumbling vestige";
+    private static final String LOTUS_PETAL = "lotus petal";
+    private static final String DARK_RITUAL = "dark ritual";
+    private static final String SIMIAN_SPIRIT_GUIDE = "simian spirit guide";
+    private static final String EXHUME = "exhume";
+    private static final String ANIMATE_DEAD = "animate dead";
+    private static final String HAND_OF_EMRAKUL = "hand of emrakul";
+    private static final String GREATER_SANDWURM = "greater sandwurm";
+    private static final String PATHRAZER_OF_ULAMOG = "pathrazer of ulamog";
+    private static final String ULAMOG_S_CRUSHER = "ulamog's crusher";
+    private static final String PUTRID_IMP = "putrid imp";
+    private static final String FAITHLESS_LOOTING = "faithless looting";
+    private static final String REANIMATE = "reanimate";
+    private static final String GITAXIAN_PROBE = "gitaxian probe";
+    private static final String DRAGON_BREATH = "dragon breath";
 
     private static String[] REANIMATORS_1B = new String[]{EXHUME, ANIMATE_DEAD};
     // ordered by power / interest to discard
