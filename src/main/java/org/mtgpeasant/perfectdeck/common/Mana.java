@@ -86,13 +86,14 @@ public class Mana {
         if (!contains(other)) {
             throw new IllegalArgumentException("Can't remove " + other + " mana from " + this);
         }
-        return new Mana(
+        Mana result = new Mana(
                 B - other.B,
                 U - other.U,
                 G - other.G,
                 R - other.R,
                 W - other.W,
                 X - other.X);
+        return result.ccm() == 0 ? zero() : result;
     }
 
     public boolean isEmpty() {

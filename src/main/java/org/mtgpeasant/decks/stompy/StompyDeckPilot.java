@@ -213,18 +213,30 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 countVines--;
                 potentialPool = potentialPool.minus(GG);
             }
+            int countSwipes = game.getHand().count(SAVAGE_SWIPE);
+            while (potentialPool.contains(G) && countSwipes > 0) {
+                potentialBoost += 2;
+                countSwipes--;
+                potentialPool = potentialPool.minus(G);
+            }
             if (potentialBoost >= game.getOpponentLife()) {
                 game.log(">> I can rush now");
                 while (game.getHand().contains(ASPECT_OF_HYDRA) && canPay(G)) {
                     produce(G);
                     game.castNonPermanent(ASPECT_OF_HYDRA, G)
-                            .damageOpponent(devotion, "aspect of hydra boost");
+                            .damageOpponent(devotion, "aspect of hydra +" + devotion + "/+" + devotion);
                     triggerNettle();
                 }
                 while (game.getHand().contains(VINES_OF_VASTWOOD) && canPay(GG)) {
                     produce(GG);
                     game.castNonPermanent(VINES_OF_VASTWOOD, GG)
-                            .damageOpponent(4, "vines boost");
+                            .damageOpponent(4, "vines +4/+4");
+                    triggerNettle();
+                }
+                while (game.getHand().contains(SAVAGE_SWIPE) && canPay(G)) {
+                    produce(G);
+                    game.castNonPermanent(SAVAGE_SWIPE, G)
+                            .damageOpponent(2, "savage swipe +2/+2");
                     triggerNettle();
                 }
             }

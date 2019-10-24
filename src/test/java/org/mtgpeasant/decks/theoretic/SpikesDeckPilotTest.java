@@ -1,7 +1,6 @@
 package org.mtgpeasant.decks.theoretic;
 
 import org.junit.Test;
-import org.mtgpeasant.decks.theoretic.SpikesDeckPilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
@@ -10,7 +9,7 @@ import java.io.IOException;
 
 public class SpikesDeckPilotTest {
     @Test
-    public void goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/spikes-deck.txt"),
                 SpikesDeckPilot.class.getName(),

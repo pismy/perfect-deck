@@ -1,7 +1,6 @@
 package org.mtgpeasant.decks.theoretic;
 
 import org.junit.Test;
-import org.mtgpeasant.decks.theoretic.KarstenAggroDeck1Pilot;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
@@ -10,9 +9,9 @@ import java.io.IOException;
 
 public class KarstenAggroDeck1PilotTest {
     @Test
-    public void karsten_aggro_deck1_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void karsten_aggro_deck1_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/theoretic-deck-1.txt"),
+                new File("src/main/resources/karsten-deck-1.txt"),
                 KarstenAggroDeck1Pilot.class.getName(),
                 50000,
                 GoldfishSimulator.Start.BOTH,
@@ -23,9 +22,9 @@ public class KarstenAggroDeck1PilotTest {
 
 
     @Test
-    public void karsten_aggro_deck1_observe() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void karsten_aggro_deck1_observe() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/theoretic-deck-1.txt"),
+                new File("src/main/resources/karsten-deck-1.txt"),
                 KarstenAggroDeck1Pilot.class.getName(),
                 3,
                 GoldfishSimulator.Start.BOTH,
