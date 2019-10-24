@@ -1,0 +1,12 @@
+# ============
+# === Matchers
+# ============
+<G>: [Forest] | [Land Grant]
+<+G>: [Forest] | [Land Grant] | [Quirion Ranger] | [Llanowar Elves] | [Fyndhorn Elves]
+<creature>: [Quirion Ranger] | [Nettle Sentinel] | [Skarrgan Pit-Skulk] | [Vault Skirge] | [Nest Invader] | [Burning-Tree Emissary] | [Safehold Elite] | [Silhana Ledgewalker] | [Young Wolf] | [River Boa] | [Strangleroot Geist] | [Llanowar Elves] | [Fyndhorn Elves]
+<boost>: [Rancor] | [Curse of Predation] | [Vines of Vastwood] | [Hunger of the Howlpack] | [Aspect of Hydra] | [Savage Swipe]
+
+# ======================
+# === Hand keeping rules
+# ======================
+<<two mana, 2 crea and 1 boost>>: <G> & <+G> & <creature> & <boost>

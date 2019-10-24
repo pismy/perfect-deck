@@ -1,35 +1,33 @@
-# discard
+// discard
 4 Faithless Looting
 3 Putrid Imp
 
-# reanimation
+// reanimation
 4 Animate Dead
 4 Exhume
 1 Reanimate
 
-# creatures
+// creatures
 4 Hand of Emrakul
 4 Greater Sandwurm
-#1 Pathrazer of Ulamog
 4 Ulamog's Crusher
 
-# mana
-#3 Dark Ritual
+// mana
 3 Simian Spirit Guide
 4 Lotus Petal
 4 Crumbling Vestige
 5 Mountain
 9 Swamp
 
-# others
+// others
 3 Dragon Breath
 4 Gitaxian Probe
-#2 Shred Memory
 
-# Sideboard:
+// Sideboard
 SB 3 Apostle's Blessing
-SB 4 Duress
+SB 3 Duress
 SB 2 Electrickery
 SB 2 Mind Rake
 SB 2 Pyroblast
 SB 2 Shenanigans
+SB 1 Darkness
