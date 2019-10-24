@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class StompyDeckPilotTest {
     @Test
-    public void stompy_deck_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void stompy_deck_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/stompy-deck.txt"),
                 StompyDeckPilot.class.getName(),
@@ -21,7 +21,7 @@ public class StompyDeckPilotTest {
     }
 
     @Test
-    public void stompy_deck_observe() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public void stompy_deck_observe() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
                 new File("src/main/resources/stompy-deck.txt"),
                 StompyDeckPilot.class.getName(),
