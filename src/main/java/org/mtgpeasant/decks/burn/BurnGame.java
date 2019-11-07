@@ -6,6 +6,7 @@ import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Extends {@link Game} and manages several burn specific stuff:
@@ -24,21 +25,30 @@ class BurnGame extends Game implements BurnCards {
         super(onThePlay, logs);
     }
 
+    /**
+     * Override to rest turn state
+     */
     @Override
-    protected Game startNextTurn() {
+    protected void startNextTurn() {
+        super.startNextTurn();
         damageDealtThisTurn = 0;
         prowessBoost = 0;
-        return super.startNextTurn();
     }
 
+    /**
+     * Override to keep track of damage dealt this turn
+     */
     @Override
-    protected Game _damageOpponent(int damage) {
+    protected void _damageOpponent(int damage) {
+        super._damageOpponent(damage);
         damageDealtThisTurn += damage;
-        return super._damageOpponent(damage);
     }
 
+    /**
+     * Override to implement triggers
+     */
     @Override
-    public Game cast(String cardName, Area from, Area to, Mana cost) {
+    public void cast(String cardName, Area from, Area to, Mana cost) {
         super.cast(cardName, from, to, cost);
 
         CardType type = typeof(cardName);
@@ -58,6 +68,9 @@ class BurnGame extends Game implements BurnCards {
             if (instantsAndSorceriesInGY >= 2) {
                 getTapped().findAll(GHITU_LAVARUNNER).forEach(this::untap);
             }
+
+            // trigger all untapped kiln
+            prowessBoost += countUntapped(KILN_FIEND) * 3;
         }
 
         // trigger non-creatures
@@ -65,80 +78,25 @@ class BurnGame extends Game implements BurnCards {
             // trigger all archer
             getBoard().findAll(FIREBRAND_ARCHER).forEach(archer -> damageOpponent(1, "firebrand trigger"));
 
-            // prowess
+            // monastery prowess
             prowessBoost += getBoard().count(MONASTERY_SWIFTSPEAR) * 1;
         }
 
         // if it was a creature: tap it unless it has haste (to simulate summoning sickness)
         if (type == CardType.creature) {
-            if (cardName != MONASTERY_SWIFTSPEAR && (cardName != GHITU_LAVARUNNER || countInGraveyard(CardType.instant, CardType.sorcery) < 2)) {
+            if(cardName.equals(MONASTERY_SWIFTSPEAR) || (cardName.equals(GHITU_LAVARUNNER) && countInGraveyard(CardType.instant, CardType.sorcery) >= 2)) {
+                // create has haste: leave untap
+            } else {
                 // doesn't have haste: tap
                 tap(cardName);
             }
         }
-
-        return this;
     }
 
     public int countInGraveyard(CardType... types) {
-        return Arrays.stream(types).mapToInt(type -> getGraveyard().count(this.cardsOfType(type))).sum();
+        List<CardType> typesList = Arrays.asList(types);
+        return (int)getGraveyard().stream().filter(card -> typesList.contains(typeof(card))).count();
+//        return Arrays.stream(types).mapToInt(type -> getGraveyard().count(this.cardsOfType(type))).sum();
     }
 
-    String[] cardsOfType(CardType type) {
-        switch (type) {
-            case creature:
-                return new String[]{MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER, FIREBRAND_ARCHER};
-            case enchantment:
-                return new String[]{CURSE_OF_THE_PIERCED_HEART};
-            case instant:
-                return new String[]{FIREBLAST, LIGHTNING_BOLT, NEEDLE_DROP, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT};
-            case land:
-                return new String[]{MOUNTAIN, FORGOTTEN_CAVE};
-            case sorcery:
-                return new String[]{RIFT_BOLT, LAVA_SPIKE, SKEWER_THE_CRITICS, CHAIN_LIGHTNING, FORKED_BOLT, FLAME_RIFT, GITAXIAN_PROBE, LIGHT_UP_THE_STAGE};
-            case planeswalker:
-            case artifact:
-            default:
-                return new String[0];
-        }
-    }
-
-    CardType typeof(String cardName) {
-        switch (cardName) {
-            case MOUNTAIN:
-            case FORGOTTEN_CAVE:
-                return CardType.land;
-
-            case MONASTERY_SWIFTSPEAR:
-            case THERMO_ALCHEMIST:
-            case KELDON_MARAUDERS:
-            case GHITU_LAVARUNNER:
-            case ORCISH_HELLRAISER:
-            case VIASHINO_PYROMANCER:
-            case FIREBRAND_ARCHER:
-                return CardType.creature;
-
-            case FIREBLAST:
-            case LIGHTNING_BOLT:
-            case NEEDLE_DROP:
-            case SEARING_BLAZE:
-            case MAGMA_JET:
-            case VOLCANIC_FALLOUT:
-                return CardType.instant;
-
-            case RIFT_BOLT:
-            case LAVA_SPIKE:
-            case SKEWER_THE_CRITICS:
-            case CHAIN_LIGHTNING:
-            case FORKED_BOLT:
-            case FLAME_RIFT:
-            case GITAXIAN_PROBE:
-            case LIGHT_UP_THE_STAGE:
-                return CardType.sorcery;
-
-            case CURSE_OF_THE_PIERCED_HEART:
-                return CardType.enchantment;
-        }
-        return null;
-    }
 }

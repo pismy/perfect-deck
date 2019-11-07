@@ -80,7 +80,8 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         // whichever the situation, if I have a probe in hand: play it
         if (game.getHand().contains(GITAXIAN_PROBE)) {
             // play it: we'll maybe find what we miss
-            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero()).draw(1);
+            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero());
+            game.draw(1);
             return true;
         }
 
@@ -103,23 +104,20 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 produce(R);
-                game
-                        .castNonPermanent(FAITHLESS_LOOTING, R)
-                        .draw(2);
+                game.castNonPermanent(FAITHLESS_LOOTING, R);
+                game.draw(2);
                 discard(2);
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
                 // cycle
                 produce(Mana.of("2"));
-                game
-                        .discard(GREATER_SANDWURM)
-                        .draw(1);
+                game.discard(GREATER_SANDWURM);
+                game.draw(1);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
                 produce(R2);
-                game
-                        .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
-                        .draw(2);
+                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
+                game.draw(2);
                 // then another card...
                 discard(2);
                 return true;
@@ -128,17 +126,15 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             // no monster in hand: can I look for one ?
             if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 produce(R);
-                game
-                        .castNonPermanent(FAITHLESS_LOOTING, R)
-                        .draw(2);
+                game.castNonPermanent(FAITHLESS_LOOTING, R);
+                game.draw(2);
                 // now discard 2 cards
                 discard(2);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
                 produce(R2);
-                game
-                        .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
-                        .draw(2);
+                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
+                game.draw(2);
                 // then another card...
                 discard(2);
                 return true;
@@ -151,30 +147,26 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 return true;
             } else if (game.getHand().contains(PUTRID_IMP) && canPay(B)) {
                 produce(B);
-                game
-                        .castPermanent(PUTRID_IMP, B)
-                        // discard a monster (any)
-                        .discard(monstersInHand.getFirst());
+                game.castPermanent(PUTRID_IMP, B);
+                // discard a monster (any)
+                game.discard(monstersInHand.getFirst());
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
                 produce(R);
-                game
-                        .castNonPermanent(FAITHLESS_LOOTING, R)
-                        .draw(2);
+                game.castNonPermanent(FAITHLESS_LOOTING, R);
+                game.draw(2);
                 discard(2);
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
                 // cycle
                 produce(Mana.of("2"));
-                game
-                        .discard(GREATER_SANDWURM)
-                        .draw(1);
+                game.discard(GREATER_SANDWURM);
+                game.draw(1);
                 return true;
             } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
                 produce(R2);
-                game
-                        .cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2)
-                        .draw(2);
+                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
+                game.draw(2);
                 // then another card...
                 discard(2);
                 return true;
@@ -469,13 +461,15 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             if (toPay.getB() > 0) {
                 Optional<String> blackProducer = game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE);
                 if (!landed && blackProducer.isPresent()) {
-                    game.land(blackProducer.get()).tapLandForMana(blackProducer.get(), B);
+                    game.land(blackProducer.get());
+                    game.tapLandForMana(blackProducer.get(), B);
                     toPay = toPay.minus(B);
                     landed = true;
                 } else if (petalsInHand > 0) {
                     int nb = Math.min(toPay.getB(), petalsInHand);
                     for (int i = 0; i < nb; i++) {
-                        game.discard(LOTUS_PETAL).add(B);
+                        game.discard(LOTUS_PETAL);
+                        game.add(B);
                     }
                     petalsInHand -= nb;
                     toPay = toPay.minus(Mana.of(nb, 0, 0, 0, 0, 0));
@@ -486,20 +480,23 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             } else if (toPay.getR() > 0) {
                 Optional<String> redProducer = game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE);
                 if (!landed && redProducer.isPresent()) {
-                    game.land(redProducer.get()).tapLandForMana(redProducer.get(), R);
+                    game.land(redProducer.get());
+                    game.tapLandForMana(redProducer.get(), R);
                     toPay = toPay.minus(R);
                     landed = true;
                 } else if (simiansInHand > 0) {
                     int nb = Math.min(toPay.getR(), simiansInHand);
                     for (int i = 0; i < nb; i++) {
-                        game.discard(SIMIAN_SPIRIT_GUIDE).add(R);
+                        game.discard(SIMIAN_SPIRIT_GUIDE);
+                        game.add(R);
                     }
                     simiansInHand -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, nb, 0, 0));
                 } else if (petalsInHand > 0) {
                     int nb = Math.min(toPay.getR(), petalsInHand);
                     for (int i = 0; i < nb; i++) {
-                        game.discard(LOTUS_PETAL).add(R);
+                        game.discard(LOTUS_PETAL);
+                        game.add(R);
                     }
                     petalsInHand -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, nb, 0, 0));
@@ -524,20 +521,23 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                     untappedSwamps -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
                 } else if (!landed && xProducer.isPresent()) {
-                    game.land(xProducer.get()).tapLandForMana(xProducer.get(), X);
+                    game.land(xProducer.get());
+                    game.tapLandForMana(xProducer.get(), X);
                     toPay = toPay.minus(X);
                     landed = true;
                 } else if (simiansInHand > 0) {
                     int nb = Math.min(toPay.getX(), simiansInHand);
                     for (int i = 0; i < nb; i++) {
-                        game.discard(SIMIAN_SPIRIT_GUIDE).add(R);
+                        game.discard(SIMIAN_SPIRIT_GUIDE);
+                        game.add(R);
                     }
                     simiansInHand -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));
                 } else if (petalsInHand > 0) {
                     int nb = Math.min(toPay.getX(), petalsInHand);
                     for (int i = 0; i < nb; i++) {
-                        game.discard(LOTUS_PETAL).add(B);
+                        game.discard(LOTUS_PETAL);
+                        game.add(B);
                     }
                     petalsInHand -= nb;
                     toPay = toPay.minus(Mana.of(0, 0, 0, 0, 0, nb));

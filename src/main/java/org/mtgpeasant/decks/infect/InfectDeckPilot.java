@@ -91,7 +91,8 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     public void firstMainPhase() {
         // whichever the situation, if I have a probe in hand: play it
         while (game.getHand().contains(GITAXIAN_PROBE)) {
-            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero()).draw(1);
+            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero());
+            game.draw(1);
         }
 
         // land
@@ -120,13 +121,16 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
         // play all mutagenic
         while (game.getHand().contains(MUTAGENIC_GROWTH)) {
-            game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero()).poisonOpponent(2);
+            game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero());
+            game.poisonOpponent(2);
         }
 
         // play all invigorates (if forest)
         if (game.getBoard().contains(FOREST)) {
             while (game.getHand().contains(INVIGORATE)) {
-                game.castNonPermanent(INVIGORATE, Mana.zero()).poisonOpponent(4).damageOpponent(-3);
+                game.castNonPermanent(INVIGORATE, Mana.zero());
+                game.poisonOpponent(4);
+                game.damageOpponent(-3);
             }
         }
 
@@ -134,7 +138,8 @@ public class InfectDeckPilot extends DeckPilot<Game> {
         int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
         while (castableScaleUp > 0 && canPay(G)) {
             produce(G);
-            game.castNonPermanent(SCALE_UP, G).poisonOpponent(5);
+            game.castNonPermanent(SCALE_UP, G);
+            game.poisonOpponent(5);
             castableScaleUp--;
         }
 
@@ -177,19 +182,22 @@ public class InfectDeckPilot extends DeckPilot<Game> {
                 case MIGHT_OF_OLD_KROSA:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(MIGHT_OF_OLD_KROSA, G).poisonOpponent(4);
+                        game.castNonPermanent(MIGHT_OF_OLD_KROSA, G);
+                        game.poisonOpponent(4);
                     }
                     break;
                 case GROUNDSWELL:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(GROUNDSWELL, G).poisonOpponent(game.isLanded() ? 4 : 2);
+                        game.castNonPermanent(GROUNDSWELL, G);
+                        game.poisonOpponent(game.isLanded() ? 4 : 2);
                     }
                     break;
                 case GIANT_GROWTH:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(GIANT_GROWTH, G).poisonOpponent(3);
+                        game.castNonPermanent(GIANT_GROWTH, G);
+                        game.poisonOpponent(3);
                     }
                     break;
                 case SEAL_OF_STRENGTH:
@@ -201,41 +209,57 @@ public class InfectDeckPilot extends DeckPilot<Game> {
                 case BLOSSOMING_DEFENSE:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(BLOSSOMING_DEFENSE, G).poisonOpponent(2);
+                        game.castNonPermanent(BLOSSOMING_DEFENSE, G);
+                        game.poisonOpponent(2);
                     }
                     break;
                 case LARGER_THAN_LIFE:
                     if (canPay(G1)) {
                         produce(G1);
-                        game.castNonPermanent(LARGER_THAN_LIFE, G1).poisonOpponent(4);
+                        game.castNonPermanent(LARGER_THAN_LIFE, G1);
+                        game.poisonOpponent(4);
                     }
                     break;
                 case VINES_OF_VASTWOOD:
                     if (canPay(GG)) {
                         produce(GG);
-                        game.castNonPermanent(VINES_OF_VASTWOOD, GG).poisonOpponent(4);
+                        game.castNonPermanent(VINES_OF_VASTWOOD, GG);
+                        game.poisonOpponent(4);
                     }
                     break;
                 case RANGER_S_GUILE:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(RANGER_S_GUILE, G).poisonOpponent(1);
+                        game.castNonPermanent(RANGER_S_GUILE, G);
+                        game.poisonOpponent(1);
                     }
                     break;
             }
         }
 
         // sacrifice all seals
-        game.getBoard().findAll(SEAL_OF_STRENGTH).forEach(card -> game.sacrifice(card).poisonOpponent(3));
+        game.getBoard().findAll(SEAL_OF_STRENGTH).forEach(card -> {
+            game.sacrifice(card);
+            game.poisonOpponent(3);
+        });
 
         // attach with all creatures
-        creatures.forEach(card -> game.tapForAttack(card, 1).poisonOpponent(1));
+        creatures.forEach(card -> {
+            game.tapForAttack(card, 1);
+            game.poisonOpponent(1);
+        });
 
         // add rancors
-        game.getBoard().findAll(RANCOR).forEach(card -> game.tap(card).poisonOpponent(2));
+        game.getBoard().findAll(RANCOR).forEach(card -> {
+            game.tap(card);
+            game.poisonOpponent(2);
+        });
 
         // use one untapped pendelhaven to boost
-        game.getUntapped(PENDELHAVEN).forEach(card -> game.tap(card).poisonOpponent(1));
+        game.getUntapped(PENDELHAVEN).forEach(card -> {
+            game.tap(card);
+            game.poisonOpponent(1);
+        });
     }
 
     private TurnSimulation simulateTurn(Mana potentialPool, Collection<String> spells) {
@@ -403,7 +427,8 @@ public class InfectDeckPilot extends DeckPilot<Game> {
             Optional<String> producer = game.findFirstUntapped(FOREST, PENDELHAVEN, LOTUS_PETAL);
             if (producer.isPresent()) {
                 if (producer.get().equals(LOTUS_PETAL)) {
-                    game.sacrifice(LOTUS_PETAL).add(G);
+                    game.sacrifice(LOTUS_PETAL);
+                    game.add(G);
                 } else {
                     // a land
                     game.tapLandForMana(producer.get(), G);

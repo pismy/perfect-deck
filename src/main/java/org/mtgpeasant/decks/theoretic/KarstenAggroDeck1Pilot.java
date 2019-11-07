@@ -90,7 +90,8 @@ public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
         if (castableBolts * 3 >= game.getOpponentLife()) {
             // my bolts can kill the opponent: go ahead
             for (int i = 0; i < castableBolts; i++) {
-                game.castNonPermanent(BOLT, ONE).damageOpponent(3);
+                game.castNonPermanent(BOLT, ONE);
+                game.damageOpponent(3);
             }
         } else {
             // cast as many leeches as we can
@@ -103,7 +104,8 @@ public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
             }
             // finally cast as many bolts as we can
             while (game.getPool().ccm() >= 1 && game.getHand().contains(BOLT)) {
-                game.castNonPermanent(BOLT, ONE).damageOpponent(3);
+                game.castNonPermanent(BOLT, ONE);
+                game.damageOpponent(3);
             }
         }
     }

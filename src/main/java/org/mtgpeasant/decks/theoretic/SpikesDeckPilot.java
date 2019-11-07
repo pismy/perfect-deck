@@ -99,7 +99,8 @@ public class SpikesDeckPilot extends DeckPilot<Game> {
 
         // cast all bolts
         while (game.getHand().contains(BOLT) && game.canPay(R)) {
-            game.castNonPermanent(BOLT, R).damageOpponent(3);
+            game.castNonPermanent(BOLT, R);
+            game.damageOpponent(3);
         }
     }
 }

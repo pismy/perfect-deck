@@ -20,6 +20,9 @@ import java.util.stream.Stream;
  * <li>manage [light up the stage]</li>
  * <li>manage [ghitu lavarunner] haste</li>
  * <li>manage [forgotten cave] cycling</li>
+ * <li>manage [magma jet] scry</li>
+ * <li>manage [thunderous wrath]</li>
+ * <li>manage [seal of fire]</li>
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>
  */
@@ -31,12 +34,12 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     public static final Mana RR = Mana.of("RR");
     public static final Mana RR1 = Mana.of("1RR");
 
-    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER};
+    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER};
     private static String[] LANDS = {MOUNTAIN, FORGOTTEN_CAVE};
 
     // all cards that could contribute to a kill in the turn
     private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
-            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT};
+            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
 
     public BurnDeckPilot(BurnGame game) {
         super(game);
@@ -96,30 +99,34 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         });
     }
 
+    /**
+     * Override draw step to manage thunderous wrath (with miracle cost)
+     */
+    @Override
+    public void drawStep() {
+        Cards drawn = game.draw(1);
+        // pay thunderous wrath miracle cost
+        if (drawn.getFirst().equals(THUNDEROUS_WRATH) && canPay(R)) {
+            produce(R);
+            game.castNonPermanent(THUNDEROUS_WRATH, R);
+            game.damageOpponent(5, "a miracle!");
+        }
+    }
+
     @Override
     public void firstMainPhase() {
-        // whichever the situation, if I have a probe in hand: play it
-        // TODO: maybe not always optimal. Casting a Swiftspear before would be better
-        while (game.getHand().contains(GITAXIAN_PROBE)) {
-            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero());
-            game.draw(1);
+        // start by playing all probes
+        // TODO: maybe not always optimal. Casting a Swiftspear before could be better
+        while (playOneOf(false, GITAXIAN_PROBE).isPresent()) {
         }
 
-        // if mountain: land
-        if (game.getHand().contains(MOUNTAIN)) {
-            game.land(MOUNTAIN);
-        } else if (game.getHand().contains(FORGOTTEN_CAVE) && game.getBoard().count(MOUNTAIN, FORGOTTEN_CAVE) < 3) {
-            game.land(FORGOTTEN_CAVE);
-            game.tap(FORGOTTEN_CAVE);
-        }
+        // then land
+        playOneOf(false, MOUNTAIN, FORGOTTEN_CAVE);
 
         // is there a way to kill opponent this turn (only from turn 3)?
         if (game.getCurrentTurn() > 2) {
-            Mana potentialPool = game.getPool()
-                    .plus(Mana.of(0, 0, 0, game.countUntapped(MOUNTAIN, FORGOTTEN_CAVE), 0, 0));
-
             int ghituStrength = game.countInGraveyard(Game.CardType.instant, Game.CardType.sorcery) >= 2 ? 2 : 1;
-            int forseenCombatDamage =
+            int forseenDamage =
                     game.countUntapped(MONASTERY_SWIFTSPEAR) * 1
                             + game.getProwessBoost()
                             + game.countUntapped(KELDON_MARAUDERS) * 3
@@ -130,139 +137,75 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                             // +1 per thermo (EOT)
                             + game.countUntapped(THERMO_ALCHEMIST) * 1;
 
-            Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
-            Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
-                    .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
-                    .sorted(Comparator.reverseOrder())
-                    .findFirst();
+            if(game.getOpponentLife() > forseenDamage) {
+                Mana potentialPool = game.getPool()
+                        .plus(Mana.of(0, 0, 0, game.countUntapped(MOUNTAIN, FORGOTTEN_CAVE), 0, 0));
 
-            if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenCombatDamage >= game.getOpponentLife()) {
-                game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
-                // draw all mana I can from pool
-                optimalSpellsOrder.get().playedSpells.forEach(this::cast);
-                return;
+                Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
+                Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
+                        .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
+                        .sorted(Comparator.reverseOrder())
+                        .findFirst();
+
+                if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
+                    game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
+                    // sacrifice all seals
+                    game.getBoard().findAll(SEAL_OF_FIRE).forEach(seal -> {
+                        game.sacrifice(seal);
+                        game.damageOpponent(2);
+                    });
+
+                    // then play spells
+                    optimalSpellsOrder.get().playedSpells.forEach(card -> play(true, card));
+                    return;
+                }
             }
         }
 
-        while (play()) {
+        while (playBestCard()) {
         }
     }
 
     /**
-     * Play the best spell in case there is no kill option this turn
+     * Play the best card in case there is no kill option this turn
      */
-    private boolean play() {
-        if (game.getHand().contains(FIREBRAND_ARCHER) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(FIREBRAND_ARCHER, R1);
-            return true;
-        } else if (game.getHand().contains(THERMO_ALCHEMIST) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(THERMO_ALCHEMIST, R1);
-            return true;
-        } else if (game.getHand().contains(ELECTROSTATIC_FIELD) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(ELECTROSTATIC_FIELD, R1);
-            return true;
-        } else if (game.getHand().contains(KELDON_MARAUDERS) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(KELDON_MARAUDERS, R1);
-            game.damageOpponent(1, "keldon ETB trigger");
-            // 2 vanishing counters
-            game.addCounter("time", KELDON_MARAUDERS, Game.Area.board, 2);
-            return true;
-        } else if (game.getHand().contains(VIASHINO_PYROMANCER) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(VIASHINO_PYROMANCER, R1);
-            game.damageOpponent(2, "viashino ETB trigger");
-            return true;
-        } else if (game.getHand().contains(ORCISH_HELLRAISER) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(ORCISH_HELLRAISER, R1);
-            // time counter for echo
-            game.addCounter("time", ORCISH_HELLRAISER, Game.Area.board, 1);
-            return true;
-        } else if (game.getHand().contains(CURSE_OF_THE_PIERCED_HEART) && canPay(R1)) {
-            produce(R1);
-            game.castPermanent(CURSE_OF_THE_PIERCED_HEART, R1);
-            return true;
-        } else if (game.getHand().contains(MONASTERY_SWIFTSPEAR) && canPay(R)) {
-            produce(R);
-            game.castPermanent(MONASTERY_SWIFTSPEAR, R);
-            return true;
-        } else if (game.getHand().contains(GHITU_LAVARUNNER) && canPay(R) && game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2) {
-            // play with this priority if haste
-            produce(R);
-            game.castPermanent(GHITU_LAVARUNNER, R);
-            return true;
-        } else if (game.getHand().contains(FLAME_RIFT) && canPay(R1)) {
-            produce(R1);
-            game.castNonPermanent(FLAME_RIFT, R1);
-            game.damageOpponent(4, null);
-            return true;
-        } else if (game.isLanded() && game.getHand().contains(SEARING_BLAZE) && canPay(RR)) {
-            // only play if landed (landfall)
-            produce(RR);
-            game.castNonPermanent(SEARING_BLAZE, RR);
-            game.damageOpponent(3, null);
-            return true;
-        } else if (game.getDamageDealtThisTurn() > 0 && game.getHand().contains(SKEWER_THE_CRITICS) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(SKEWER_THE_CRITICS, R);
-            game.damageOpponent(3, null);
-            return true;
-        } else if (game.getHand().contains(RIFT_BOLT) && canPay(R)) {
-            // suspend
-            produce(R);
-            game.pay(R);
-            game.move(RIFT_BOLT, Game.Area.hand, Game.Area.exile);
-            game.addCounter("time", RIFT_BOLT, Game.Area.exile, 1);
-            return true;
-        } else if (game.getDamageDealtThisTurn() > 0 && game.getHand().contains(NEEDLE_DROP) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(NEEDLE_DROP, R);
-            game.damageOpponent(1, null);
-            game.draw(1);
-            return true;
-        } else if (game.getHand().contains(LIGHTNING_BOLT) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(LIGHTNING_BOLT, R);
-            game.damageOpponent(3, null);
-            return true;
-        } else if (game.getHand().contains(CHAIN_LIGHTNING) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(CHAIN_LIGHTNING, R);
-            game.damageOpponent(3, null);
-            return true;
-        } else if (game.getHand().contains(LAVA_SPIKE) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(LAVA_SPIKE, R);
-            game.damageOpponent(3, null);
-            return true;
-        } else if (game.getHand().contains(FORKED_BOLT) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(FORKED_BOLT, R);
-            game.damageOpponent(2, null);
-            return true;
-        } else if (game.getHand().contains(LAVA_DART) && canPay(R)) {
-            produce(R);
-            game.castNonPermanent(LAVA_DART, R);
-            game.damageOpponent(1, null);
-            game.draw(1);
-            return true;
-        } else if (game.getHand().contains(GHITU_LAVARUNNER) && canPay(R)) {
-            // play with low priority if not haste
-            produce(R);
-            game.castPermanent(GHITU_LAVARUNNER, R);
-            return true;
-        } else {
-            return false;
-        }
+    private boolean playBestCard() {
+        boolean ghituHasHaste = game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2;
+        return playOneOf(false,
+                MOUNTAIN,
+                MONASTERY_SWIFTSPEAR,
+                GITAXIAN_PROBE,
+                NEEDLE_DROP,
+                FORGOTTEN_CAVE,
+                KILN_FIEND,
+                FIREBRAND_ARCHER,
+                THERMO_ALCHEMIST,
+                ELECTROSTATIC_FIELD,
+                KELDON_MARAUDERS,
+                VIASHINO_PYROMANCER,
+                ORCISH_HELLRAISER,
+                CURSE_OF_THE_PIERCED_HEART,
+                ghituHasHaste ? GHITU_LAVARUNNER : "_",
+                FLAME_RIFT,
+                game.isLanded() ? SEARING_BLAZE : "_",
+                game.getDamageDealtThisTurn() > 0 ? SKEWER_THE_CRITICS : "_",
+                RIFT_BOLT,
+                CHAIN_LIGHTNING,
+                LAVA_SPIKE,
+                LIGHTNING_BOLT,
+                FORKED_BOLT,
+                SEAL_OF_FIRE,
+                MAGMA_JET,
+                VOLCANIC_FALLOUT,
+                GHITU_LAVARUNNER,
+                SKEWER_THE_CRITICS
+        ).isPresent();
     }
 
     @Override
     public void combatPhase() {
         game.getUntapped(MONASTERY_SWIFTSPEAR).forEach(card -> game.tapForAttack(card, 1));
+        game.getUntapped(KILN_FIEND).forEach(card -> game.tapForAttack(card, 1));
         if (game.getProwessBoost() > 0) {
             game.damageOpponent(game.getProwessBoost(), "prowess");
         }
@@ -286,25 +229,28 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
             Mana potentialPool = game.getPool()
                     .plus(Mana.of(0, 0, 0, game.countUntapped(MOUNTAIN, FORGOTTEN_CAVE), 0, 0));
 
-            Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
-            Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
-                    .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
-                    .sorted(Comparator.reverseOrder())
-                    .findFirst();
-
             int forseenDamage =
                     // +1 per thermo (EOT)
                     +game.countUntapped(THERMO_ALCHEMIST) * 1;
 
-            if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
-                game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
-                // draw all mana I can from pool
-                optimalSpellsOrder.get().playedSpells.forEach(this::cast);
-                return;
+            if(game.getOpponentLife() > forseenDamage) {
+                Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
+                Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
+                        .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
+                        .sorted(Comparator.reverseOrder())
+                        .findFirst();
+
+
+                if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
+                    game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
+                    // draw all mana I can from pool
+                    optimalSpellsOrder.get().playedSpells.forEach(card -> play(true, card));
+                    return;
+                }
             }
         }
 
-        while (play()) {
+        while (playBestCard()) {
         }
 
         // use untapped thermo a last time
@@ -320,7 +266,8 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
         int damage = 0;
 
-        int thermosOnBoard = game.getBoard().count(THERMO_ALCHEMIST);
+        int thermosOnBoard = game.countUntapped(THERMO_ALCHEMIST);
+        int kilnOnBoard = game.countUntapped(KILN_FIEND);
         int archersOnBoard = game.getBoard().count(FIREBRAND_ARCHER);
         int fieldsOnBoard = game.getBoard().count(ELECTROSTATIC_FIELD);
         int swiftspearsOnBoard = game.getBoard().count(MONASTERY_SWIFTSPEAR);
@@ -344,7 +291,8 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                     + thermosOnBoard
                     + fieldsOnBoard
                     + archersOnBoard
-                    + swiftspearsOnBoard);
+                    + swiftspearsOnBoard
+                    + kilnOnBoard * 3);
         }
 
         @Override
@@ -367,6 +315,10 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
     private TurnSimulation simulate(Mana potentialPool, List<String> spells) {
         TurnSimulation sim = new TurnSimulation();
+        // sacrifice all seals
+        int sealsOnBoard = game.getBoard().count(SEAL_OF_FIRE);
+        sim.damage(sealsOnBoard*2);
+
         for (String spell : spells) {
             switch (spell) {
                 // CREATURES
@@ -432,6 +384,13 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                         sim.damageWithNonPermanent(3);
                     }
                     break;
+                case SEAL_OF_FIRE:
+                    if (potentialPool.contains(R)) {
+                        potentialPool = potentialPool.minus(R);
+                        sim.playedSpells.add(spell);
+                        sim.damageWithNonPermanent(2); // TODO: not exactly that...
+                    }
+                    break;
                 case SKEWER_THE_CRITICS:
                     if (!sim.haveSpectacle() && potentialPool.contains(R)) {
                         // can I cast a dart from GY to have spectacle ?
@@ -448,7 +407,6 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                     }
                     break;
                 case LAVA_DART:
-                    // TODO: simulate play from GY
                     if (potentialPool.contains(R)) {
                         potentialPool = potentialPool.minus(R);
                         sim.playedSpells.add(spell);
@@ -526,173 +484,218 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         return sim;
     }
 
-    boolean cast(String card) {
+    /**
+     * Casts the first possible card from the list
+     *
+     * @param cards cards ordered by preference
+     * @return the successfully cast card
+     */
+    Optional<String> playOneOf(boolean rush, String... cards) {
+        for (String card : cards) {
+            if (game.getHand().contains(card) && canPlay(rush, card)) {
+                play(rush, card);
+                return Optional.of(card);
+            }
+        }
+        return Optional.empty();
+    }
+
+    boolean canPlay(boolean rush, String card) {
         switch (card) {
-            // CREATURES
+            case MOUNTAIN:
+            case FORGOTTEN_CAVE:
+                return !game.isLanded();
+            case GITAXIAN_PROBE:
+                return true;
             case MONASTERY_SWIFTSPEAR:
-                if (canPay(R)) {
-                    produce(R);
-                    game.castPermanent(card, R);
-                    return true;
-                }
-                break;
-            case KELDON_MARAUDERS:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castPermanent(card, R1);
-                    game.damageOpponent(1, "keldon ETB trigger");
-                    // 2 vanishing counters
-                    game.addCounter("time", KELDON_MARAUDERS, Game.Area.board, 2);
-                    return true;
-                }
-                break;
             case GHITU_LAVARUNNER:
-                if (canPay(R)) {
-                    produce(R);
-                    game.castPermanent(card, R);
-                    return true;
-                }
-                break;
-            case VIASHINO_PYROMANCER:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castPermanent(card, R1);
-                    game.damageOpponent(2, "viashino ETB trigger");
-                    return true;
-                }
-                break;
-            case FIREBRAND_ARCHER:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castPermanent(card, R1);
-                    return true;
-                }
-                break;
-            case ELECTROSTATIC_FIELD:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castPermanent(card, R1);
-                    return true;
-                }
-                break;
-            // BURN
-            case FIREBLAST:
-                if (game.getBoard().count(MOUNTAIN) >= 2) {
-                    // add R to pool before sacrifice
-                    while (game.getTapped().count(MOUNTAIN) < 2) {
-                        game.tapLandForMana(MOUNTAIN, R);
-                    }
-                    game.sacrifice(MOUNTAIN);
-                    game.sacrifice(MOUNTAIN);
-                    game.castNonPermanent(card, Mana.zero());
-                    game.damageOpponent(4, null);
-                    return true;
-                }
-                break;
-            case LAVA_DART_FB:
-                if (game.getBoard().count(MOUNTAIN) >= 1) {
-                    // add R to pool before sacrifice
-                    while (game.getTapped().count(MOUNTAIN) < 1) {
-                        game.tapLandForMana(MOUNTAIN, R);
-                    }
-                    game.sacrifice(MOUNTAIN);
-                    game.cast(LAVA_DART, Game.Area.graveyard, Game.Area.exile, Mana.zero());
-                    game.damageOpponent(1, null);
-                    return true;
-                }
-                break;
             case LAVA_SPIKE:
             case CHAIN_LIGHTNING:
             case LIGHTNING_BOLT:
-                if (canPay(R)) {
-                    produce(R);
-                    game.castNonPermanent(card, R);
-                    game.damageOpponent(3, null);
-                    return true;
-                }
-                break;
+            case LAVA_DART:
+            case FORKED_BOLT:
+            case SEAL_OF_FIRE:
+                return canPay(R);
+            case THERMO_ALCHEMIST:
+            case KELDON_MARAUDERS:
+            case ORCISH_HELLRAISER:
+            case VIASHINO_PYROMANCER:
+            case FIREBRAND_ARCHER:
+            case ELECTROSTATIC_FIELD:
+            case KILN_FIEND:
+            case MAGMA_JET:
+            case FLAME_RIFT:
+            case CURSE_OF_THE_PIERCED_HEART:
+                return canPay(R1);
+            case SEARING_BLAZE:
+                return canPay(RR);
+            case RIFT_BOLT:
+                return rush ? canPay(R) : canPay(R2);
+            case VOLCANIC_FALLOUT:
+                return canPay(RR1);
+            case FIREBLAST:
+                return (game.getBoard().count(MOUNTAIN) >= 2);
+            case LAVA_DART_FB:
+                return (game.getBoard().count(MOUNTAIN) >= 1);
             case SKEWER_THE_CRITICS:
-                if (game.getDamageDealtThisTurn() > 0 && canPay(R)) {
+                return game.getDamageDealtThisTurn() > 0 ? canPay(R) : canPay(R2);
+            case NEEDLE_DROP:
+                return game.getDamageDealtThisTurn() > 0 && canPay(R);
+            case THUNDEROUS_WRATH:
+                return false;
+        }
+        game.log("oops, unsupported card [" + card + "]");
+        return false;
+    }
+
+    boolean play(boolean rush, String card) {
+        switch (card) {
+            case MOUNTAIN:
+                game.land(card);
+                return true;
+            case FORGOTTEN_CAVE:
+                game.land(card);
+                game.tap(card);
+                return true;
+            case GITAXIAN_PROBE:
+                game.castNonPermanent(card, Mana.zero());
+                game.draw(1);
+                return true;
+            // R permanents
+            case MONASTERY_SWIFTSPEAR:
+            case GHITU_LAVARUNNER:
+            case SEAL_OF_FIRE:
+                produce(R);
+                game.castPermanent(card, R);
+                return true;
+            // bolts-like
+            case LAVA_SPIKE:
+            case CHAIN_LIGHTNING:
+            case LIGHTNING_BOLT:
+                produce(R);
+                game.castNonPermanent(card, R);
+                game.damageOpponent(3);
+                return true;
+            case FORKED_BOLT:
+                produce(R);
+                game.castNonPermanent(card, R);
+                game.damageOpponent(2);
+                return true;
+            // 1R permanents
+            case THERMO_ALCHEMIST:
+            case FIREBRAND_ARCHER:
+            case ELECTROSTATIC_FIELD:
+            case CURSE_OF_THE_PIERCED_HEART:
+            case KILN_FIEND:
+                produce(R1);
+                game.castPermanent(card, R1);
+                return true;
+            case KELDON_MARAUDERS:
+                produce(R1);
+                game.castPermanent(card, R1);
+                game.damageOpponent(1, "Keldon ETB");
+                // 2 vanishing counters
+                game.addCounter("time", card, Game.Area.board, 2);
+                return true;
+            case VIASHINO_PYROMANCER:
+                produce(R1);
+                game.castPermanent(card, R1);
+                game.damageOpponent(2, "Viashino ETB");
+                return true;
+            case ORCISH_HELLRAISER:
+                produce(R1);
+                game.castPermanent(card, R1);
+                // time counter for echo
+                game.addCounter("time", card, Game.Area.board, 1);
+                return true;
+            case MAGMA_JET:
+                produce(R1);
+                game.castNonPermanent(card, R1);
+                game.damageOpponent(2, null);
+                scry(2);
+                return true;
+            case FLAME_RIFT:
+                produce(R1);
+                game.castNonPermanent(card, R1);
+                game.damageOpponent(4, null);
+                return true;
+            case FIREBLAST:
+                // add R to pool before sacrifice
+                while (game.getTapped().count(MOUNTAIN) < 2) {
+                    game.tapLandForMana(MOUNTAIN, R);
+                }
+                game.sacrifice(MOUNTAIN);
+                game.sacrifice(MOUNTAIN);
+                game.castNonPermanent(card, Mana.zero());
+                game.damageOpponent(4, null);
+                return true;
+            case LAVA_DART:
+                produce(R);
+                game.castNonPermanent(card, R);
+                game.damageOpponent(1);
+                return true;
+            case LAVA_DART_FB:
+                // add R to pool before sacrifice
+                while (game.getTapped().count(MOUNTAIN) < 1) {
+                    game.tapLandForMana(MOUNTAIN, R);
+                }
+                game.sacrifice(MOUNTAIN);
+                game.cast(LAVA_DART, Game.Area.graveyard, Game.Area.exile, Mana.zero());
+                game.damageOpponent(1, null);
+                return true;
+            case SKEWER_THE_CRITICS:
+                if (game.getDamageDealtThisTurn() > 0) {
                     produce(R);
                     game.castNonPermanent(card, R);
                     game.damageOpponent(3, null);
-                    return true;
-                } else if (canPay(R2)) {
+                } else {
                     produce(R2);
                     game.castNonPermanent(card, R);
                     game.damageOpponent(3, null);
-                    return true;
                 }
-                break;
-            case LAVA_DART:
-                if (canPay(R)) {
-                    produce(R);
-                    game.castNonPermanent(card, R);
-                    game.damageOpponent(1, null);
-                    return true;
-                }
-                break;
+                return true;
             case NEEDLE_DROP:
-                if (game.getDamageDealtThisTurn() > 0 && canPay(R)) {
+                if (game.getDamageDealtThisTurn() > 0) {
                     produce(R);
                     game.castNonPermanent(card, R);
                     game.damageOpponent(1, null);
-                    game.draw(1); // TODO: replan a turn ?
+                    game.draw(1);
                     return true;
+                } else {
+                    return false;
                 }
-                break;
-            case FORKED_BOLT:
-                if (canPay(R)) {
-                    produce(R);
-                    game.castNonPermanent(card, R);
-                    game.damageOpponent(2, null);
-                    return true;
-                }
-                break;
             case SEARING_BLAZE:
-                if (canPay(RR)) {
-                    produce(RR);
-                    game.castNonPermanent(card, RR);
-                    int damage = (game.isLanded() ? 3 : 1);
-                    game.damageOpponent(damage, null);
-                    return true;
-                }
-                break;
-            case MAGMA_JET:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castNonPermanent(card, R1);
-                    game.damageOpponent(2, null);
-                    return true;
-                }
-                break;
+                produce(RR);
+                game.castNonPermanent(card, RR);
+                int damage = (game.isLanded() ? 3 : 1);
+                game.damageOpponent(damage, null);
+                return true;
             case VOLCANIC_FALLOUT:
-                if (canPay(RR1)) {
-                    produce(RR1);
-                    game.castNonPermanent(card, RR1);
-                    game.damageOpponent(2, null);
-                    return true;
-                }
-                break;
-            case FLAME_RIFT:
-                if (canPay(R1)) {
-                    produce(R1);
-                    game.castNonPermanent(card, R1);
-                    game.damageOpponent(4, null);
-                    return true;
-                }
-                break;
+                produce(RR1);
+                game.castNonPermanent(card, RR1);
+                game.damageOpponent(2, null);
+                return true;
             case RIFT_BOLT:
-                if (canPay(R2)) {
+                if (rush) {
+                    // cast now
                     produce(R2);
                     game.castNonPermanent(card, R2);
                     game.damageOpponent(3, null);
-                    return true;
+                } else {
+                    // suspend
+                    produce(R);
+                    game.pay(R);
+                    game.move(card, Game.Area.hand, Game.Area.exile);
+                    game.addCounter("time", card, Game.Area.exile, 1);
                 }
-                break;
+                return true;
         }
-        game.log("oops, can't play [" + card + "]");
+        game.log("oops, unsupported card [" + card + "]");
         return false;
+    }
+
+    private void scry(int number) {
+        // TODO
     }
 
     @Override
@@ -739,7 +742,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     }
 
     boolean canPay(Mana cost) {
-        // potential mana pool is current pool + untapped lands + petals on board
+        // potential mana pool is current pool + untapped lands
         Mana potentialPool = game.getPool()
                 .plus(Mana.of(0, 0, 0, game.countUntapped(LANDS), 0, 0));
         return potentialPool.contains(cost);

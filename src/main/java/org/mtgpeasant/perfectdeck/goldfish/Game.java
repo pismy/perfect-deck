@@ -86,7 +86,7 @@ public class Game {
         }
     }
 
-    protected Game startNextTurn() {
+    protected void startNextTurn() {
         currentTurn++;
         landed = false;
         _emptyPool();
@@ -105,35 +105,29 @@ public class Game {
         if (!exile.isEmpty()) {
             log("> exile: " + exile);
         }
-
-        return this;
     }
 
-    protected Game startPhase(Phase phase) {
+    protected void startPhase(Phase phase) {
         _emptyPool();
         currentPhase = phase;
-        return this;
     }
 
-    protected Game _emptyPool() {
+    protected void _emptyPool() {
         pool = Mana.zero();
-        return this;
     }
 
-    protected Game _pay(Mana cost) {
+    protected void _pay(Mana cost) {
         if (!canPay(cost)) {
             throw new IllegalActionException("Can't pay " + cost + ": not enough mana in pool (" + pool + ")");
         }
         pool = pool.minus(cost);
-        return this;
     }
 
-    protected Game _add(Mana mana) {
+    protected void _add(Mana mana) {
         pool = pool.plus(mana);
-        return this;
     }
 
-    protected Game _tap(String cardName) {
+    protected void _tap(String cardName) {
         int countOnBoard = board.count(cardName);
         if (countOnBoard == 0) {
             throw new IllegalActionException("Can't tap [" + cardName + "]: not on board");
@@ -143,23 +137,20 @@ public class Game {
             throw new IllegalActionException("Can't tap [" + cardName + "]: all tapped");
         }
         tapped.add(cardName);
-        return this;
     }
 
-    protected Game _untap(String cardName) {
+    protected void _untap(String cardName) {
         if (!board.contains(cardName)) {
             throw new IllegalActionException("Can't untap [" + cardName + "]: not on board");
         }
         tapped.remove(cardName);
-        return this;
     }
 
-    protected Game _damageOpponent(int damage) {
+    protected void _damageOpponent(int damage) {
         opponentLife -= damage;
-        return this;
     }
 
-    protected Game _move(String cardName, Area from, Area to, Side side) {
+    protected void _move(String cardName, Area from, Area to, Side side) {
         Cards fromArea = area(from);
         if (!fromArea.contains(cardName)) {
             throw new IllegalActionException("Can't move [" + cardName + "]: not in " + from);
@@ -173,7 +164,6 @@ public class Game {
         if (from == Area.board) {
             tapped.remove(cardName);
         }
-        return this;
     }
 
     /**
@@ -184,9 +174,8 @@ public class Game {
      * @param area   card area
      * @param number number of counters
      */
-    public Game addCounter(String type, String card, Area area, int number) {
+    public void addCounter(String type, String card, Area area, int number) {
         counters.add(Counters.builder().type(type).card(card).area(area).number(number).build());
-        return this;
     }
 
     /**
@@ -204,9 +193,9 @@ public class Game {
      *
      * @param cost mana cost
      */
-    public Game pay(Mana cost) {
+    public void pay(Mana cost) {
         log("- pay " + cost);
-        return _pay(cost);
+        _pay(cost);
     }
 
     /**
@@ -214,9 +203,9 @@ public class Game {
      *
      * @param mana mana to add
      */
-    public Game add(Mana mana) {
+    public void add(Mana mana) {
         log("- add " + mana + " to mana pool");
-        return _add(mana);
+        _add(mana);
     }
 
     /**
@@ -233,9 +222,9 @@ public class Game {
      *
      * @param cardName card name
      */
-    public Game tap(String cardName) {
+    public void tap(String cardName) {
         log("- tap [" + cardName + "]");
-        return _tap(cardName);
+        _tap(cardName);
     }
 
     /**
@@ -244,11 +233,10 @@ public class Game {
      * @param cardName land name
      * @param mana     produced mana
      */
-    public Game tapLandForMana(String cardName, Mana mana) {
+    public void tapLandForMana(String cardName, Mana mana) {
         log("- tap [" + cardName + "] and add " + mana + " to mana pool");
         _tap(cardName);
         _add(mana);
-        return this;
     }
 
     /**
@@ -257,11 +245,10 @@ public class Game {
      * @param cardName creature name
      * @param strength creature strength
      */
-    public Game tapForAttack(String cardName, int strength) {
+    public void tapForAttack(String cardName, int strength) {
         log("- attack with [" + cardName + "] for " + strength + " (" + opponentLife + "->" + (opponentLife - strength) + ")");
         _damageOpponent(strength);
         _tap(cardName);
-        return this;
     }
 
     /**
@@ -269,18 +256,17 @@ public class Game {
      *
      * @param cardName card name
      */
-    public Game untap(String cardName) {
+    public void untap(String cardName) {
         log("- untap [" + cardName + "]");
-        return _untap(cardName);
+        _untap(cardName);
     }
 
     /**
      * Untap all permanents
      */
-    public Game untapAll() {
+    public void untapAll() {
         log("- untap all");
         tapped.clear();
-        return this;
     }
 
     /**
@@ -341,7 +327,7 @@ public class Game {
      *
      * @param cardName land card name
      */
-    public Game land(String cardName) {
+    public void land(String cardName) {
         if (!hand.contains(cardName)) {
             throw new IllegalActionException("Can't land [" + cardName + "]: not in hand");
         }
@@ -352,7 +338,6 @@ public class Game {
         hand.remove(cardName);
         board.add(cardName);
         landed = true;
-        return this;
     }
 
     /**
@@ -360,10 +345,9 @@ public class Game {
      *
      * @param damage damage amount
      */
-    public Game damageOpponent(int damage, String reason) {
+    public void damageOpponent(int damage, String reason) {
         log("- damage" + (reason == null ? "" : " (" + reason + ")") + ": " + damage + " (" + opponentLife + "->" + (opponentLife - damage) + ")");
         _damageOpponent(damage);
-        return this;
     }
 
     /**
@@ -371,8 +355,8 @@ public class Game {
      *
      * @param damage damage amount
      */
-    public Game damageOpponent(int damage) {
-        return damageOpponent(damage, null);
+    public void damageOpponent(int damage) {
+        damageOpponent(damage, null);
     }
 
     /**
@@ -380,19 +364,17 @@ public class Game {
      *
      * @param counters number of poison counters
      */
-    public Game poisonOpponent(int counters) {
+    public void poisonOpponent(int counters) {
         opponentPoisonCounters += counters;
         log("- poison: " + counters + " (total: " + opponentPoisonCounters + ")");
-        return this;
     }
 
     /**
      * Shuffle the library
      */
-    public Game shuffleLibrary() {
+    public void shuffleLibrary() {
         log("- shuffle library");
         library = library.shuffle();
-        return this;
     }
 
     /**
@@ -400,11 +382,11 @@ public class Game {
      *
      * @param cards number of cards to draw
      */
-    public Game draw(int cards) {
+    public Cards draw(int cards) {
         Cards drawn = library.draw(cards);
         log("- draw " + cards + ": " + drawn);
         hand.addAll(drawn);
-        return this;
+        return drawn;
     }
 
     /**
@@ -415,9 +397,9 @@ public class Game {
      * @param to       target area
      * @param side     side of the target area
      */
-    public Game move(String cardName, Area from, Area to, Side side) {
+    public void move(String cardName, Area from, Area to, Side side) {
         log("- move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
-        return _move(cardName, from, to, side);
+        _move(cardName, from, to, side);
     }
 
     /**
@@ -427,8 +409,8 @@ public class Game {
      * @param from     origin area
      * @param to       target area
      */
-    public Game move(String cardName, Area from, Area to) {
-        return move(cardName, from, to, Side.top);
+    public void move(String cardName, Area from, Area to) {
+        move(cardName, from, to, Side.top);
     }
 
     /**
@@ -439,11 +421,10 @@ public class Game {
      * @param to       target area
      * @param cost     mana cost
      */
-    public Game cast(String cardName, Area from, Area to, Mana cost) {
+    public void cast(String cardName, Area from, Area to, Mana cost) {
         log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
         _pay(cost);
         _move(cardName, from, to, Side.top);
-        return this;
     }
 
     /**
@@ -452,8 +433,8 @@ public class Game {
      * @param cardName spell name
      * @param cost     mana cost
      */
-    public Game castPermanent(String cardName, Mana cost) {
-        return cast(cardName, Area.hand, Area.board, cost);
+    public void castPermanent(String cardName, Mana cost) {
+        cast(cardName, Area.hand, Area.board, cost);
     }
 
     /**
@@ -462,8 +443,8 @@ public class Game {
      * @param cardName spell name
      * @param mana     cost
      */
-    public Game castNonPermanent(String cardName, Mana mana) {
-        return cast(cardName, Area.hand, Area.graveyard, mana);
+    public void castNonPermanent(String cardName, Mana mana) {
+        cast(cardName, Area.hand, Area.graveyard, mana);
     }
 
     /**
@@ -471,10 +452,9 @@ public class Game {
      *
      * @param cardName card name
      */
-    public Game discard(String cardName) {
+    public void discard(String cardName) {
         log("- discard [" + cardName + "]");
         _move(cardName, Area.hand, Area.graveyard, Side.top);
-        return this;
     }
 
     /**
@@ -494,10 +474,9 @@ public class Game {
      *
      * @param cardName permanent name
      */
-    public Game sacrifice(String cardName) {
+    public void sacrifice(String cardName) {
         log("- sacrifice [" + cardName + "]");
         _move(cardName, Area.board, Area.graveyard, Side.top);
-        return this;
     }
 
     /**
@@ -505,10 +484,9 @@ public class Game {
      *
      * @param cardName permanent name
      */
-    public Game destroy(String cardName) {
+    public void destroy(String cardName) {
         log("- destroy [" + cardName + "]");
         _move(cardName, Area.board, Area.graveyard, Side.top);
-        return this;
     }
 
     /**
@@ -516,8 +494,8 @@ public class Game {
      *
      * @param cardName card name
      */
-    public Game putOnBottomOfLibrary(String cardName) {
-        return move(cardName, Game.Area.hand, Game.Area.library, Game.Side.bottom);
+    public void putOnBottomOfLibrary(String cardName) {
+        move(cardName, Game.Area.hand, Game.Area.library, Game.Side.bottom);
     }
 
     /**

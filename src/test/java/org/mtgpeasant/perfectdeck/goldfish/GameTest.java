@@ -57,20 +57,23 @@ public class GameTest {
         // GIVEN
         Cards library = Cards.of(new ArrayList<>(Arrays.asList("putrid imp", "swamp", "lotus petal", "simian spirit guide", "animate dead", "dragon breath", "ulamog's crusher", "faithless looting", "animate dead", "exhume", "gitaxian probe", "mountain", "hand of emrakul", "mountain")));
         Cards hand = library.draw(7);
-        Game ctx = new Game(true, null);
-        ctx.keepHandAndStart(library, hand);
+        Game game = new Game(true, null);
+        game.keepHandAndStart(library, hand);
 
         // WHEN / THEN
-        ctx
-                .land("swamp")
-                .tap("swamp").add(Mana.of("B"))
-                .castPermanent("putrid imp", Mana.of("B"))
-                .discard("ulamog's crusher")
-                .castPermanent("lotus petal", Mana.zero()).sacrifice("lotus petal").add(Mana.of("B"))
-                .discard("simian spirit guide").add(Mana.of("R"))
-                .castNonPermanent("animate dead", Mana.of("1B"));
+        game.land("swamp");
+        game.tap("swamp");
+        game.add(Mana.of("B"));
+        game.castPermanent("putrid imp", Mana.of("B"));
+        game.discard("ulamog's crusher");
+        game.castPermanent("lotus petal", Mana.zero());
+        game.sacrifice("lotus petal");
+        game.add(Mana.of("B"));
+        game.discard("simian spirit guide");
+        game.add(Mana.of("R"));
+        game.castNonPermanent("animate dead", Mana.of("1B"));
 
-        System.out.println("remains: " + ctx.getPool());
+        System.out.println("remains: " + game.getPool());
     }
 
 }
