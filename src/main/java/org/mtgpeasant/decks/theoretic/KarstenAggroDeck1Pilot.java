@@ -1,10 +1,12 @@
 package org.mtgpeasant.decks.theoretic;
 
+import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
-import org.mtgpeasant.perfectdeck.common.Mana;
 
+import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
+import static org.mtgpeasant.perfectdeck.goldfish.Card.withType;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.hand;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;
 
@@ -77,34 +79,34 @@ public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
     @Override
     public void combatPhase() {
         // attack with all creatures on board
-        game.getBoard().findAll(LIONS).forEach(crea -> game.tapForAttack(LIONS, 2));
-        game.getBoard().findAll(LEECH).forEach(crea -> game.tapForAttack(LEECH, 4));
+        game.find(withName(LIONS)).forEach(crea -> game.tapForAttack(crea, 2));
+        game.find(withName(LEECH)).forEach(crea -> game.tapForAttack(crea, 4));
     }
 
     @Override
     public void secondMainPhase() {
         // draw all mana
-        game.getBoard().findAll(LAND).forEach(land -> game.tapLandForMana(LAND, ONE));
+        game.find(withType(Game.CardType.land)).forEach(land -> game.tapLandForMana(land, ONE));
 
         int castableBolts = Math.min(game.getPool().ccm(), game.getHand().count(BOLT));
         if (castableBolts * 3 >= game.getOpponentLife()) {
             // my bolts can kill the opponent: go ahead
             for (int i = 0; i < castableBolts; i++) {
-                game.castNonPermanent(BOLT, ONE);
+                game.castInstant(BOLT, ONE);
                 game.damageOpponent(3);
             }
         } else {
             // cast as many leeches as we can
             while (game.getPool().ccm() >= 2 && game.getHand().contains(LEECH)) {
-                game.castPermanent(LEECH, TWO);
+                game.castCreature(LEECH, TWO);
             }
             // cast as many lions as we can
             while (game.getPool().ccm() >= 1 && game.getHand().contains(LIONS)) {
-                game.castPermanent(LIONS, ONE);
+                game.castCreature(LIONS, ONE);
             }
             // finally cast as many bolts as we can
             while (game.getPool().ccm() >= 1 && game.getHand().contains(BOLT)) {
-                game.castNonPermanent(BOLT, ONE);
+                game.castInstant(BOLT, ONE);
                 game.damageOpponent(3);
             }
         }

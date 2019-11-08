@@ -3,18 +3,22 @@ package org.mtgpeasant.decks.stompy;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
+import org.mtgpeasant.perfectdeck.goldfish.Card;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.Optional;
+
+import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
 
 /**
  * TODO:
  * <ul>
- *     <li>force hunger by sacrificing an eldrazi spawn</li>
- *     <li>use Quirion to untap Nettle or mana producers</li>
+ * <li>force hunger by sacrificing an eldrazi spawn</li>
+ * <li>use Quirion to untap Nettle or mana producers</li>
  * </ul>
  */
 public class StompyDeckPilot extends DeckPilot<Game> {
@@ -59,11 +63,12 @@ public class StompyDeckPilot extends DeckPilot<Game> {
     private static final String LAND_GRANT = "land grant";
     private static final String DISMEMBER = "dismember";
 
-    private static MulliganRules rules;
+    private static final String SUMMONING_SICKNESS_TAG = "sickness";
+    private static final String PERM_BOOST = "perm-boost";
+    private static final String TEMP_BOOST = "temp-boost";
 
-    // game state
-    private int boostCounters = 0;
-    private int boostUntilEot = 0;
+
+    private static MulliganRules rules;
 
     // turn state
     private boolean aCreatureIsDead = false;
@@ -100,12 +105,11 @@ public class StompyDeckPilot extends DeckPilot<Game> {
     public void untapStep() {
         aCreatureIsDead = false;
         damageDealtThisTurn = false;
-        boostUntilEot = 0;
 
-        super.untapStep();
+        game.untapAll();
 
         // Nettles don't untap as normal
-        game.getUntapped(NETTLE_SENTINEL).forEach(card -> game.tap(NETTLE_SENTINEL));
+        game.find(withName(NETTLE_SENTINEL)).forEach(card -> card.setTapped(true));
     }
 
     @Override
@@ -147,83 +151,77 @@ public class StompyDeckPilot extends DeckPilot<Game> {
     @Override
     public void combatPhase() {
         // boost all creatures and attack
-        Cards creatures = game.getUntapped(CREATURES);
+        List<Card> creatures = game.find(withType(Game.CardType.creature).and(untapped()).and(notWithTag(SUMMONING_SICKNESS_TAG)));
         if (creatures.isEmpty()) {
             return;
         }
 
         // play hunger if a creature is dead
-        if(aCreatureIsDead) {
+        if (aCreatureIsDead) {
             while (playOneOf(HUNGER_OF_THE_HOWLPACK).isPresent()) {
             }
-            creatures = game.getUntapped(CREATURES); // (a Nettle may have been untapped)
+            creatures = game.find(withType(Game.CardType.creature).and(untapped()).and(notWithTag(SUMMONING_SICKNESS_TAG))); // (a Nettle may have been untapped)
         }
 
-        // attach with all creatures
-        creatures.forEach(card -> game.tapForAttack(card, strength(card)));
+        // foresee combat damage
+        int curses = game.count(withName(CURSE_OF_PREDATION));
+        int combatDamage = creatures.stream().mapToInt(card -> strength(card) + curses).sum();
 
-        // add +1/+1 counters to each attacking creature for each curse in play
-        boostCounters += game.getBoard().count(CURSE_OF_PREDATION) * creatures.size();
-        if (boostCounters > 0) {
-            game.damageOpponent(boostCounters, boostCounters + " +1/+1 counters");
-        }
-
-        // add rancors
-        game.getBoard().findAll(RANCOR).forEach(card -> {
-            game.tap(card);
-            game.damageOpponent(2, "rancor");
-        });
-
-        // can I kill now with boosts ?
-        if (game.getOpponentLife() > 0) {
-            boolean canUseQuirion = game.getBoard().contains(QUIRION_RANGER) && game.getBoard().contains(FOREST) && !game.isLanded();
+        // can I kill now with instant boosts ?
+        if (combatDamage < game.getOpponentLife()) {
+            boolean canUseQuirion = game.findFirst(withName(QUIRION_RANGER)).isPresent() && game.findFirst(withName(FOREST)).isPresent() && !game.isLanded();
             Mana potentialPool = game.getPool()
                     .plus(Mana.of(
                             0,
                             0,
-                            game.countUntapped(FOREST) + (canUseQuirion ? 1 : 0) + game.countUntapped(LLANOWAR_ELVES, FYNDHORN_ELVES),
+                            game.count(withName(FOREST).and(untapped())) + (canUseQuirion ? 1 : 0) + game.count(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())),
                             0,
                             0,
-                            game.getBoard().count(ELDRAZI_SPAWN))
+                            game.count(withName(ELDRAZI_SPAWN)))
                     );
-            int potentialBoost = 0;
+            int instantBoosts = 0;
+
             int countHydra = game.getHand().count(ASPECT_OF_HYDRA);
             int devotion = devotion();
             while (potentialPool.contains(G) && countHydra > 0) {
-                potentialBoost += devotion;
+                instantBoosts += devotion;
                 countHydra--;
                 potentialPool = potentialPool.minus(G);
             }
             int countVines = game.getHand().count(VINES_OF_VASTWOOD);
             while (potentialPool.contains(GG) && countVines > 0) {
-                potentialBoost += 4;
+                instantBoosts += 4;
                 countVines--;
                 potentialPool = potentialPool.minus(GG);
             }
             int countSwipes = game.getHand().count(SAVAGE_SWIPE);
             while (potentialPool.contains(G) && countSwipes > 0) {
-                potentialBoost += 2;
+                instantBoosts += 2;
                 countSwipes--;
                 potentialPool = potentialPool.minus(G);
             }
-            if (potentialBoost >= game.getOpponentLife()) {
+            if (combatDamage + instantBoosts >= game.getOpponentLife()) {
                 game.log(">> I can rush now");
-                while(playOneOf(ASPECT_OF_HYDRA, VINES_OF_VASTWOOD, SAVAGE_SWIPE).isPresent()) {
+                while (playOneOf(ASPECT_OF_HYDRA, VINES_OF_VASTWOOD, SAVAGE_SWIPE).isPresent()) {
                 }
             }
         }
-        if(boostUntilEot > 0) {
-            game.damageOpponent(boostUntilEot, boostUntilEot + " +1/+1 until EOT");
-        }
+
+        // attack with all creatures
+        creatures.forEach(card -> {
+            // add one +1/+1 counter per curse
+            card.addCounter(PERM_BOOST, curses);
+            game.tapForAttack(card, strength(card));
+        });
 
         damageDealtThisTurn = true;
     }
 
     @Override
     public void secondMainPhase() {
-        while(playOneOf(
+        while (playOneOf(
                 // at least one Quirion on board is top priority
-                !game.getBoard().contains(QUIRION_RANGER) ? QUIRION_RANGER : "_",
+                !game.findFirst(withName(QUIRION_RANGER)).isPresent() ? QUIRION_RANGER : "_",
                 LLANOWAR_ELVES,
                 FYNDHORN_ELVES,
                 // skarrgan if damage dealt (+1/+1)
@@ -246,17 +244,31 @@ public class StompyDeckPilot extends DeckPilot<Game> {
 
     @Override
     public void endingPhase() {
+        // reset temporary boosts and summoning sickness
+        game.find(withType(Game.CardType.creature)).forEach(card -> {
+            card.getCounters().remove(TEMP_BOOST);
+            card.getTags().remove(SUMMONING_SICKNESS_TAG);
+        });
+
         if (game.getHand().size() > 7) {
             discard(game.getHand().size() - 7);
         }
     }
 
     private void triggerNettle() {
-        game.getTapped().findAll(NETTLE_SENTINEL).forEach(card -> game.untap(NETTLE_SENTINEL));
+        game.find(withName(NETTLE_SENTINEL).and(tapped())).forEach(card -> card.setTapped(false));
     }
 
-    private int strength(String creature) {
-        switch (creature) {
+    private int strength(Card creature) {
+        // strength is base strength + +1/1 counters + temporary boosts + 2 * rancors
+        return baseStrength(creature)
+                + creature.getCounter(PERM_BOOST)
+                + creature.getCounter(TEMP_BOOST)
+                + 2 * creature.getCounter(RANCOR);
+    }
+
+    private int baseStrength(Card creature) {
+        switch (creature.getName()) {
             case ELDRAZI_SPAWN:
                 return 0;
             case QUIRION_RANGER:
@@ -286,8 +298,8 @@ public class StompyDeckPilot extends DeckPilot<Game> {
         return game.getBoard().stream().mapToInt(this::devotion).sum();
     }
 
-    private int devotion(String card) {
-        switch (card) {
+    private int devotion(Card card) {
+        switch (card.getName()) {
             case QUIRION_RANGER:
             case NETTLE_SENTINEL:
             case SKARRGAN_PIT_SKULK:
@@ -335,11 +347,11 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 continue;
             }
             // discard extra lands
-            if (game.getBoard().count(FOREST) + game.getHand().count(FOREST) > 3 && game.discardOneOf(FOREST).isPresent()) {
+            if (game.count(withName(FOREST)) + game.getHand().count(FOREST) > 3 && game.discardOneOf(FOREST).isPresent()) {
                 continue;
             }
             // discard extra creatures
-            if (game.getBoard().count(CREATURES) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
+            if (game.count(withName(CREATURES)) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // TODO: choose better
@@ -349,35 +361,35 @@ public class StompyDeckPilot extends DeckPilot<Game> {
 
     boolean canPay(Mana cost) {
         // potential mana pool is current pool + untapped lands + petals on board
-        boolean canUseQuirion = game.getBoard().contains(QUIRION_RANGER) && game.getBoard().contains(FOREST) && !game.isLanded();
+        boolean canUseQuirion = game.findFirst(withName(QUIRION_RANGER)).isPresent() && game.findFirst(withName(FOREST)).isPresent() && !game.isLanded();
         Mana potentialPool = game.getPool()
                 .plus(Mana.of(
                         0,
                         0,
-                        game.countUntapped(FOREST) + (canUseQuirion ? 1 : 0) + game.countUntapped(LLANOWAR_ELVES, FYNDHORN_ELVES),
+                        game.count(withName(FOREST).and(untapped())) + (canUseQuirion ? 1 : 0) + game.count(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())),
                         0,
                         0,
-                        game.getBoard().count(ELDRAZI_SPAWN))
+                        game.count(withName(ELDRAZI_SPAWN)))
                 );
         return potentialPool.contains(cost);
     }
 
     void produce(Mana cost) {
         while (!game.canPay(cost)) {
-            Optional<String> land = game.findFirstUntapped(FOREST);
+            Optional<Card> land = game.findFirst(withName(FOREST).and(untapped()));
             if (land.isPresent()) {
                 game.tapLandForMana(land.get(), G);
-            } else if (game.countUntapped(LLANOWAR_ELVES, FYNDHORN_ELVES) > 0) {
-                game.tap(game.findFirstUntapped(LLANOWAR_ELVES, FYNDHORN_ELVES).get());
+            } else if (game.count(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())) > 0) {
+                game.tap(game.findFirst(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())).get());
                 game.add(G);
-            } else if (game.getBoard().contains(QUIRION_RANGER) && game.getBoard().contains(FOREST) && !game.isLanded()) {
+            } else if (game.findFirst(withName(QUIRION_RANGER)).isPresent() && game.findFirst(withName(FOREST)).isPresent() && !game.isLanded()) {
                 // use Quirion ability
                 game.log("- use [Quirion Ranger] ability");
                 game.move(FOREST, Game.Area.board, Game.Area.hand);
-                game.land(FOREST);
-                game.tapLandForMana(FOREST, G);
+                Card forest = game.land(FOREST);
+                game.tapLandForMana(forest, G);
                 // if possible untap a nettle or a mana producer ? TODO (manage summoning sickness)
-            } else if (game.getBoard().count(ELDRAZI_SPAWN) > 0) {
+            } else if (game.count(withName(ELDRAZI_SPAWN)) > 0) {
                 // sacrifice a spawn
                 sacrificeASpawn();
             } else {
@@ -388,13 +400,15 @@ public class StompyDeckPilot extends DeckPilot<Game> {
     }
 
     private void sacrificeASpawn() {
-        game.sacrifice(ELDRAZI_SPAWN);
-        game.add(ONE);
-        aCreatureIsDead = true;
+        game.findFirst(withName(ELDRAZI_SPAWN)).ifPresent(card -> {
+            game.sacrifice(card);
+            game.add(ONE);
+            aCreatureIsDead = true;
+        });
     }
 
     void maybeSacrificeForHunger() {
-        if(!aCreatureIsDead && canPay(G) && game.getHand().contains(HUNGER_OF_THE_HOWLPACK) && game.getBoard().contains(ELDRAZI_SPAWN)) {
+        if (!aCreatureIsDead && canPay(G) && game.getHand().contains(HUNGER_OF_THE_HOWLPACK) && game.findFirst(withName(ELDRAZI_SPAWN)).isPresent()) {
             sacrificeASpawn();
         }
     }
@@ -434,13 +448,22 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 return canPay(G);
             case ASPECT_OF_HYDRA:
             case HUNGER_OF_THE_HOWLPACK:
+                // need an untapped target creature
+                return game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))
+                ).isPresent() && canPay(G);
             case RANCOR:
-                // need a target creature
-                return game.getBoard().count(CREATURES) > 0 && canPay(G);
+                // need a target creature (any)
+                return game.findFirst(withType(Game.CardType.creature)).isPresent() && canPay(G);
             case SAVAGE_SWIPE:
                 // need a target creature with power 2
-                // TODO: not exact (does not take counters into account)
-                return game.getUntapped(CREATURES).stream().filter(crea -> strength(crea) == 2).findFirst().isPresent() && canPay(G);
+                return game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))
+                        .and(crea -> strength(crea) == 2)
+                ).isPresent()
+                        && canPay(G);
             case NEST_INVADER:
             case SAFEHOLD_ELITE:
             case RIVER_BOA:
@@ -452,7 +475,7 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 return canPay(GG);
             case VINES_OF_VASTWOOD:
                 // need a target creature
-                return game.getBoard().count(CREATURES) > 0 && canPay(GG);
+                return game.count(withName(CREATURES)) > 0 && canPay(GG);
             case CURSE_OF_PREDATION:
                 return canPay(G2);
         }
@@ -472,13 +495,12 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 triggerNettle();
                 return true;
             case GITAXIAN_PROBE:
-                game.castNonPermanent(card, Mana.zero());
+                game.castSorcery(card, Mana.zero());
                 game.draw(1);
                 return true;
             case VAULT_SKIRGE:
                 produce(ONE);
-                game.castPermanent(card, ONE);
-                game.tap(card); // summoning sickness
+                game.castCreature(card, ONE).tag(SUMMONING_SICKNESS_TAG);
                 return true;
             case QUIRION_RANGER:
             case LLANOWAR_ELVES:
@@ -486,81 +508,104 @@ public class StompyDeckPilot extends DeckPilot<Game> {
             case NETTLE_SENTINEL:
             case YOUNG_WOLF:
                 produce(G);
-                game.castPermanent(card, G);
-                game.tap(card); // summoning sickness
+                game.castCreature(card, G).tag(SUMMONING_SICKNESS_TAG);
                 triggerNettle();
                 return true;
             case SKARRGAN_PIT_SKULK:
                 produce(G);
-                game.castPermanent(card, G);
-                game.tap(card); // summoning sickness
-                triggerNettle();
+                Card crea = game.castCreature(card, G).tag(SUMMONING_SICKNESS_TAG);
                 if (damageDealtThisTurn) {
-                    boostCounters += 1;
+                    crea.addCounter(PERM_BOOST, 1);
                 }
-                return true;
-            case RANCOR:
-                produce(G);
-                game.castPermanent(card, G);
                 triggerNettle();
                 return true;
-            case ASPECT_OF_HYDRA:
+            case RANCOR: {
+                // target preferably a creature ready to attack, or else any creature
+                Card targetCreature = game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG)))
+                        .orElseGet(() -> game.findFirst(withType(Game.CardType.creature)).get());
                 produce(G);
-                game.castNonPermanent(card, G);
+                game.castEnchantment(card, G).tag("on:" + targetCreature.getName());
+                targetCreature.incrCounter(RANCOR);
+                triggerNettle();
+                return true;
+            }
+            case ASPECT_OF_HYDRA: {
+                // target a creature ready to attack
+                Card targetCreature = game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))).get();
+                produce(G);
+                game.castInstant(card, G);
                 int devotion = devotion();
-                boostUntilEot += devotion;
+                targetCreature.addCounter(TEMP_BOOST, devotion);
                 triggerNettle();
                 return true;
-            case SAVAGE_SWIPE:
+            }
+            case SAVAGE_SWIPE: {
+                // target a creature ready to attack with power 2
+                Card targetCreature = game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))
+                        .and(c -> strength(c) == 2)
+                ).get();
                 produce(G);
-                game.castNonPermanent(card, G);
-                boostUntilEot += 2;
+                game.castSorcery(card, G);
+                targetCreature.addCounter(TEMP_BOOST, 2);
                 triggerNettle();
                 return true;
-            case HUNGER_OF_THE_HOWLPACK:
+            }
+            case HUNGER_OF_THE_HOWLPACK: {
+                // target a creature ready to attack
+                Card targetCreature = game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))).get();
                 produce(G);
-                game.castNonPermanent(card, G);
-                boostCounters += aCreatureIsDead ? 3 : 1;
+                game.castInstant(card, G);
+                targetCreature.addCounter(PERM_BOOST, aCreatureIsDead ? 3 : 1);
                 triggerNettle();
                 return true;
-            case NEST_INVADER:
+            }
+            case VINES_OF_VASTWOOD: {
+                // target a creature ready to attack
+                Card targetCreature = game.findFirst(withType(Game.CardType.creature)
+                        .and(untapped())
+                        .and(notWithTag(SUMMONING_SICKNESS_TAG))).get();
+                produce(GG);
+                game.castInstant(card, GG);
+                targetCreature.addCounter(TEMP_BOOST, 4);
+                triggerNettle();
+                return true;
+            }
+            case NEST_INVADER: {
                 produce(G1);
-                game.castPermanent(card, G1);
-                game.tap(card); // summoning sickness
+                game.castCreature(card, G1).tag(SUMMONING_SICKNESS_TAG);
                 triggerNettle();
-                game.getBoard().add(ELDRAZI_SPAWN);
-                game.tap(ELDRAZI_SPAWN); // summoning sickness
+                game.getBoard().add(new Card(ELDRAZI_SPAWN, Game.CardType.creature).tag("token").tag(SUMMONING_SICKNESS_TAG));
                 return true;
+            }
             case SAFEHOLD_ELITE:
             case RIVER_BOA:
             case SILHANA_LEDGEWALKER:
                 produce(G1);
-                game.castPermanent(card, G1);
-                game.tap(card); // summoning sickness
+                game.castCreature(card, G1).tag(SUMMONING_SICKNESS_TAG);
                 triggerNettle();
                 return true;
             case BURNING_TREE_EMISSARY:
                 produce(G1);
-                game.castPermanent(card, G1);
-                // tap to simulate invocation sickness
-                game.tap(card);
+                game.castCreature(card, G1).tag(SUMMONING_SICKNESS_TAG);
                 game.add(GR);
                 triggerNettle();
                 return true;
             case STRANGLEROOT_GEIST:
                 produce(GG);
-                game.castPermanent(card, GG);
-                triggerNettle();
-                return true;
-            case VINES_OF_VASTWOOD:
-                produce(GG);
-                game.castNonPermanent(card, GG);
-                boostUntilEot += 4;
+                game.castCreature(card, GG);
                 triggerNettle();
                 return true;
             case CURSE_OF_PREDATION:
                 produce(G2);
-                game.castPermanent(card, G2);
+                game.castEnchantment(card, G2);
                 triggerNettle();
                 return true;
         }

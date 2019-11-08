@@ -61,13 +61,13 @@ public class GameTest {
         game.keepHandAndStart(library, hand);
 
         // WHEN / THEN
-        game.land("swamp");
-        game.tap("swamp");
+        Card swamp = game.land("swamp");
+        game.tap(swamp);
         game.add(Mana.of("B"));
         game.castPermanent("putrid imp", Mana.of("B"));
         game.discard("ulamog's crusher");
-        game.castPermanent("lotus petal", Mana.zero());
-        game.sacrifice("lotus petal");
+        Card petal = game.castPermanent("lotus petal", Mana.zero());
+        game.sacrifice(petal);
         game.add(Mana.of("B"));
         game.discard("simian spirit guide");
         game.add(Mana.of("R"));

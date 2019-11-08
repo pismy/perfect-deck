@@ -6,17 +6,17 @@ import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.common.utils.Permutations;
+import org.mtgpeasant.perfectdeck.goldfish.Card;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
 
 public class InfectDeckPilot extends DeckPilot<Game> {
 
@@ -91,13 +91,13 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     public void firstMainPhase() {
         // whichever the situation, if I have a probe in hand: play it
         while (game.getHand().contains(GITAXIAN_PROBE)) {
-            game.castNonPermanent(GITAXIAN_PROBE, Mana.zero());
+            game.castSorcery(GITAXIAN_PROBE, Mana.zero());
             game.draw(1);
         }
 
         // land
         // pendelhaven if no invigorate in hand and no forest on board
-        if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(INVIGORATE) || game.getBoard().contains(FOREST))) {
+        if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(INVIGORATE) || game.findFirst(withName(FOREST)).isPresent())) {
             game.land(PENDELHAVEN);
         } else if (game.getHand().contains(FOREST)) {
             game.land(FOREST);
@@ -105,14 +105,14 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
         // play all petals
         while (game.getHand().contains(LOTUS_PETAL)) {
-            game.castPermanent(LOTUS_PETAL, Mana.zero());
+            game.castArtifact(LOTUS_PETAL, Mana.zero());
         }
     }
 
     @Override
     public void combatPhase() {
         // boost all creatures and attack
-        Cards creatures = game.getBoard().findAll(CREATURES);
+        List<Card> creatures = game.find(withType(Game.CardType.creature));
         if (creatures.isEmpty()) {
             return;
         }
@@ -121,14 +121,14 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
         // play all mutagenic
         while (game.getHand().contains(MUTAGENIC_GROWTH)) {
-            game.castNonPermanent(MUTAGENIC_GROWTH, Mana.zero());
+            game.castInstant(MUTAGENIC_GROWTH, Mana.zero());
             game.poisonOpponent(2);
         }
 
         // play all invigorates (if forest)
-        if (game.getBoard().contains(FOREST)) {
+        if (game.findFirst(withName(FOREST)).isPresent()) {
             while (game.getHand().contains(INVIGORATE)) {
-                game.castNonPermanent(INVIGORATE, Mana.zero());
+                game.castInstant(INVIGORATE, Mana.zero());
                 game.poisonOpponent(4);
                 game.damageOpponent(-3);
             }
@@ -138,19 +138,19 @@ public class InfectDeckPilot extends DeckPilot<Game> {
         int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
         while (castableScaleUp > 0 && canPay(G)) {
             produce(G);
-            game.castNonPermanent(SCALE_UP, G);
+            game.castSorcery(SCALE_UP, G);
             game.poisonOpponent(5);
             castableScaleUp--;
         }
 
         // is there an optimal order to play my spells to kill this turn ?
         int poisonCountersAtEOT = game.getOpponentPoisonCounters();
-        poisonCountersAtEOT += 3 * game.getBoard().count(SEAL_OF_STRENGTH);
-        poisonCountersAtEOT += 1 * game.getBoard().count(CREATURES);
-        poisonCountersAtEOT += 2 * game.getBoard().count(RANCOR);
+        poisonCountersAtEOT += 3 * game.count(withName(SEAL_OF_STRENGTH));
+        poisonCountersAtEOT += 1 * creatures.size();
+        poisonCountersAtEOT += 2 * game.count(withName(RANCOR));
 
         Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
+                .plus(Mana.of(0, 0, game.count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
 
         Collection<String> boostsToPlay = game.isLanded() ?
                 game.getHand().findAll(RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
@@ -176,61 +176,61 @@ public class InfectDeckPilot extends DeckPilot<Game> {
                 case RANCOR:
                     if (canPay(G)) {
                         produce(G);
-                        game.castPermanent(RANCOR, G);
+                        game.castEnchantment(RANCOR, G);
                     }
                     break;
                 case MIGHT_OF_OLD_KROSA:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(MIGHT_OF_OLD_KROSA, G);
+                        game.castInstant(MIGHT_OF_OLD_KROSA, G);
                         game.poisonOpponent(4);
                     }
                     break;
                 case GROUNDSWELL:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(GROUNDSWELL, G);
+                        game.castInstant(GROUNDSWELL, G);
                         game.poisonOpponent(game.isLanded() ? 4 : 2);
                     }
                     break;
                 case GIANT_GROWTH:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(GIANT_GROWTH, G);
+                        game.castInstant(GIANT_GROWTH, G);
                         game.poisonOpponent(3);
                     }
                     break;
                 case SEAL_OF_STRENGTH:
                     if (canPay(G)) {
                         produce(G);
-                        game.castPermanent(SEAL_OF_STRENGTH, G);
+                        game.castEnchantment(SEAL_OF_STRENGTH, G);
                     }
                     break;
                 case BLOSSOMING_DEFENSE:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(BLOSSOMING_DEFENSE, G);
+                        game.castInstant(BLOSSOMING_DEFENSE, G);
                         game.poisonOpponent(2);
                     }
                     break;
                 case LARGER_THAN_LIFE:
                     if (canPay(G1)) {
                         produce(G1);
-                        game.castNonPermanent(LARGER_THAN_LIFE, G1);
+                        game.castInstant(LARGER_THAN_LIFE, G1);
                         game.poisonOpponent(4);
                     }
                     break;
                 case VINES_OF_VASTWOOD:
                     if (canPay(GG)) {
                         produce(GG);
-                        game.castNonPermanent(VINES_OF_VASTWOOD, GG);
+                        game.castInstant(VINES_OF_VASTWOOD, GG);
                         game.poisonOpponent(4);
                     }
                     break;
                 case RANGER_S_GUILE:
                     if (canPay(G)) {
                         produce(G);
-                        game.castNonPermanent(RANGER_S_GUILE, G);
+                        game.castInstant(RANGER_S_GUILE, G);
                         game.poisonOpponent(1);
                     }
                     break;
@@ -238,7 +238,7 @@ public class InfectDeckPilot extends DeckPilot<Game> {
         }
 
         // sacrifice all seals
-        game.getBoard().findAll(SEAL_OF_STRENGTH).forEach(card -> {
+        game.find(withName(SEAL_OF_STRENGTH)).forEach(card -> {
             game.sacrifice(card);
             game.poisonOpponent(3);
         });
@@ -250,13 +250,13 @@ public class InfectDeckPilot extends DeckPilot<Game> {
         });
 
         // add rancors
-        game.getBoard().findAll(RANCOR).forEach(card -> {
+        game.find(withName(RANCOR)).forEach(card -> {
             game.tap(card);
             game.poisonOpponent(2);
         });
 
         // use one untapped pendelhaven to boost
-        game.getUntapped(PENDELHAVEN).forEach(card -> {
+        game.find(withName(PENDELHAVEN).and(untapped())).forEach(card -> {
             game.tap(card);
             game.poisonOpponent(1);
         });
@@ -335,30 +335,32 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     @Override
     public void secondMainPhase() {
         // cast 1 creature if none on board
-        if (game.getBoard().count(CREATURES) == 0) {
+        if (game.count(withType(Game.CardType.creature)) == 0) {
             if (game.getHand().contains(GLISTENER_ELF) && canPay(G)) {
                 produce(G);
-                game.castPermanent(GLISTENER_ELF, G);
+                game.castCreature(GLISTENER_ELF, G);
             } else if (game.getHand().contains(BLIGHT_MAMBA) && canPay(G1)) {
                 produce(G1);
-                game.castPermanent(BLIGHT_MAMBA, G1);
+                game.castCreature(BLIGHT_MAMBA, G1);
             } else if (game.getHand().contains(ICHORCLAW_MYR) && canPay(TWO)) {
                 produce(TWO);
-                game.castPermanent(ICHORCLAW_MYR, TWO);
+                game.castCreature(ICHORCLAW_MYR, TWO);
             }
         }
 
         // play all seals
         while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
             produce(G);
-            game.castPermanent(SEAL_OF_STRENGTH, G);
+            game.castEnchantment(SEAL_OF_STRENGTH, G);
         }
 
         // play rancors
-        if (game.getBoard().count(CREATURES) > 0) {
+        Optional<Card> creature = game.findFirst(withType(Game.CardType.creature));
+        if (creature.isPresent()) {
             while (game.getHand().contains(RANCOR) && canPay(G)) {
                 produce(G);
-                game.castPermanent(RANCOR, G);
+                game.castEnchantment(RANCOR, G).tag("on:" + creature.get().getName());
+                creature.get().incrCounter("rancors");
             }
         }
 
@@ -367,7 +369,7 @@ public class InfectDeckPilot extends DeckPilot<Game> {
             Mana cost = crea.equals(GLISTENER_ELF) ? G : crea.equals(BLIGHT_MAMBA) ? G1 : TWO;
             if (canPay(cost)) {
                 produce(cost);
-                game.castPermanent(crea, cost);
+                game.castCreature(crea, cost);
             }
         }
     }
@@ -403,11 +405,11 @@ public class InfectDeckPilot extends DeckPilot<Game> {
                 continue;
             }
             // discard extra lands
-            if (game.getBoard().count(MANA_PRODUCERS) + game.getHand().count(MANA_PRODUCERS) > 3 && game.discardOneOf(MANA_PRODUCERS).isPresent()) {
+            if (game.count(withName(MANA_PRODUCERS)) + game.getHand().count(MANA_PRODUCERS) > 3 && game.discardOneOf(MANA_PRODUCERS).isPresent()) {
                 continue;
             }
             // discard extra creatures
-            if (game.getBoard().count(CREATURES) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
+            if (game.count(withType(Game.CardType.creature)) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // TODO: choose better
@@ -418,16 +420,16 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     boolean canPay(Mana cost) {
         // potential mana pool is current pool + untapped lands + petals on board
         Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, game.countUntapped(MANA_PRODUCERS), 0, 0, 0));
+                .plus(Mana.of(0, 0, game.count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
         return potentialPool.contains(cost);
     }
 
     void produce(Mana cost) {
         while (!game.canPay(cost)) {
-            Optional<String> producer = game.findFirstUntapped(FOREST, PENDELHAVEN, LOTUS_PETAL);
+            Optional<Card> producer = game.findFirst(withName(FOREST, PENDELHAVEN, LOTUS_PETAL).and(untapped()));
             if (producer.isPresent()) {
-                if (producer.get().equals(LOTUS_PETAL)) {
-                    game.sacrifice(LOTUS_PETAL);
+                if (producer.get().getName().equals(LOTUS_PETAL)) {
+                    game.sacrifice(producer.get());
                     game.add(G);
                 } else {
                     // a land

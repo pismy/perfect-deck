@@ -3,6 +3,11 @@ package org.mtgpeasant.decks.burn;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 public interface BurnCards {
+    String SUMMONING_SICKNESS_TAG = "sickness";
+    String DEFENDER_SUBTYPE = "defender";
+    String PERM_BOOST = "perm-boost";
+    String TURN_BOOST = "turn-boost";
+
     // LANDS
     String MOUNTAIN = "mountain";
     String FORGOTTEN_CAVE = "forgotten cave";
