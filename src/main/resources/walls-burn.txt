@@ -1,9 +1,9 @@
 4 Thermo-Alchemist
 4 Firebrand Archer
 3 Electrostatic Field
+
 3 Fireblast
 3 Rift Bolt
-1 Light Up the Stage
 4 Skewer the Critics
 4 Magma Jet
 3 Flame Rift
@@ -11,8 +11,13 @@
 4 Lightning Bolt
 4 Chain Lightning
 1 Needle Drop
+
+1 Light Up the Stage
+
 16 Mountain
 3 Forgotten Cave
+
+
 SB: 3 Ghitu Lavarunner
 SB: 1 Volcanic Fallout
 SB: 3 Incinerate

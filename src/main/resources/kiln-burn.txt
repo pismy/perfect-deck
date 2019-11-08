@@ -1,0 +1,32 @@
+4 Monastery Swiftspear
+// 4 Thermo-Alchemist
+3 Firebrand Archer
+4 Kiln Fiend
+
+3 Gitaxian Probe
+
+4 Chain Lightning
+2 Fireblast
+1 Forked Bolt
+4 Lava Dart
+4 Lightning Bolt
+1 Needle Drop
+2 Searing Blaze
+
+// TODO 2 Crash Through
+// TODO 2 Reckless Charge
+// TODO 2 Flame Jab
+4 Skewer the Critics
+4 Lava Spike
+2 Fireblast
+
+18 Mountain
+
+SB: 3 Apostle's Blessing
+SB: 2 Electrickery
+SB: 1 Gorilla Shaman
+SB: 1 Guerrilla Tactics
+SB: 2 Pyroblast
+SB: 2 Red Elemental Blast
+SB: 1 Skullcrack
+SB: 3 Smash to Smithereens

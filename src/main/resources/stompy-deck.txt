@@ -17,8 +17,8 @@
 4 Rancor
 3 Curse of Predation
 2 Vines of Vastwood
-1 Hunger of the Howlpack
-3 Aspect of Hydra
+2 Hunger of the Howlpack
+2 Aspect of Hydra
 // Savage Swipe
 
 // mana
