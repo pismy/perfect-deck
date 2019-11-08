@@ -141,6 +141,30 @@ public class StompyDeckPilot extends DeckPilot<Game> {
 
         }
 
+        // TODO: play more (for e.g. to untap nettle before combat)
+        while (playOneOf(
+                // at least one Quirion on board is top priority
+                !game.findFirst(withName(QUIRION_RANGER)).isPresent() ? QUIRION_RANGER : "_",
+                LLANOWAR_ELVES,
+                FYNDHORN_ELVES,
+                // skarrgan if damage dealt (+1/+1)
+                damageDealtThisTurn ? SKARRGAN_PIT_SKULK : "_",
+                NEST_INVADER,
+                // then hunger if a creature is dead
+                aCreatureIsDead ? HUNGER_OF_THE_HOWLPACK : "_",
+                SAFEHOLD_ELITE,
+                NETTLE_SENTINEL,
+                RIVER_BOA,
+                SILHANA_LEDGEWALKER,
+                QUIRION_RANGER,
+                VAULT_SKIRGE,
+                SKARRGAN_PIT_SKULK,
+                YOUNG_WOLF
+        ).isPresent()) {
+
+        }
+
+
         if (game.getPool().ccm() > 0) {
             // still have mana in pool: we should consume before combat phase
             // TODO
@@ -582,7 +606,7 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 produce(G1);
                 game.castCreature(card, G1).tag(SUMMONING_SICKNESS_TAG);
                 triggerNettle();
-                game.getBoard().add(new Card(ELDRAZI_SPAWN, Game.CardType.creature).tag("token").tag(SUMMONING_SICKNESS_TAG));
+                game.createToken(ELDRAZI_SPAWN, Game.CardType.creature).tag(SUMMONING_SICKNESS_TAG);
                 return true;
             }
             case SAFEHOLD_ELITE:

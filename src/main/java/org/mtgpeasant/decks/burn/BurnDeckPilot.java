@@ -21,10 +21,8 @@ import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
  * TODO:
  * <ul>
  * <li>manage [light up the stage]</li>
- * <li>manage [ghitu lavarunner] haste</li>
  * <li>manage [forgotten cave] cycling</li>
  * <li>manage [magma jet] scry</li>
- * <li>manage [thunderous wrath]</li>
  * <li>manage [seal of fire]</li>
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>

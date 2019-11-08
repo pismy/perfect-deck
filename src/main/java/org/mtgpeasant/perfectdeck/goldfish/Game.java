@@ -12,7 +12,8 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Card.tapped;
+import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
 
 @Getter
 @ToString(exclude = "library")
@@ -24,7 +25,7 @@ public class Game {
 
     public enum Side {top, bottom}
 
-    public enum CardType {artifact, creature, enchantment, instant, land, planeswalker, sorcery}
+    public enum CardType {artifact, creature, enchantment, instant, land, planeswalker, sorcery, token}
 
     // game state
     private final boolean onThePlay;
@@ -324,6 +325,21 @@ public class Game {
         Card card = new Card(cardName, CardType.land);
         board.add(card);
         landed = true;
+        return card;
+    }
+
+    /**
+     * Create a token
+     *
+     * @param name the token card name
+     */
+    public Card createToken(String name, CardType... types) {
+        log("- create token [" + name + "]");
+        CardType[] types2 = new CardType[types.length + 1];
+        types2[0] = CardType.token;
+        System.arraycopy(types, 0, types2, 1, types.length);
+        Card card = new Card(name, types2);
+        board.add(card);
         return card;
     }
 

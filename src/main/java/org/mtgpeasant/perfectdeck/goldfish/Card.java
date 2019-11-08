@@ -62,18 +62,14 @@ public class Card {
     }
 
     public String toString() {
-        StringBuilder sb = new StringBuilder(name);
+        StringBuilder sb = new StringBuilder();
+        if (tapped) {
+            sb.append("⟳"); // ↱↴💫💫
+        }
+        sb.append(name);
         boolean first = true;
-        if (/*tapped ||*/ !tags.isEmpty() || !counters.isEmpty()) {
+        if (!tags.isEmpty() || !counters.isEmpty()) {
             sb.append(" <");
-//            if (tapped) {
-//                if(first) {
-//                    first = false;
-//                } else {
-//                    sb.append(", ");
-//                }
-//                sb.append("tapped");
-//            }
             for (String tag : tags) {
                 if(first) {
                     first = false;
