@@ -119,7 +119,14 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 // then chain burning trees
                 BURNING_TREE_EMISSARY,
                 // then curse
-                CURSE_OF_PREDATION,
+                CURSE_OF_PREDATION
+        ).isPresent()) {
+
+        }
+
+        maybeSacrificeForHunger();
+
+        while (playOneOf(
                 // then hunger if a creature is dead
                 aCreatureIsDead ? HUNGER_OF_THE_HOWLPACK : "_",
                 // then rancor
@@ -386,6 +393,12 @@ public class StompyDeckPilot extends DeckPilot<Game> {
         aCreatureIsDead = true;
     }
 
+    void maybeSacrificeForHunger() {
+        if(!aCreatureIsDead && canPay(G) && game.getHand().contains(HUNGER_OF_THE_HOWLPACK) && game.getBoard().contains(ELDRAZI_SPAWN)) {
+            sacrificeASpawn();
+        }
+    }
+
     /**
      * Casts the first possible card from the list
      *
@@ -420,11 +433,14 @@ public class StompyDeckPilot extends DeckPilot<Game> {
             case YOUNG_WOLF:
                 return canPay(G);
             case ASPECT_OF_HYDRA:
-            case SAVAGE_SWIPE:
             case HUNGER_OF_THE_HOWLPACK:
             case RANCOR:
                 // need a target creature
                 return game.getBoard().count(CREATURES) > 0 && canPay(G);
+            case SAVAGE_SWIPE:
+                // need a target creature with power 2
+                // TODO: not exact (does not take counters into account)
+                return game.getUntapped(CREATURES).stream().filter(crea -> strength(crea) == 2).findFirst().isPresent() && canPay(G);
             case NEST_INVADER:
             case SAFEHOLD_ELITE:
             case RIVER_BOA:
@@ -490,20 +506,20 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 return true;
             case ASPECT_OF_HYDRA:
                 produce(G);
-                game.castNonPermanent(ASPECT_OF_HYDRA, G);
+                game.castNonPermanent(card, G);
                 int devotion = devotion();
                 boostUntilEot += devotion;
                 triggerNettle();
                 return true;
             case SAVAGE_SWIPE:
                 produce(G);
-                game.castNonPermanent(SAVAGE_SWIPE, G);
+                game.castNonPermanent(card, G);
                 boostUntilEot += 2;
                 triggerNettle();
                 return true;
             case HUNGER_OF_THE_HOWLPACK:
                 produce(G);
-                game.castNonPermanent(SAVAGE_SWIPE, G);
+                game.castNonPermanent(card, G);
                 boostCounters += aCreatureIsDead ? 3 : 1;
                 triggerNettle();
                 return true;
@@ -538,13 +554,13 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 return true;
             case VINES_OF_VASTWOOD:
                 produce(GG);
-                game.castNonPermanent(VINES_OF_VASTWOOD, GG);
+                game.castNonPermanent(card, GG);
                 boostUntilEot += 4;
                 triggerNettle();
                 return true;
             case CURSE_OF_PREDATION:
                 produce(G2);
-                game.castPermanent(CURSE_OF_PREDATION, G2);
+                game.castPermanent(card, G2);
                 triggerNettle();
                 return true;
         }
