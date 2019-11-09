@@ -11,18 +11,26 @@ import java.util.function.Predicate;
 @Data
 public class Card {
     final String name;
-    final List<Game.CardType> types;
+    final Set<Game.CardType> types;
     boolean tapped = false;
     Set<String> tags = new HashSet<>();
     Map<String, Integer> counters = new HashMap<>();
 
-    public Card(String name, Game.CardType... types) {
+    Card(String name, Game.CardType... types) {
         this.name = name;
-        this.types = Arrays.asList(types);
+        this.types = new HashSet<>(Arrays.asList(types));
+    }
+
+    public static Card card(String name, Game.CardType... types) {
+        return new Card(name, types);
     }
 
     public int getCounter(String name) {
         return counters.getOrDefault(name, 0);
+    }
+
+    public boolean hasType(Game.CardType type) {
+        return types.contains(type);
     }
 
     public boolean hasCounter(String name) {
@@ -71,7 +79,7 @@ public class Card {
         if (!tags.isEmpty() || !counters.isEmpty()) {
             sb.append(" <");
             for (String tag : tags) {
-                if(first) {
+                if (first) {
                     first = false;
                 } else {
                     sb.append(", ");
@@ -79,12 +87,12 @@ public class Card {
                 sb.append("#" + tag);
             }
             for (Map.Entry<String, Integer> ctr : counters.entrySet()) {
-                if(first) {
+                if (first) {
                     first = false;
                 } else {
                     sb.append(", ");
                 }
-                sb.append(ctr.getKey()+":"+ctr.getValue());
+                sb.append(ctr.getKey() + ":" + ctr.getValue());
             }
             sb.append(">");
         }
@@ -103,7 +111,7 @@ public class Card {
     }
 
     public static Predicate<Card> withType(Game.CardType type) {
-        return card -> card.getTypes().contains(type);
+        return card -> card.hasType(type);
     }
 
     public static Predicate<Card> withTag(String name) {

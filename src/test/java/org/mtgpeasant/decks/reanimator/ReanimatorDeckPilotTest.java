@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mtgpeasant.perfectdeck.goldfish.Card.card;
 
 public class ReanimatorDeckPilotTest {
     @Test
@@ -30,7 +31,7 @@ public class ReanimatorDeckPilotTest {
                 Cards.of("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
                 deck.getMain().shuffle(),
                 Cards.of("faithless looting"),
-                Arrays.asList(new Card("mountain", Game.CardType.land), new Card("swamp", Game.CardType.land)),
+                Arrays.asList(card("mountain", Game.CardType.land), card("swamp", Game.CardType.land)),
                 new ArrayList<>()
         );
         ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);

@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.mtgpeasant.perfectdeck.goldfish.Card.card;
 import static org.mtgpeasant.perfectdeck.goldfish.Card.tapped;
 import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
 
@@ -178,7 +179,7 @@ public class Game {
             return null;
         } else {
             List<Card> cards = (List<Card>) toArea;
-            Card moved = new Card(cardName, types);
+            Card moved = card(cardName, types);
             if (side == Side.top) {
                 cards.add(0, moved);
             } else {
@@ -322,7 +323,7 @@ public class Game {
         }
         log("- land [" + cardName + "]");
         hand.remove(cardName);
-        Card card = new Card(cardName, CardType.land);
+        Card card = card(cardName, CardType.land);
         board.add(card);
         landed = true;
         return card;
@@ -338,7 +339,7 @@ public class Game {
         CardType[] types2 = new CardType[types.length + 1];
         types2[0] = CardType.token;
         System.arraycopy(types, 0, types2, 1, types.length);
-        Card card = new Card(name, types2);
+        Card card = card(name, types2);
         board.add(card);
         return card;
     }

@@ -3,6 +3,8 @@ package org.mtgpeasant.perfectdeck.common;
 import com.google.common.base.Strings;
 import lombok.Value;
 
+import java.util.Objects;
+
 @Value
 public class Mana {
     final int B;
@@ -98,6 +100,25 @@ public class Mana {
 
     public boolean isEmpty() {
         return ccm() == 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+        Mana mana = (Mana) o;
+        return B == mana.B &&
+                U == mana.U &&
+                G == mana.G &&
+                R == mana.R &&
+                W == mana.W &&
+                X == mana.X;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), B, U, G, R, W, X);
     }
 
     @Override
