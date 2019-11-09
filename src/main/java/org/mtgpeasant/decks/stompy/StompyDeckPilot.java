@@ -164,7 +164,6 @@ public class StompyDeckPilot extends DeckPilot<Game> {
 
         }
 
-
         if (game.getPool().ccm() > 0) {
             // still have mana in pool: we should consume before combat phase
             // TODO

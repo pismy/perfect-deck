@@ -7,11 +7,11 @@ import java.util.Objects;
 
 @Value
 public class Mana {
-    private static final Mana _B = Mana.of("B");
-    private static final Mana _R = Mana.of("R");
-    private static final Mana _G = Mana.of("G");
-    private static final Mana _U = Mana.of("U");
-    private static final Mana _W = Mana.of("W");
+    private static final Mana B = Mana.of("B");
+    private static final Mana R = Mana.of("R");
+    private static final Mana G = Mana.of("G");
+    private static final Mana U = Mana.of("U");
+    private static final Mana W = Mana.of("W");
     private static final Mana ONE = Mana.of("1");
     private static final Mana ZERO = new Mana(0, 0, 0, 0, 0, 0);
 
@@ -24,31 +24,31 @@ public class Mana {
     }
 
     public static Mana b() {
-        return _B;
+        return B;
     }
 
     public static Mana r() {
-        return _R;
+        return R;
     }
 
     public static Mana g() {
-        return _G;
+        return G;
     }
 
     public static Mana u() {
-        return _U;
+        return U;
     }
 
     public static Mana w() {
-        return _W;
+        return W;
     }
 
-    final int B;
-    final int U;
-    final int G;
-    final int R;
-    final int W;
-    final int X;
+    final int b;
+    final int u;
+    final int g;
+    final int r;
+    final int w;
+    final int x;
 
     public static Mana of(String mana) {
         int b = 0, u = 0, g = 0, r = 0, w = 0;
@@ -100,20 +100,20 @@ public class Mana {
     }
 
     public int ccm() {
-        return B + U + G + R + W + X;
+        return b + u + g + r + w + x;
     }
 
     public boolean contains(Mana other) {
-        return B >= other.B
-                && U >= other.U
-                && G >= other.G
-                && R >= other.R
-                && W >= other.W
-                && X >= other.X + other.B - B + other.U - U + other.G - G + other.R - R + other.W - W;
+        return b >= other.b
+                && u >= other.u
+                && g >= other.g
+                && r >= other.r
+                && w >= other.w
+                && x >= other.x + other.b - b + other.u - u + other.g - g + other.r - r + other.w - w;
     }
 
     public Mana plus(Mana other) {
-        return new Mana(B + other.B, U + other.U, G + other.G, R + other.R, W + other.W, X + other.X);
+        return new Mana(b + other.b, u + other.u, g + other.g, r + other.r, w + other.w, x + other.x);
     }
 
     public Mana minus(Mana other) {
@@ -121,17 +121,17 @@ public class Mana {
             throw new IllegalArgumentException("Can't remove " + other + " mana from " + this);
         }
         Mana result = new Mana(
-                B - other.B,
-                U - other.U,
-                G - other.G,
-                R - other.R,
-                W - other.W,
-                X - other.X);
+                b - other.b,
+                u - other.u,
+                g - other.g,
+                r - other.r,
+                w - other.w,
+                x - other.x);
         return result.ccm() == 0 ? zero() : result;
     }
 
     /**
-     * Removes the given amount of mana from this
+     * Removes the given amount of mana from this pool
      * <p>
      * Example:
      * <pre>
@@ -145,12 +145,12 @@ public class Mana {
     public RemoveResult remove(Mana other) {
         // 1: remove colors
         Mana removed = new Mana(
-                Math.min(B, other.B),
-                Math.min(U, other.U),
-                Math.min(G, other.G),
-                Math.min(R, other.R),
-                Math.min(W, other.W),
-                Math.min(X, other.X));
+                Math.min(b, other.b),
+                Math.min(u, other.u),
+                Math.min(g, other.g),
+                Math.min(r, other.r),
+                Math.min(w, other.w),
+                Math.min(x, other.x));
         Mana rest = this.minus(removed);
         Mana notRemoved = other.minus(removed);
 
@@ -158,20 +158,20 @@ public class Mana {
         while (notRemoved.getX() > 0 && rest.ccm() > 0) {
             // TODO: which color to choose ?
             if (rest.getB() > 0) {
-                rest = rest.minus(_B);
-                removed = removed.plus(_B);
+                rest = rest.minus(B);
+                removed = removed.plus(B);
             } else if (rest.getU() > 0) {
-                rest = rest.minus(_U);
-                removed = removed.plus(_U);
+                rest = rest.minus(U);
+                removed = removed.plus(U);
             } else if (rest.getG() > 0) {
-                rest = rest.minus(_G);
-                removed = removed.plus(_G);
+                rest = rest.minus(G);
+                removed = removed.plus(G);
             } else if (rest.getR() > 0) {
-                rest = rest.minus(_R);
-                removed = removed.plus(_R);
+                rest = rest.minus(R);
+                removed = removed.plus(R);
             } else if (rest.getW() > 0) {
-                rest = rest.minus(_W);
-                removed = removed.plus(_W);
+                rest = rest.minus(W);
+                removed = removed.plus(W);
             }
             notRemoved = notRemoved.minus(ONE);
         }
@@ -195,17 +195,17 @@ public class Mana {
         if (this == other) return true;
         if (other == null || getClass() != other.getClass()) return false;
         Mana mana = (Mana) other;
-        return B == mana.B &&
-                U == mana.U &&
-                G == mana.G &&
-                R == mana.R &&
-                W == mana.W &&
-                X == mana.X;
+        return b == mana.b &&
+                u == mana.u &&
+                g == mana.g &&
+                r == mana.r &&
+                w == mana.w &&
+                x == mana.x;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), B, U, G, R, W, X);
+        return Objects.hash(super.hashCode(), b, u, g, r, w, x);
     }
 
     @Override
@@ -214,13 +214,13 @@ public class Mana {
             return "0";
         }
         return new StringBuilder()
-                .append(X > 0 ? X : "")
-                .append(Strings.repeat("B", B))
-                .append(Strings.repeat("U", U))
-                .append(Strings.repeat("G", G))
-                .append(Strings.repeat("R", R))
-                .append(Strings.repeat("W", W))
-                .append(X < 0 ? X : "")
+                .append(x > 0 ? x : "")
+                .append(Strings.repeat("B", b))
+                .append(Strings.repeat("U", u))
+                .append(Strings.repeat("G", g))
+                .append(Strings.repeat("R", r))
+                .append(Strings.repeat("W", w))
+                .append(x < 0 ? x : "")
 //                .append("(")
 //                .append(ccm())
 //                .append(")")

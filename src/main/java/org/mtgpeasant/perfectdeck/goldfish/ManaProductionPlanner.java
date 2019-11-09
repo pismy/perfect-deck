@@ -43,7 +43,7 @@ public class ManaProductionPlanner {
             pool = pool.plus(next.get().mana);
         }
 
-        // TODO: remove a step if we have too much mana
+        // TODO: remove steps if we have too much mana
 
         // we did it
         return Optional.of(new Plan(steps));
