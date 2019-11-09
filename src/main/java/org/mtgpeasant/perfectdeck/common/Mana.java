@@ -7,16 +7,48 @@ import java.util.Objects;
 
 @Value
 public class Mana {
+    private static final Mana _B = Mana.of("B");
+    private static final Mana _R = Mana.of("R");
+    private static final Mana _G = Mana.of("G");
+    private static final Mana _U = Mana.of("U");
+    private static final Mana _W = Mana.of("W");
+    private static final Mana ONE = Mana.of("1");
+    private static final Mana ZERO = new Mana(0, 0, 0, 0, 0, 0);
+
+    public static Mana zero() {
+        return ZERO;
+    }
+
+    public static Mana one() {
+        return ONE;
+    }
+
+    public static Mana b() {
+        return _B;
+    }
+
+    public static Mana r() {
+        return _R;
+    }
+
+    public static Mana g() {
+        return _G;
+    }
+
+    public static Mana u() {
+        return _U;
+    }
+
+    public static Mana w() {
+        return _W;
+    }
+
     final int B;
     final int U;
     final int G;
     final int R;
     final int W;
     final int X;
-
-    public static Mana zero() {
-        return new Mana(0, 0, 0, 0, 0, 0);
-    }
 
     public static Mana of(String mana) {
         int b = 0, u = 0, g = 0, r = 0, w = 0;
@@ -98,16 +130,71 @@ public class Mana {
         return result.ccm() == 0 ? zero() : result;
     }
 
+    /**
+     * Removes the given amount of mana from this
+     * <p>
+     * Example:
+     * <pre>
+     *     2B.remove(1BR)
+     *     gives:
+     *     - removed: 1B
+     *     - notRemoved: R
+     *     - rest: B
+     * </pre>
+     */
+    public RemoveResult remove(Mana other) {
+        // 1: remove colors
+        Mana removed = new Mana(
+                Math.min(B, other.B),
+                Math.min(U, other.U),
+                Math.min(G, other.G),
+                Math.min(R, other.R),
+                Math.min(W, other.W),
+                Math.min(X, other.X));
+        Mana rest = this.minus(removed);
+        Mana notRemoved = other.minus(removed);
+
+        // 2: pay remaining uncolors with coloured
+        while (notRemoved.getX() > 0 && rest.ccm() > 0) {
+            // TODO: which color to choose ?
+            if (rest.getB() > 0) {
+                rest = rest.minus(_B);
+                removed = removed.plus(_B);
+            } else if (rest.getU() > 0) {
+                rest = rest.minus(_U);
+                removed = removed.plus(_U);
+            } else if (rest.getG() > 0) {
+                rest = rest.minus(_G);
+                removed = removed.plus(_G);
+            } else if (rest.getR() > 0) {
+                rest = rest.minus(_R);
+                removed = removed.plus(_R);
+            } else if (rest.getW() > 0) {
+                rest = rest.minus(_W);
+                removed = removed.plus(_W);
+            }
+            notRemoved = notRemoved.minus(ONE);
+        }
+
+        return new RemoveResult(removed, notRemoved, rest);
+    }
+
+    @Value
+    public static class RemoveResult {
+        final Mana removed;
+        final Mana notRemoved;
+        final Mana rest;
+    }
+
     public boolean isEmpty() {
         return ccm() == 0;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
-        Mana mana = (Mana) o;
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other == null || getClass() != other.getClass()) return false;
+        Mana mana = (Mana) other;
         return B == mana.B &&
                 U == mana.U &&
                 G == mana.G &&

@@ -37,7 +37,7 @@ public class ReanimatorDeckPilotTest {
         ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);
 
         // WHEN / THEN
-        assertThat(pilot.canPay(Mana.of("2"))).isTrue();
+        assertThat(pilot.maybeProduce(Mana.of("2"))).isTrue();
     }
 
 //    @Test

@@ -16,7 +16,7 @@ public interface ManaSource {
 
     static List<ManaSource> getTapSources(Game game, String cardName, Mana... produceable) {
         return game.getBoard().stream()
-                .filter(withName(cardName).and(untapped()))
+                .filter(withName(cardName).and(untapped())) // TODO: filter out creatures with summoning sickness
                 .map(card -> tap(card, produceable))
                 .collect(Collectors.toList());
     }

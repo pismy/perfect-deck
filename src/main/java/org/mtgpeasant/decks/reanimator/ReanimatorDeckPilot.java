@@ -3,19 +3,21 @@ package org.mtgpeasant.decks.reanimator;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
-import org.mtgpeasant.perfectdeck.goldfish.Card;
-import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
-import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.*;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mtgpeasant.perfectdeck.goldfish.Card.untapped;
 import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
+import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
+import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
 
 public class ReanimatorDeckPilot extends DeckPilot<Game> {
-//    boolean firstCreaKilled = false;
+    //    boolean firstCreaKilled = false;
 
     private static final Mana B = Mana.of("B");
     private static final Mana B1 = Mana.of("1B");
@@ -40,6 +42,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     private static final String REANIMATE = "reanimate";
     private static final String GITAXIAN_PROBE = "gitaxian probe";
     private static final String DRAGON_BREATH = "dragon breath";
+    public static final Mana TWO = Mana.of("2");
 
     private static String[] REANIMATORS_1B = new String[]{EXHUME, ANIMATE_DEAD};
     // ordered by power / interest to discard
@@ -94,32 +97,29 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         if (!monstersInGy.isEmpty()) {
             // I have a monster in the graveyard: I must now reanimate
             Cards reanimators = game.getHand().findAll(REANIMATORS_1B);
-            if (game.getHand().contains(REANIMATE) && canPay(B)) {
-                produce(B);
+            if (game.getHand().contains(REANIMATE) && maybeProduce(B)) {
                 game.castSorcery(REANIMATE, B);
                 String monster = monstersInGy.getFirst();
                 game.move(monster, Game.Area.graveyard, Game.Area.board);
                 return true;
-            } else if (!reanimators.isEmpty() && canPay(B1)) {
-                produce(B1);
+            } else if (!reanimators.isEmpty() && maybeProduce(B1)) {
                 game.castSorcery(reanimators.getFirst(), B1);
                 String monster = monstersInGy.getFirst();
                 game.move(monster, Game.Area.graveyard, Game.Area.board);
                 return true;
-            } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                produce(R);
+            } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
                 game.castSorcery(FAITHLESS_LOOTING, R);
                 game.draw(2);
                 discard(2);
                 return true;
-            } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
+            } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
                 // cycle
-                produce(Mana.of("2"));
+                game.log("- cycle [" + GREATER_SANDWURM + "]");
+                game.pay(TWO);
                 game.discard(GREATER_SANDWURM);
                 game.draw(1);
                 return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                produce(R2);
+            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
                 game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
                 game.draw(2);
                 // then another card...
@@ -128,15 +128,13 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             }
         } else if (monstersInHand.isEmpty()) {
             // no monster in hand: can I look for one ?
-            if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                produce(R);
+            if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
                 game.castSorcery(FAITHLESS_LOOTING, R);
                 game.draw(2);
                 // now discard 2 cards
                 discard(2);
                 return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                produce(R2);
+            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
                 game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
                 game.draw(2);
                 // then another card...
@@ -149,26 +147,24 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 // I can discard a monster (any)
                 game.discard(monstersInHand.getFirst());
                 return true;
-            } else if (game.getHand().contains(PUTRID_IMP) && canPay(B)) {
-                produce(B);
+            } else if (game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
                 game.castCreature(PUTRID_IMP, B);
                 // discard a monster (any)
                 game.discard(monstersInHand.getFirst());
                 return true;
-            } else if (game.getHand().contains(FAITHLESS_LOOTING) && canPay(R)) {
-                produce(R);
+            } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
                 game.castSorcery(FAITHLESS_LOOTING, R);
                 game.draw(2);
                 discard(2);
                 return true;
-            } else if (game.getHand().contains(GREATER_SANDWURM) && canPay(Mana.of("2"))) {
+            } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
                 // cycle
-                produce(Mana.of("2"));
+                game.log("- cycle [" + GREATER_SANDWURM + "]");
+                game.pay(TWO);
                 game.discard(GREATER_SANDWURM);
                 game.draw(1);
                 return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && canPay(R2)) {
-                produce(R2);
+            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
                 game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
                 game.draw(2);
                 // then another card...
@@ -192,8 +188,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             game.land(CRUMBLING_VESTIGE);
         }
         // cast imp if none
-        if (!game.findFirst(withName(PUTRID_IMP)).isPresent() && game.getHand().contains(PUTRID_IMP) && canPay(B)) {
-            produce(B);
+        if (!game.findFirst(withName(PUTRID_IMP)).isPresent() && game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
             game.castCreature(PUTRID_IMP, B);
         }
         // EOT
@@ -337,183 +332,199 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         }
     }
 
-    boolean canPay(Mana toPay) {
-        // draw required X from Vestiges
-        int untappedVestiges = game.count(withName(CRUMBLING_VESTIGE).and(untapped()));
-        while (toPay.getX() > 0 && untappedVestiges > 0) {
-            untappedVestiges--;
-            toPay = toPay.minus(X);
-        }
-        // draw required B from Swamps
-        int untappedSwamps = game.count(withName(SWAMP).and(untapped()));
-        while (toPay.getB() > 0 && untappedSwamps > 0) {
-            untappedSwamps--;
-            toPay = toPay.minus(B);
-        }
-        // draw required R from Mountains
-        int untappedMountains = game.count(withName(MOUNTAIN).and(untapped()));
-        while (toPay.getR() > 0 && untappedMountains > 0) {
-            untappedMountains--;
-            toPay = toPay.minus(R);
-        }
+    boolean maybeProduce(Mana cost) {
+        List<ManaSource> sources = new ArrayList<>();
+        sources.addAll(getTapSources(game, CRUMBLING_VESTIGE, X));
+        sources.addAll(getTapSources(game, SWAMP, B));
+        sources.addAll(getTapSources(game, MOUNTAIN, R));
+        sources.add(landing(
+                with(SWAMP, B),
+                with(MOUNTAIN, R),
+                with(CRUMBLING_VESTIGE, B, R)
+        ));
+        sources.addAll(getDiscardSources(game, SIMIAN_SPIRIT_GUIDE, R));
+        sources.addAll(getDiscardSources(game, LOTUS_PETAL, R, B));
 
-        // pay remaining cost with: land drop + simian + petal
-        boolean landed = game.isLanded();
-        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
-        int petalsInHand = game.getHand().count(LOTUS_PETAL);
-
-        while (!toPay.isEmpty()) {
-            if (toPay.getB() > 0) {
-                if (!landed && game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE).isPresent()) {
-                    toPay = toPay.minus(B);
-                    landed = true;
-                } else if (petalsInHand > 0) {
-                    petalsInHand--;
-                    toPay = toPay.minus(B);
-                } else {
-                    // can't pay B :(
-                    return false;
-                }
-            } else if (toPay.getR() > 0) {
-                if (!landed && game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE).isPresent()) {
-                    toPay = toPay.minus(R);
-                    landed = true;
-                } else if (simiansInHand > 0) {
-                    simiansInHand--;
-                    toPay = toPay.minus(R);
-                } else if (petalsInHand > 0) {
-                    petalsInHand--;
-                    toPay = toPay.minus(R);
-                } else {
-                    // can't pay R :(
-                    return false;
-                }
-            } else if (toPay.getX() > 0) {
-                if (untappedMountains > 0) {
-                    untappedMountains--;
-                    toPay = toPay.minus(X);
-                } else if (untappedSwamps > 0) {
-                    untappedSwamps--;
-                    toPay = toPay.minus(X);
-                } else if (!landed && game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
-                    toPay = toPay.minus(X);
-                    landed = true;
-                } else if (simiansInHand > 0) {
-                    simiansInHand--;
-                    toPay = toPay.minus(X);
-                } else if (petalsInHand > 0) {
-                    petalsInHand--;
-                    toPay = toPay.minus(X);
-                } else {
-                    // can't pay X :(
-                    return false;
-                }
-            }
-        }
-        return true;
+        return ManaProductionPlanner.maybeProduce(game, sources, cost);
     }
 
-    boolean maybeProduce(String land, Mana mana) {
-        Optional<Card> untappedLand = game.findFirst(withName(land).and(untapped()));
-        if (untappedLand.isPresent()) {
-            game.tapLandForMana(untappedLand.get(), mana);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    void produce(Mana cost) {
-        // draw required X from Vestiges
-        while (cost.getX() > 0 && maybeProduce(CRUMBLING_VESTIGE, X)) {
-            cost = cost.minus(X);
-        }
-        // draw required B from Swamps
-        while (cost.getB() > 0 && maybeProduce(SWAMP, B)) {
-            cost = cost.minus(B);
-        }
-        // draw required R from Mountains
-        while (cost.getR() > 0 && maybeProduce(MOUNTAIN, R)) {
-            cost = cost.minus(R);
-        }
-
-        // pay remaining cost with: land drop + simian + petal
-        boolean landed = game.isLanded();
-        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
-        int petalsInHand = game.getHand().count(LOTUS_PETAL);
-
-        while (!cost.isEmpty()) {
-            if (cost.getB() > 0) {
-                Optional<String> blackProducer = game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE);
-                if (!landed && blackProducer.isPresent()) {
-                    Card land = game.land(blackProducer.get());
-                    game.tapLandForMana(land, B);
-                    cost = cost.minus(B);
-                    landed = true;
-                } else if (petalsInHand > 0) {
-                    game.discard(LOTUS_PETAL);
-                    game.add(B);
-                    cost = cost.minus(B);
-                    petalsInHand--;
-                } else {
-                    // can't pay B :(
-                    throw new RuntimeException("Couldn't pay " + cost);
-                }
-            } else if (cost.getR() > 0) {
-                Optional<String> redProducer = game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE);
-                if (!landed && redProducer.isPresent()) {
-                    Card land = game.land(redProducer.get());
-                    game.tapLandForMana(land, R);
-                    cost = cost.minus(R);
-                    landed = true;
-                } else if (simiansInHand > 0) {
-                    game.discard(SIMIAN_SPIRIT_GUIDE);
-                    game.add(R);
-                    cost = cost.minus(R);
-                    simiansInHand--;
-                } else if (petalsInHand > 0) {
-                    game.discard(LOTUS_PETAL);
-                    game.add(R);
-                    cost = cost.minus(R);
-                    petalsInHand--;
-                } else {
-                    // can't pay R :(
-                    throw new RuntimeException("Couldn't pay " + cost);
-                }
-            } else if (cost.getX() > 0) {
-                Optional<String> xProducer = game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
-                if (maybeProduce(MOUNTAIN, R)) {
-                    cost = cost.minus(X);
-                } else if (maybeProduce(SWAMP, B)) {
-                    cost = cost.minus(X);
-                } else if (!landed && xProducer.isPresent()) {
-                    Card land = game.land(xProducer.get());
-                    game.tapLandForMana(land, X);
-                    cost = cost.minus(X);
-                    landed = true;
-                } else if (simiansInHand > 0) {
-                    int nb = Math.min(cost.getX(), simiansInHand);
-                    for (int i = 0; i < nb; i++) {
-                        game.discard(SIMIAN_SPIRIT_GUIDE);
-                        game.add(R);
-                    }
-                    simiansInHand -= nb;
-                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
-                } else if (petalsInHand > 0) {
-                    int nb = Math.min(cost.getX(), petalsInHand);
-                    for (int i = 0; i < nb; i++) {
-                        game.discard(LOTUS_PETAL);
-                        game.add(B);
-                    }
-                    petalsInHand -= nb;
-                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
-                } else {
-                    // can't pay X :(
-                    throw new RuntimeException("Couldn't pay " + cost);
-                }
-            }
-        }
-    }
+//    boolean canPay(Mana toPay) {
+//        // draw required X from Vestiges
+//        int untappedVestiges = game.count(withName(CRUMBLING_VESTIGE).and(untapped()));
+//        while (toPay.getX() > 0 && untappedVestiges > 0) {
+//            untappedVestiges--;
+//            toPay = toPay.minus(X);
+//        }
+//        // draw required B from Swamps
+//        int untappedSwamps = game.count(withName(SWAMP).and(untapped()));
+//        while (toPay.getB() > 0 && untappedSwamps > 0) {
+//            untappedSwamps--;
+//            toPay = toPay.minus(B);
+//        }
+//        // draw required R from Mountains
+//        int untappedMountains = game.count(withName(MOUNTAIN).and(untapped()));
+//        while (toPay.getR() > 0 && untappedMountains > 0) {
+//            untappedMountains--;
+//            toPay = toPay.minus(R);
+//        }
+//
+//        // pay remaining cost with: land drop + simian + petal
+//        boolean landed = game.isLanded();
+//        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
+//        int petalsInHand = game.getHand().count(LOTUS_PETAL);
+//
+//        while (!toPay.isEmpty()) {
+//            if (toPay.getB() > 0) {
+//                if (!landed && game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE).isPresent()) {
+//                    toPay = toPay.minus(B);
+//                    landed = true;
+//                } else if (petalsInHand > 0) {
+//                    petalsInHand--;
+//                    toPay = toPay.minus(B);
+//                } else {
+//                    // can't pay B :(
+//                    return false;
+//                }
+//            } else if (toPay.getR() > 0) {
+//                if (!landed && game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE).isPresent()) {
+//                    toPay = toPay.minus(R);
+//                    landed = true;
+//                } else if (simiansInHand > 0) {
+//                    simiansInHand--;
+//                    toPay = toPay.minus(R);
+//                } else if (petalsInHand > 0) {
+//                    petalsInHand--;
+//                    toPay = toPay.minus(R);
+//                } else {
+//                    // can't pay R :(
+//                    return false;
+//                }
+//            } else if (toPay.getX() > 0) {
+//                if (untappedMountains > 0) {
+//                    untappedMountains--;
+//                    toPay = toPay.minus(X);
+//                } else if (untappedSwamps > 0) {
+//                    untappedSwamps--;
+//                    toPay = toPay.minus(X);
+//                } else if (!landed && game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
+//                    toPay = toPay.minus(X);
+//                    landed = true;
+//                } else if (simiansInHand > 0) {
+//                    simiansInHand--;
+//                    toPay = toPay.minus(X);
+//                } else if (petalsInHand > 0) {
+//                    petalsInHand--;
+//                    toPay = toPay.minus(X);
+//                } else {
+//                    // can't pay X :(
+//                    return false;
+//                }
+//            }
+//        }
+//        return true;
+//    }
+//
+//    boolean maybeProduce(String land, Mana mana) {
+//        Optional<Card> untappedLand = game.findFirst(withName(land).and(untapped()));
+//        if (untappedLand.isPresent()) {
+//            game.tapLandForMana(untappedLand.get(), mana);
+//            return true;
+//        } else {
+//            return false;
+//        }
+//    }
+//
+//    void produce(Mana cost) {
+//        // draw required X from Vestiges
+//        while (cost.getX() > 0 && maybeProduce(CRUMBLING_VESTIGE, X)) {
+//            cost = cost.minus(X);
+//        }
+//        // draw required B from Swamps
+//        while (cost.getB() > 0 && maybeProduce(SWAMP, B)) {
+//            cost = cost.minus(B);
+//        }
+//        // draw required R from Mountains
+//        while (cost.getR() > 0 && maybeProduce(MOUNTAIN, R)) {
+//            cost = cost.minus(R);
+//        }
+//
+//        // pay remaining cost with: land drop + simian + petal
+//        boolean landed = game.isLanded();
+//        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
+//        int petalsInHand = game.getHand().count(LOTUS_PETAL);
+//
+//        while (!cost.isEmpty()) {
+//            if (cost.getB() > 0) {
+//                Optional<String> blackProducer = game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE);
+//                if (!landed && blackProducer.isPresent()) {
+//                    Card land = game.land(blackProducer.get());
+//                    game.tapLandForMana(land, B);
+//                    cost = cost.minus(B);
+//                    landed = true;
+//                } else if (petalsInHand > 0) {
+//                    game.discard(LOTUS_PETAL);
+//                    game.add(B);
+//                    cost = cost.minus(B);
+//                    petalsInHand--;
+//                } else {
+//                    // can't pay B :(
+//                    throw new RuntimeException("Couldn't pay " + cost);
+//                }
+//            } else if (cost.getR() > 0) {
+//                Optional<String> redProducer = game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE);
+//                if (!landed && redProducer.isPresent()) {
+//                    Card land = game.land(redProducer.get());
+//                    game.tapLandForMana(land, R);
+//                    cost = cost.minus(R);
+//                    landed = true;
+//                } else if (simiansInHand > 0) {
+//                    game.discard(SIMIAN_SPIRIT_GUIDE);
+//                    game.add(R);
+//                    cost = cost.minus(R);
+//                    simiansInHand--;
+//                } else if (petalsInHand > 0) {
+//                    game.discard(LOTUS_PETAL);
+//                    game.add(R);
+//                    cost = cost.minus(R);
+//                    petalsInHand--;
+//                } else {
+//                    // can't pay R :(
+//                    throw new RuntimeException("Couldn't pay " + cost);
+//                }
+//            } else if (cost.getX() > 0) {
+//                Optional<String> xProducer = game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
+//                if (maybeProduce(MOUNTAIN, R)) {
+//                    cost = cost.minus(X);
+//                } else if (maybeProduce(SWAMP, B)) {
+//                    cost = cost.minus(X);
+//                } else if (!landed && xProducer.isPresent()) {
+//                    Card land = game.land(xProducer.get());
+//                    game.tapLandForMana(land, X);
+//                    cost = cost.minus(X);
+//                    landed = true;
+//                } else if (simiansInHand > 0) {
+//                    int nb = Math.min(cost.getX(), simiansInHand);
+//                    for (int i = 0; i < nb; i++) {
+//                        game.discard(SIMIAN_SPIRIT_GUIDE);
+//                        game.add(R);
+//                    }
+//                    simiansInHand -= nb;
+//                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
+//                } else if (petalsInHand > 0) {
+//                    int nb = Math.min(cost.getX(), petalsInHand);
+//                    for (int i = 0; i < nb; i++) {
+//                        game.discard(LOTUS_PETAL);
+//                        game.add(B);
+//                    }
+//                    petalsInHand -= nb;
+//                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
+//                } else {
+//                    // can't pay X :(
+//                    throw new RuntimeException("Couldn't pay " + cost);
+//                }
+//            }
+//        }
+//    }
 
     @Override
     public String checkWin() {

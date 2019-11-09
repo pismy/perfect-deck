@@ -18,11 +18,10 @@ public class ManaProductionPlanner {
     public static final Mana W = Mana.of("W");
     public static final Mana ONE = Mana.of("1");
 
-    public static boolean maybePay(Game game, List<ManaSource> sources, Mana cost) {
+    public static boolean maybeProduce(Game game, List<ManaSource> sources, Mana cost) {
         Optional<Plan> plan = plan(game, sources, cost);
         if (plan.isPresent()) {
             plan.get().execute(game);
-            game.pay(cost);
             return true;
         } else {
             return false;
@@ -33,19 +32,18 @@ public class ManaProductionPlanner {
         List<ManaSource> usableSources = new ArrayList<>(sources);
         List<Plan.Step> steps = new ArrayList<>();
 
-        // first remove all I can from actual pool
-        // TODO
-
-        // TODO: pay coloured mana first, then uncouloured last
-
-        while (!cost.isEmpty()) {
-            Optional<Plan.Step> next = findFirst(game, usableSources, one(cost));
+        Mana pool = game.getPool();
+        while (!pool.contains(cost)) {
+            Mana.RemoveResult result = pool.remove(cost);
+            Optional<Plan.Step> next = findFirst(game, usableSources, one(result.getNotRemoved()));
             if (!next.isPresent()) {
                 return Optional.empty();
             }
             steps.add(next.get());
-            cost = cost.minus(next.get().mana); // TODO: no
+            pool = pool.plus(next.get().mana);
         }
+
+        // TODO: remove a step if we have too much mana
 
         // we did it
         return Optional.of(new Plan(steps));
