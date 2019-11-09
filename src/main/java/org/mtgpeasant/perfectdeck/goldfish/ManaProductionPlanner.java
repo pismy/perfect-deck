@@ -9,7 +9,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-public class ManaProductionPlan {
+public class ManaProductionPlanner {
+
+    public static final Mana B = Mana.of("B");
+    public static final Mana R = Mana.of("R");
+    public static final Mana G = Mana.of("G");
+    public static final Mana U = Mana.of("U");
+    public static final Mana W = Mana.of("W");
+    public static final Mana ONE = Mana.of("1");
 
     public static boolean maybePay(Game game, List<ManaSource> sources, Mana cost) {
         Optional<Plan> plan = plan(game, sources, cost);
@@ -29,26 +36,42 @@ public class ManaProductionPlan {
         // first remove all I can from actual pool
         // TODO
 
-        // TODO: concentrate on uncolored mana producers first ? or managed by sources order ?
+        // TODO: pay coloured mana first, then uncouloured last
 
         while (!cost.isEmpty()) {
-            Optional<Plan.Step> next = findFirst(game, usableSources, cost);
+            Optional<Plan.Step> next = findFirst(game, usableSources, one(cost));
             if (!next.isPresent()) {
                 return Optional.empty();
             }
             steps.add(next.get());
-            cost = cost.minus(next.get().mana);
+            cost = cost.minus(next.get().mana); // TODO: no
         }
 
         // we did it
         return Optional.of(new Plan(steps));
     }
 
-    static Optional<Plan.Step> findFirst(Game game, List<ManaSource> sources, Mana cost) {
+    static Mana one(Mana cost) {
+        if(cost.getB() > 0) {
+            return B;
+        } else if(cost.getR() > 0) {
+            return R;
+        } else if(cost.getG() > 0) {
+            return G;
+        } else if(cost.getU() > 0) {
+            return U;
+        } else if(cost.getW() > 0) {
+            return W;
+        } else {
+            return ONE;
+        }
+    }
+
+    static Optional<Plan.Step> findFirst(Game game, List<ManaSource> sources, Mana one) {
         for (ManaSource source : sources) {
             Set<Mana> produceable = source.canProduce(game);
             for (Mana mana : produceable) {
-                if (cost.contains(mana)) { // TODO: not the right test !!!
+                if (mana.contains(one)) {
                     // use this source to produce this mana
                     sources.remove(source);
                     return Optional.of(new Plan.Step(mana, source));

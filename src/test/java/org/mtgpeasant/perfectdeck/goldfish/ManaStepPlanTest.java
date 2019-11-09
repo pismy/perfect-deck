@@ -57,7 +57,7 @@ public class ManaStepPlanTest {
         sources.addAll(ManaSource.getSacrificeSources(game, LOTUS_PETAL, R, B));
 
         // WHEN
-        Optional<ManaProductionPlan.Plan> plan = ManaProductionPlan.plan(game, sources, Mana.of("2BBB"));
+        Optional<ManaProductionPlanner.Plan> plan = ManaProductionPlanner.plan(game, sources, Mana.of("2BBB"));
 
         // THEN
         assertThat(plan).isPresent();
