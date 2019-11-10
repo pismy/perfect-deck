@@ -1,5 +1,7 @@
 package org.mtgpeasant.perfectdeck.common.cards;
 
+import com.google.common.base.Preconditions;
+
 import java.util.*;
 
 
@@ -36,9 +38,7 @@ public class Cards extends ArrayDeque<String> {
      * @return looked cards
      */
     public Cards look(int number) {
-        if (number > size()) {
-            throw new IllegalArgumentException("Can't look more cards than size");
-        }
+        Preconditions.checkArgument(number <= size(), "Can't look more cards than size (" + number + ">" + size() + ")");
         Cards selected = new Cards();
         int i = 0;
         Iterator<String> cards = this.iterator();
@@ -56,9 +56,7 @@ public class Cards extends ArrayDeque<String> {
      * @return drawn cards
      */
     public Cards draw(int number) {
-        if (number > size()) {
-            throw new IllegalArgumentException("Can't draw more cards than available (" + number + ">" + size() + ")");
-        }
+        Preconditions.checkArgument(number <= size(), "Can't draw more cards than available (" + number + ">" + size() + ")");
         Cards selected = new Cards();
         for (int i = 0; i < number; i++) {
             selected.add(removeFirst());

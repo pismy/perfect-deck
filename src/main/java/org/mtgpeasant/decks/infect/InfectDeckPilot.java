@@ -383,7 +383,7 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
     void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
-            if (game.putOnBottomOfLibraryOneOf(MENTAL_MISSTEP, APOSTLE_S_BLESSING).isPresent()) {
+            if (game.putOnBottomOfLibraryOneOf(MENTAL_MISSTEP, APOSTLE_S_BLESSING, GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
             // discard extra lands

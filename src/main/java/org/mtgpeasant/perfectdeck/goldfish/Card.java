@@ -13,6 +13,7 @@ public class Card {
     final String name;
     final Set<Game.CardType> types;
     boolean tapped = false;
+    Boolean sickness = false;
     Set<String> tags = new HashSet<>();
     Map<String, Integer> counters = new HashMap<>();
 
@@ -69,10 +70,23 @@ public class Card {
         return this;
     }
 
+    public Card setSickness(boolean sickness) {
+        this.sickness = sickness;
+        return this;
+    }
+
+    /*
+     * haste: ⚡
+     * tap: ⟳ ↱↴
+     * sickness: 🌀😵🐌🌪🤢
+     */
     public String toString() {
         StringBuilder sb = new StringBuilder();
         if (tapped) {
-            sb.append("⟳"); // ↱↴💫💫
+            sb.append("⟳"); // ↱↴🌀
+        }
+        if (sickness == Boolean.TRUE) {
+            sb.append("\uD83C\uDF00");
         }
         sb.append(name);
         boolean first = true;
@@ -110,12 +124,27 @@ public class Card {
         };
     }
 
+    /**
+     * Composite filter
+     */
+    public static Predicate<Card> creatureThatCanAttack() {
+        return withType(Game.CardType.creature).and(untapped()).and(withoutSickness());
+    }
+
     public static Predicate<Card> withType(Game.CardType type) {
         return card -> card.hasType(type);
     }
 
     public static Predicate<Card> withTag(String name) {
         return card -> card.hasTag(name);
+    }
+
+    public static Predicate<Card> withSickness() {
+        return card -> card.sickness == Boolean.TRUE;
+    }
+
+    public static Predicate<Card> withoutSickness() {
+        return card -> card.sickness != Boolean.TRUE;
     }
 
     public static Predicate<Card> notWithTag(String name) {

@@ -12,15 +12,25 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.card;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.tapped;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
+import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
 
 @Getter
 @ToString(exclude = "library")
 public class Game {
 
-    public enum Phase {beginning, first_main, combat, second_main, ending}
+    public enum Phase {
+        beginning("beg"),
+        first_main("m#1"),
+        combat("cmb"),
+        second_main("m#2"),
+        ending("end");
+
+        final String symbol;
+
+        Phase(String symbol) {
+            this.symbol = symbol;
+        }
+    }
 
     public enum Area {hand, library, board, exile, graveyard}
 
@@ -92,8 +102,11 @@ public class Game {
         currentTurn++;
         landed = false;
         _emptyPool();
+        // unset summoning sickness
+        find(withType(CardType.creature).and(withSickness())).forEach(creature -> creature.setSickness(false));
 
         // log
+        currentPhase = null;
         log("=== Turn " + currentTurn + " ===");
         log("> opponent life: " + opponentLife);
         if (opponentPoisonCounters > 0) {
@@ -185,6 +198,10 @@ public class Game {
             } else {
                 cards.add(moved);
             }
+            // set summoning sickness on creatures (by default)
+            if (to == Area.board && moved.hasType(CardType.creature)) {
+                moved.setSickness(true);
+            }
             return moved;
         }
     }
@@ -225,7 +242,7 @@ public class Game {
      * @param cost mana cost
      */
     public void pay(Mana cost) {
-        log("- pay " + cost);
+        log("pay " + cost);
         _pay(cost);
     }
 
@@ -236,7 +253,7 @@ public class Game {
      */
     public void add(Mana mana) {
         _add(mana);
-        log("- add " + mana + " to mana pool (" + pool + ")");
+        log("add " + mana + " to mana pool (" + pool + ")");
     }
 
     /**
@@ -254,7 +271,7 @@ public class Game {
      * @param card card
      */
     public void tap(Card card) {
-        log("- tap [" + card + "]");
+        log("tap [" + card + "]");
         if (card.isTapped()) {
             throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
         }
@@ -268,7 +285,7 @@ public class Game {
      * @param mana produced mana
      */
     public void tapLandForMana(Card card, Mana mana) {
-        log("- tap [" + card + "] and add " + mana + " to mana pool");
+        log("tap [" + card + "] and add " + mana + " to mana pool");
         if (card.isTapped()) {
             throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
         }
@@ -283,7 +300,7 @@ public class Game {
      * @param strength creature strength
      */
     public void tapForAttack(Card card, int strength) {
-        log("- attack with [" + card + "] for " + strength + " (" + (opponentLife - strength) + ")");
+        log("attack with [" + card + "] for " + strength + " (" + (opponentLife - strength) + ")");
         if (card.isTapped()) {
             throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
         }
@@ -297,7 +314,7 @@ public class Game {
 //     * @param cardName card name
 //     */
 //    public void untap(String cardName) {
-//        log("- untap [" + cardName + "]");
+//        log("untap [" + cardName + "]");
 //        _untap(cardName);
 //    }
 
@@ -305,7 +322,7 @@ public class Game {
      * Untap all permanents
      */
     public void untapAll() {
-        log("- untap all");
+        log("untap all");
         board.stream().filter(tapped()).forEach(card -> card.setTapped(false));
     }
 
@@ -321,7 +338,7 @@ public class Game {
         if (landed) {
             throw new IllegalActionException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
-        log("- land [" + cardName + "]");
+        log("land [" + cardName + "]");
         hand.remove(cardName);
         Card card = card(cardName, CardType.land);
         board.add(card);
@@ -335,12 +352,16 @@ public class Game {
      * @param name the token card name
      */
     public Card createToken(String name, CardType... types) {
-        log("- create token [" + name + "]");
+        log("create token [" + name + "]");
         CardType[] types2 = new CardType[types.length + 1];
         types2[0] = CardType.token;
         System.arraycopy(types, 0, types2, 1, types.length);
         Card card = card(name, types2);
         board.add(card);
+        // set summoning sickness on creatures (by default)
+        if (card.hasType(CardType.creature)) {
+            card.setSickness(true);
+        }
         return card;
     }
 
@@ -350,7 +371,7 @@ public class Game {
      * @param damage damage amount
      */
     public void damageOpponent(int damage, String reason) {
-        log("- damage" + (reason == null ? "" : " (" + reason + ")") + ": " + damage + " (" + (opponentLife - damage) + ")");
+        log("damage" + (reason == null ? "" : " (" + reason + ")") + ": " + damage + " (" + (opponentLife - damage) + ")");
         _damageOpponent(damage);
     }
 
@@ -370,14 +391,14 @@ public class Game {
      */
     public void poisonOpponent(int counters) {
         opponentPoisonCounters += counters;
-        log("- poison: " + counters + " (total: " + opponentPoisonCounters + ")");
+        log("poison: " + counters + " (total: " + opponentPoisonCounters + ")");
     }
 
     /**
      * Shuffle the library
      */
     public void shuffleLibrary() {
-        log("- shuffle library");
+        log("shuffle library");
         library = library.shuffle();
     }
 
@@ -388,7 +409,7 @@ public class Game {
      */
     public Cards draw(int cards) {
         Cards drawn = library.draw(cards);
-        log("- draw " + cards + ": " + drawn);
+        log("draw " + cards + ": " + drawn);
         hand.addAll(drawn);
         return drawn;
     }
@@ -403,7 +424,7 @@ public class Game {
      * @param types    card type(s)
      */
     public Card move(String cardName, Area from, Area to, Side side, CardType... types) {
-        log("- move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
+        log("move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
         return _move(cardName, from, to, side, types);
     }
 
@@ -429,7 +450,7 @@ public class Game {
      * @param types    card type(s)
      */
     public Card cast(String cardName, Area from, Area to, Mana cost, CardType... types) {
-        log("- cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
+        log("cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
         _pay(cost);
         return _move(cardName, from, to, Side.top, types);
     }
@@ -522,7 +543,7 @@ public class Game {
      * @param cardName card name
      */
     public void discard(String cardName) {
-        log("- discard [" + cardName + "]");
+        log("discard [" + cardName + "]");
         _move(cardName, Area.hand, Area.graveyard, Side.top);
     }
 
@@ -544,7 +565,7 @@ public class Game {
      * @param card permanent card
      */
     public void sacrifice(Card card) {
-        log("- sacrifice [" + card + "]");
+        log("sacrifice [" + card + "]");
         _move(card, Area.board, Area.graveyard, Side.top);
     }
 
@@ -554,7 +575,7 @@ public class Game {
      * @param card permanent name
      */
     public void destroy(Card card) {
-        log("- destroy [" + card + "]");
+        log("destroy [" + card + "]");
         _move(card, Area.board, Area.graveyard, Side.top);
     }
 
@@ -582,6 +603,10 @@ public class Game {
     public void log(String message) {
         if (logs == null) {
             return;
+        }
+        if (currentPhase != null) {
+            logs.print(currentPhase.symbol);
+            logs.print("> ");
         }
         logs.println(message);
     }

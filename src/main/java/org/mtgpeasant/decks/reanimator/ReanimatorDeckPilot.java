@@ -114,7 +114,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
                 // cycle
-                game.log("- cycle [" + GREATER_SANDWURM + "]");
+                game.log("cycle [" + GREATER_SANDWURM + "]");
                 game.pay(TWO);
                 game.discard(GREATER_SANDWURM);
                 game.draw(1);
@@ -159,7 +159,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
                 // cycle
-                game.log("- cycle [" + GREATER_SANDWURM + "]");
+                game.log("cycle [" + GREATER_SANDWURM + "]");
                 game.pay(TWO);
                 game.discard(GREATER_SANDWURM);
                 game.draw(1);

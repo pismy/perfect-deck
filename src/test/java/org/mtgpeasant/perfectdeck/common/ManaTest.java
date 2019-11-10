@@ -3,6 +3,7 @@ package org.mtgpeasant.perfectdeck.common;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mtgpeasant.perfectdeck.common.Mana.of;
 import static org.mtgpeasant.perfectdeck.common.Mana.zero;
 
@@ -38,13 +39,43 @@ public class ManaTest {
     }
 
     @Test
+    public void minus_test_1() {
+        Mana mana = of("BU1");
+        assertThat(mana.minus(of("3"))).isEqualTo(zero());
+    }
+
+    @Test
+    public void minus_test_2() {
+        Mana mana = of("BU1");
+        assertThat(mana.minus(of("B2"))).isEqualTo(zero());
+    }
+
+    @Test
+    public void minus_test_3() {
+        Mana mana = of("BU1");
+        assertThat(mana.minus(of("U"))).isEqualTo(of("1B"));
+    }
+
+    @Test
+    public void minus_test_4() {
+        Mana mana = of("BU1");
+        assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> mana.minus(of("4")));
+    }
+
+    @Test
+    public void minus_test_5() {
+        Mana mana = of("BU1");
+        assertThatExceptionOfType(IllegalArgumentException.class).isThrownBy(() -> mana.minus(of("R")));
+    }
+
+    @Test
     public void equals_test() {
         assertThat(of("1BU")).isEqualTo(of("B1U"));
     }
 
     @Test
     public void remove_test1() {
-        Mana.RemoveResult result = of("1BU").remove(of("1BR"));
+        Mana.ManaPull result = of("1BU").pull(of("1BR"));
         assertThat(result.getRemoved()).isEqualTo(of("1B"));
         assertThat(result.getNotRemoved()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(of("U"));
@@ -52,7 +83,7 @@ public class ManaTest {
 
     @Test
     public void remove_test2() {
-        Mana.RemoveResult result = of("1BU").remove(of("2BR"));
+        Mana.ManaPull result = of("1BU").pull(of("2BR"));
         assertThat(result.getRemoved()).isEqualTo(of("1BU"));
         assertThat(result.getNotRemoved()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(Mana.zero());
@@ -60,7 +91,7 @@ public class ManaTest {
 
     @Test
     public void remove_test3() {
-        Mana.RemoveResult result = of("2BU").remove(of("1BR"));
+        Mana.ManaPull result = of("2BU").pull(of("1BR"));
         assertThat(result.getRemoved()).isEqualTo(of("1B"));
         assertThat(result.getNotRemoved()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(of("1U"));
@@ -68,7 +99,7 @@ public class ManaTest {
 
     @Test
     public void remove_test4() {
-        Mana.RemoveResult result = of("RRR").remove(of("2R"));
+        Mana.ManaPull result = of("RRR").pull(of("2R"));
         assertThat(result.getRemoved()).isEqualTo(of("RRR"));
         assertThat(result.getNotRemoved()).isEqualTo(zero());
         assertThat(result.getRest()).isEqualTo(zero());
@@ -76,7 +107,7 @@ public class ManaTest {
 
     @Test
     public void remove_test5() {
-        Mana.RemoveResult result = of("2R").remove(of("RRR"));
+        Mana.ManaPull result = of("2R").pull(of("RRR"));
         assertThat(result.getRemoved()).isEqualTo(of("R"));
         assertThat(result.getNotRemoved()).isEqualTo(of("RR"));
         assertThat(result.getRest()).isEqualTo(of("2"));

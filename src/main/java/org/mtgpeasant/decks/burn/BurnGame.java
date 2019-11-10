@@ -58,7 +58,7 @@ class BurnGame extends Game implements BurnCards {
         // trigger instants and sorceries
         if (type == CardType.instant || type == CardType.sorcery) {
             // trigger all untapped thermo
-            find(withName(THERMO_ALCHEMIST).and(untapped()).and(notWithTag(SUMMONING_SICKNESS_TAG))).forEach(crea -> damageOpponent(1, "thermo ability"));
+            find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(crea -> damageOpponent(1, "thermo ability"));
 
             // trigger all electrostatic fields
             find(withName(ELECTROSTATIC_FIELD)).forEach(crea -> damageOpponent(1, "electrostatic field trigger"));
@@ -66,9 +66,8 @@ class BurnGame extends Game implements BurnCards {
             // untap ghitu lavarunners if at least 2 instant and sorceries ?
             int instantsAndSorceriesInGY = countInGraveyard(CardType.instant, CardType.sorcery);
             if (instantsAndSorceriesInGY >= 2) {
-                find(withName(GHITU_LAVARUNNER)).forEach(crea -> {
-                    crea.setTapped(false);
-                    crea.getTags().remove(SUMMONING_SICKNESS_TAG);
+                find(withName(GHITU_LAVARUNNER).and(withSickness())).forEach(crea -> {
+                    crea.setSickness(false);
                 });
             }
 

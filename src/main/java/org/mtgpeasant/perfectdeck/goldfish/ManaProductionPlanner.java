@@ -34,7 +34,7 @@ public class ManaProductionPlanner {
 
         Mana pool = game.getPool();
         while (!pool.contains(cost)) {
-            Mana.RemoveResult result = pool.remove(cost);
+            Mana.ManaPull result = pool.pull(cost);
             Optional<Plan.Step> next = findFirst(game, usableSources, one(result.getNotRemoved()));
             if (!next.isPresent()) {
                 return Optional.empty();

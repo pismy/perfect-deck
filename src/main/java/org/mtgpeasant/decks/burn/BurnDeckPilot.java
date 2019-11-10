@@ -127,7 +127,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
         // is there a way to kill opponent this turn (only from turn 3)?
         if (game.getCurrentTurn() > 2) {
-            List<Card> creatures = game.find(withType(Game.CardType.creature).and(untapped()).and(notWithTag(SUMMONING_SICKNESS_TAG)));
+            List<Card> creatures = game.find(creatureThatCanAttack().and(notWithTag(DEFENDER_SUBTYPE)));
             int forseenDamage = creatures.stream().mapToInt(this::strength).sum()
                     // +1 per thermo (EOT)
                     + game.count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
@@ -199,11 +199,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
     @Override
     public void combatPhase() {
-        List<Card> creatures = game.find(withType(Game.CardType.creature)
-                .and(untapped())
-                .and(notWithTag(SUMMONING_SICKNESS_TAG))
-                .and(notWithTag(DEFENDER_SUBTYPE)));
-
+        List<Card> creatures = game.find(creatureThatCanAttack().and(notWithTag(DEFENDER_SUBTYPE)));
         creatures.forEach(card -> game.tapForAttack(card, strength(card)));
     }
 
@@ -239,7 +235,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         }
 
         // use untapped thermo a last time
-        game.find(withName(THERMO_ALCHEMIST).and(untapped()).and(notWithTag(SUMMONING_SICKNESS_TAG))).forEach(card -> {
+        game.find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(card -> {
             game.tap(card);
             game.damageOpponent(1, "thermo");
         });
@@ -566,20 +562,22 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
             case FORGOTTEN_CAVE:
                 game.land(card).setTapped(true);
                 return true;
+
             case GITAXIAN_PROBE:
                 game.castSorcery(card, Mana.zero());
                 game.draw(1);
                 return true;
+
             // R permanents
             case MONASTERY_SWIFTSPEAR:
                 produce(R);
-                game.castCreature(card, R);
+                game.castCreature(card, R).setSickness(false);
                 return true;
             case GHITU_LAVARUNNER:
                 produce(R);
                 Card crd = game.castCreature(card, R);
-                if (game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) < 2) {
-                    crd.tag(SUMMONING_SICKNESS_TAG);
+                if (game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2) {
+                    crd.setSickness(false);
                 }
                 return true;
             case SEAL_OF_FIRE:
@@ -607,12 +605,12 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
             case FIREBRAND_ARCHER:
             case KILN_FIEND:
                 produce(R1);
-                game.castCreature(card, R1).tag(SUMMONING_SICKNESS_TAG);
+                game.castCreature(card, R1);
                 return true;
             case THERMO_ALCHEMIST:
             case ELECTROSTATIC_FIELD:
                 produce(R1);
-                game.castCreature(card, R1).tag(SUMMONING_SICKNESS_TAG).tag(DEFENDER_SUBTYPE);
+                game.castCreature(card, R1).tag(DEFENDER_SUBTYPE);
                 return true;
             case CURSE_OF_THE_PIERCED_HEART:
                 produce(R1);
@@ -621,20 +619,20 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
             case KELDON_MARAUDERS:
                 produce(R1);
                 game.castCreature(card, R1)
-                        .tag(SUMMONING_SICKNESS_TAG)
+
                         // 2 vanishing counters
                         .addCounter("vanishing", 2);
                 game.damageOpponent(1, "Keldon ETB");
                 return true;
             case VIASHINO_PYROMANCER:
                 produce(R1);
-                game.castCreature(card, R1).tag(SUMMONING_SICKNESS_TAG);
+                game.castCreature(card, R1);
                 game.damageOpponent(2, "Viashino ETB");
                 return true;
             case ORCISH_HELLRAISER:
                 produce(R1);
                 game.castCreature(card, R1)
-                        .tag(SUMMONING_SICKNESS_TAG)
+
                         // time counter for echo
                         .addCounter("echo", 1);
                 return true;
@@ -734,7 +732,6 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         // reset temporary boosts and summoning sickness
         game.find(withType(Game.CardType.creature)).forEach(card -> {
             card.getCounters().remove(TURN_BOOST);
-            card.getTags().remove(SUMMONING_SICKNESS_TAG);
         });
 
         // then discard extra cards

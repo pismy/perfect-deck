@@ -1,5 +1,6 @@
 package org.mtgpeasant.perfectdeck.common;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import lombok.Value;
 
@@ -7,13 +8,13 @@ import java.util.Objects;
 
 @Value
 public class Mana {
-    private static final Mana B = Mana.of("B");
-    private static final Mana R = Mana.of("R");
-    private static final Mana G = Mana.of("G");
-    private static final Mana U = Mana.of("U");
-    private static final Mana W = Mana.of("W");
-    private static final Mana ONE = Mana.of("1");
-    private static final Mana ZERO = new Mana(0, 0, 0, 0, 0, 0);
+    private static final Mana B = of(1, 0, 0, 0, 0, 0);
+    private static final Mana U = of(0, 1, 0, 0, 0, 0);
+    private static final Mana G = of(0, 0, 1, 0, 0, 0);
+    private static final Mana R = of(0, 0, 0, 1, 0, 0);
+    private static final Mana W = of(0, 0, 0, 0, 1, 0);
+    private static final Mana ONE = of(0, 0, 0, 0, 0, 1);
+    private static final Mana ZERO = of(0, 0, 0, 0, 0, 0);
 
     public static Mana zero() {
         return ZERO;
@@ -49,6 +50,21 @@ public class Mana {
     final int r;
     final int w;
     final int x;
+
+    private Mana(int b, int u, int g, int r, int w, int x) {
+        Preconditions.checkArgument(b >= 0, "Cannot have negative amount of B");
+        Preconditions.checkArgument(u >= 0, "Cannot have negative amount of U");
+        Preconditions.checkArgument(g >= 0, "Cannot have negative amount of G");
+        Preconditions.checkArgument(r >= 0, "Cannot have negative amount of R");
+        Preconditions.checkArgument(w >= 0, "Cannot have negative amount of W");
+        Preconditions.checkArgument(x >= 0, "Cannot have negative amount of X");
+        this.b = b;
+        this.u = u;
+        this.g = g;
+        this.r = r;
+        this.w = w;
+        this.x = x;
+    }
 
     public static Mana of(String mana) {
         int b = 0, u = 0, g = 0, r = 0, w = 0;
@@ -113,21 +129,13 @@ public class Mana {
     }
 
     public Mana plus(Mana other) {
-        return new Mana(b + other.b, u + other.u, g + other.g, r + other.r, w + other.w, x + other.x);
+        return of(b + other.b, u + other.u, g + other.g, r + other.r, w + other.w, x + other.x);
     }
 
     public Mana minus(Mana other) {
-        if (!contains(other)) {
-            throw new IllegalArgumentException("Can't remove " + other + " mana from " + this);
-        }
-        Mana result = new Mana(
-                b - other.b,
-                u - other.u,
-                g - other.g,
-                r - other.r,
-                w - other.w,
-                x - other.x);
-        return result.ccm() == 0 ? zero() : result;
+        ManaPull pull = pull(other);
+        Preconditions.checkArgument(pull.notRemoved.isEmpty(), "Can't remove " + other + " mana from " + this);
+        return pull.rest;
     }
 
     /**
@@ -142,45 +150,70 @@ public class Mana {
      *     - rest: B
      * </pre>
      */
-    public RemoveResult remove(Mana other) {
+    public ManaPull pull(Mana other) {
         // 1: remove colors
-        Mana removed = new Mana(
+        Mana removed = of(
                 Math.min(b, other.b),
                 Math.min(u, other.u),
                 Math.min(g, other.g),
                 Math.min(r, other.r),
                 Math.min(w, other.w),
-                Math.min(x, other.x));
-        Mana rest = this.minus(removed);
-        Mana notRemoved = other.minus(removed);
+                Math.min(x, other.x)
+        );
+        Mana rest = of(
+                b - removed.b,
+                u - removed.u,
+                g - removed.g,
+                r - removed.r,
+                w - removed.w,
+                x - removed.x
+        );
+        Mana notRemoved = of(
+                other.b - removed.b,
+                other.u - removed.u,
+                other.g - removed.g,
+                other.r - removed.r,
+                other.w - removed.w,
+                other.x - removed.x
+        );
 
         // 2: pay remaining uncolors with coloured
-        while (notRemoved.getX() > 0 && rest.ccm() > 0) {
-            // TODO: which color to choose ?
-            if (rest.getB() > 0) {
-                rest = rest.minus(B);
-                removed = removed.plus(B);
-            } else if (rest.getU() > 0) {
-                rest = rest.minus(U);
-                removed = removed.plus(U);
-            } else if (rest.getG() > 0) {
-                rest = rest.minus(G);
-                removed = removed.plus(G);
-            } else if (rest.getR() > 0) {
-                rest = rest.minus(R);
-                removed = removed.plus(R);
-            } else if (rest.getW() > 0) {
-                rest = rest.minus(W);
-                removed = removed.plus(W);
+        if (notRemoved.getX() > 0 && rest.ccm() > 0) {
+            if (notRemoved.getX() >= rest.ccm()) {
+                // we can consume all coloured from the rest
+                removed = removed.plus(rest);
+                notRemoved = notRemoved.minus(of(0, 0, 0, 0, 0, rest.ccm()));
+                rest = zero();
+            } else {
+                // we consume partly
+                while (notRemoved.getX() > 0 && rest.ccm() > 0) {
+                    // TODO: which color to choose ?
+                    if (rest.getB() > 0) {
+                        rest = rest.minus(B);
+                        removed = removed.plus(B);
+                    } else if (rest.getU() > 0) {
+                        rest = rest.minus(U);
+                        removed = removed.plus(U);
+                    } else if (rest.getG() > 0) {
+                        rest = rest.minus(G);
+                        removed = removed.plus(G);
+                    } else if (rest.getR() > 0) {
+                        rest = rest.minus(R);
+                        removed = removed.plus(R);
+                    } else if (rest.getW() > 0) {
+                        rest = rest.minus(W);
+                        removed = removed.plus(W);
+                    }
+                    notRemoved = notRemoved.minus(ONE);
+                }
             }
-            notRemoved = notRemoved.minus(ONE);
         }
 
-        return new RemoveResult(removed, notRemoved, rest);
+        return new ManaPull(removed, notRemoved, rest);
     }
 
     @Value
-    public static class RemoveResult {
+    public static class ManaPull {
         final Mana removed;
         final Mana notRemoved;
         final Mana rest;
@@ -214,7 +247,7 @@ public class Mana {
             return "0";
         }
         return new StringBuilder()
-                .append(x > 0 ? x : "")
+                .append(x > 0 ? x : "") // Character.toString((char)(x+9311))
                 .append(Strings.repeat("B", b))
                 .append(Strings.repeat("U", u))
                 .append(Strings.repeat("G", g))
