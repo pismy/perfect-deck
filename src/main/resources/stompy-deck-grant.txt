@@ -1,3 +1,7 @@
+// https://mtg-peasant.com/top8/1110/2/
+// Land Grant
+// Aspect of Hydra
+
 // creatures
 4 Quirion Ranger
 4 Nettle Sentinel
@@ -7,26 +11,20 @@
 4 Burning-Tree Emissary
 2 Safehold Elite
 1 Silhana Ledgewalker
-// Young Wolf
-// River Boa
-// Strangleroot Geist
-// Llanowar Elves
-// Fyndhorn Elves
 
 // boosts
 4 Rancor
-3 Curse of Predation
+4 Curse of Predation
 2 Vines of Vastwood
-2 Hunger of the Howlpack
-2 Aspect of Hydra
-// Savage Swipe
+1 Hunger of the Howlpack
+3 Aspect of Hydra
 
 // mana
 14 Forest
 4 Land Grant
 
 // others
-2 Dismember
+1 Dismember
 
 SB: 1 Relic of Progenitus
 SB: 2 Scattershot Archer

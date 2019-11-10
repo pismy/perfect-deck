@@ -1,0 +1,23 @@
+// https://mtg-peasant.com/top8/1137/5/
+// no Land Grant
+// Aspect of Hydra
+
+4 Burning-Tree Emissary
+2 Safehold Elite
+4 Vines of Vastwood
+4 Nettle Sentinel
+4 Vault Skirge
+4 Quirion Ranger
+4 Rancor
+3 Curse of Predation
+4 Skarrgan Pit-Skulk
+2 Strangleroot Geist
+18 Forest
+4 Nest Invader
+3 Aspect of Hydra
+SB: 3 Natural State
+SB: 1 Gut Shot
+SB: 2 Relic of Progenitus
+SB: 3 Life Goes On
+SB: 3 Scattershot Archer
+SB: 3 Epic Confrontation

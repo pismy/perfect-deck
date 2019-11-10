@@ -1,0 +1,27 @@
+// https://mtg-peasant.com/top8/1135/8/
+// 2 dorks
+// 16 lands, no Land Grant
+// Swipes
+
+4 Burning-Tree Emissary
+4 Curse of Predation
+1 Elvish Mystic
+16 Forest
+1 Llanowar Elves
+4 Nest Invader
+4 Nettle Sentinel
+4 Quirion Ranger
+4 Rancor
+1 River Boa
+4 Savage Swipe
+4 Skarrgan Pit-Skulk
+1 Dismember
+4 Vault Skirge
+4 Vines of Vastwood
+SB: 2 Gleeful Sabotage
+SB: 2 Gut Shot
+SB: 2 Natural State
+SB: 2 Relic of Progenitus
+SB: 3 Scattershot Archer
+SB: 1 Thermokarst
+SB: 3 Weather the Storm

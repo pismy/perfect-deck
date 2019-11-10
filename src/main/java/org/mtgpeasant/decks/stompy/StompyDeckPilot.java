@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static org.mtgpeasant.perfectdeck.common.Mana.zero;
 import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
 
 /**
@@ -567,13 +568,13 @@ public class StompyDeckPilot extends DeckPilot<Game> {
                 return true;
             case LAND_GRANT:
                 // put a forest from library to the board
-                game.discard(card);
+                game.castSorcery(card, zero());
                 game.move(FOREST, Game.Area.library, Game.Area.hand);
                 triggerNettle();
                 return true;
 
             case GITAXIAN_PROBE:
-                game.castSorcery(card, Mana.zero());
+                game.castSorcery(card, zero());
                 game.draw(1);
                 return true;
 
