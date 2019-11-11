@@ -4,8 +4,9 @@ import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 public interface BurnCards {
     String DEFENDER_SUBTYPE = "defender";
-    String PERM_BOOST = "perm-boost";
-    String TURN_BOOST = "turn-boost";
+
+    String PERM_BOOST = "+1/+1";
+    String TURN_BOOST = "*+1/+1";
 
     // LANDS
     String MOUNTAIN = "mountain";

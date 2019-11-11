@@ -22,26 +22,49 @@ public class Card {
         this.types = new HashSet<>(Arrays.asList(types));
     }
 
+    /**
+     * Creates a card with specified name and types
+     */
     public static Card card(String name, Game.CardType... types) {
         return new Card(name, types);
     }
 
+    /**
+     * Returns the number of counters of given name
+     */
     public int getCounter(String name) {
         return counters.getOrDefault(name, 0);
     }
 
+    /**
+     * Determines whether this card has the given type
+     */
     public boolean hasType(Game.CardType type) {
         return types.contains(type);
     }
 
+    /**
+     * Determines whether this card has a counter of the given name
+     */
     public boolean hasCounter(String name) {
         return counters.get(name) != null;
     }
 
+    /**
+     * Determines whether this card has the given tag
+     */
     public boolean hasTag(String name) {
         return tags.contains(name);
     }
 
+    /**
+     * Adds a given number of named counter
+     * <p>
+     * <strong>Important</strong>: a tag starting with {@code '*'} is automatically cleaned-up at end of turn
+     *
+     * @param name  counter name
+     * @param count number of counter to add
+     */
     public Card addCounter(String name, int count) {
         Integer newCount = counters.getOrDefault(name, 0) + count;
         if (newCount == 0) {
@@ -52,27 +75,65 @@ public class Card {
         return this;
     }
 
+    /**
+     * Increments the given counter by 1
+     */
     public Card incrCounter(String name) {
         return addCounter(name, 1);
     }
 
+    /**
+     * Decrements the given counter by 1
+     */
     public Card decrCounter(String name) {
         return addCounter(name, -1);
     }
 
+    /**
+     * Adds the given tag
+     * <p>
+     * <strong>Important</strong>: a tag starting with {@code '*'} is automatically cleaned-up at end of turn
+     */
     public Card tag(String name) {
         tags.add(name);
         return this;
     }
 
+    /**
+     * Sets the card tapped state
+     */
     public Card setTapped(boolean tapped) {
         this.tapped = tapped;
         return this;
     }
 
+    /**
+     * Sets the card summoning sickness
+     */
     public Card setSickness(boolean sickness) {
         this.sickness = sickness;
         return this;
+    }
+
+    void cleanup() {
+        // tags
+        for (Iterator<String> it = tags.iterator(); it.hasNext(); ) {
+            if (isTemporary(it.next())) {
+                it.remove();
+            }
+        }
+        // counter
+        for (Iterator<Map.Entry<String, Integer>> it = counters.entrySet().iterator(); it.hasNext(); ) {
+            if (isTemporary(it.next().getKey())) {
+                it.remove();
+            }
+        }
+        // unset summoning sickness
+        sickness = null;
+    }
+
+    boolean isTemporary(String name) {
+        return name.startsWith("*");
     }
 
     /*
@@ -106,7 +167,7 @@ public class Card {
                 } else {
                     sb.append(", ");
                 }
-                sb.append(ctr.getKey() + ":" + ctr.getValue());
+                sb.append(ctr.getKey() + ": " + ctr.getValue());
             }
             sb.append(">");
         }

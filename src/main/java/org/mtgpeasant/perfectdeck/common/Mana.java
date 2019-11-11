@@ -133,8 +133,8 @@ public class Mana {
     }
 
     public Mana minus(Mana other) {
-        ManaPull pull = pull(other);
-        Preconditions.checkArgument(pull.notRemoved.isEmpty(), "Can't remove " + other + " mana from " + this);
+        Extraction pull = extract(other);
+        Preconditions.checkArgument(pull.notExtracted.isEmpty(), "Can't remove " + other + " mana from " + this);
         return pull.rest;
     }
 
@@ -150,7 +150,7 @@ public class Mana {
      *     - rest: B
      * </pre>
      */
-    public ManaPull pull(Mana other) {
+    public Extraction extract(Mana other) {
         // 1: remove colors
         Mana removed = of(
                 Math.min(b, other.b),
@@ -209,13 +209,13 @@ public class Mana {
             }
         }
 
-        return new ManaPull(removed, notRemoved, rest);
+        return new Extraction(removed, notRemoved, rest);
     }
 
     @Value
-    public static class ManaPull {
-        final Mana removed;
-        final Mana notRemoved;
+    public static class Extraction {
+        final Mana extracted;
+        final Mana notExtracted;
         final Mana rest;
     }
 

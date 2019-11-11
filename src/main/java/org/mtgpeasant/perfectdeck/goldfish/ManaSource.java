@@ -10,9 +10,26 @@ import static org.mtgpeasant.perfectdeck.goldfish.Card.untapped;
 import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
 
 public interface ManaSource {
-    Set<Mana> canProduce(Game game);
+    /**
+     * Returns the possible costs to activate this mana source
+     */
+    default Set<Mana> costs(Game game) {
+        return Collections.emptySet();
+    }
 
-    void doProduce(Game game, Mana mana);
+    /**
+     * Returns the possible ammounts of mana this mana source can produce
+     */
+    Set<Mana> produces(Game game);
+
+    /**
+     * Makes the mana source produce the required mana at the given cost
+     *
+     * @param game    game
+     * @param cost    cost
+     * @param produce mana to produce
+     */
+    void doProduce(Game game, Mana cost, Mana produce);
 
     static List<ManaSource> getTapSources(Game game, String cardName, Mana... produceable) {
         return game.getBoard().stream()
@@ -45,17 +62,17 @@ public interface ManaSource {
         Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
         return new ManaSource() {
             @Override
-            public Set<Mana> canProduce(Game game) {
+            public Set<Mana> produces(Game game) {
                 return mana;
             }
 
             @Override
-            public void doProduce(Game game, Mana mana) {
+            public void doProduce(Game game, Mana cost, Mana produce) {
                 if (card.hasType(Game.CardType.land)) {
-                    game.tapLandForMana(card, mana);
+                    game.tapLandForMana(card, produce);
                 } else {
                     game.tap(card);
-                    game.add(mana);
+                    game.add(produce);
                 }
             }
 
@@ -76,14 +93,14 @@ public interface ManaSource {
         Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
         return new ManaSource() {
             @Override
-            public Set<Mana> canProduce(Game game) {
+            public Set<Mana> produces(Game game) {
                 return mana;
             }
 
             @Override
-            public void doProduce(Game game, Mana mana) {
+            public void doProduce(Game game, Mana cost, Mana produce) {
                 game.sacrifice(card);
-                game.add(mana);
+                game.add(produce);
             }
 
             @Override
@@ -103,14 +120,14 @@ public interface ManaSource {
         Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
         return new ManaSource() {
             @Override
-            public Set<Mana> canProduce(Game game) {
+            public Set<Mana> produces(Game game) {
                 return mana;
             }
 
             @Override
-            public void doProduce(Game game, Mana mana) {
+            public void doProduce(Game game, Mana cost, Mana produce) {
                 game.discard(card);
-                game.add(mana);
+                game.add(produce);
             }
 
             @Override
@@ -161,7 +178,7 @@ public interface ManaSource {
         }
 
         @Override
-        public Set<Mana> canProduce(Game game) {
+        public Set<Mana> produces(Game game) {
             List<Option> landable = landable(game);
 
             if (landable.size() == 0) {
@@ -179,16 +196,16 @@ public interface ManaSource {
         }
 
         @Override
-        public void doProduce(Game game, Mana mana) {
+        public void doProduce(Game game, Mana cost, Mana produce) {
             List<Option> landable = landable(game);
             for (Option opt : landable) {
-                if (opt.produceable.contains(mana)) {
+                if (opt.produceable.contains(produce)) {
                     Card land = game.land(opt.card);
-                    game.tapLandForMana(land, mana);
+                    game.tapLandForMana(land, produce);
                     return;
                 }
             }
-            throw new IllegalStateException("Could not produce " + mana + " with any of the available lands in hand");
+            throw new IllegalStateException("Could not produce " + produce + " with any of the available lands in hand");
         }
 
         @Override

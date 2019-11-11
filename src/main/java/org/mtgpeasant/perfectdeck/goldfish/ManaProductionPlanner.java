@@ -34,13 +34,13 @@ public class ManaProductionPlanner {
 
         Mana pool = game.getPool();
         while (!pool.contains(cost)) {
-            Mana.ManaPull result = pool.pull(cost);
-            Optional<Plan.Step> next = findFirst(game, usableSources, one(result.getNotRemoved()));
+            Mana.Extraction result = pool.extract(cost);
+            Optional<Plan.Step> next = findFirst(game, usableSources, result.getNotExtracted());
             if (!next.isPresent()) {
                 return Optional.empty();
             }
             steps.add(next.get());
-            pool = pool.plus(next.get().mana);
+            pool = pool.plus(next.get().produce);
         }
 
         // TODO: remove steps if we have too much mana
@@ -49,30 +49,48 @@ public class ManaProductionPlanner {
         return Optional.of(new Plan(steps));
     }
 
-    static Mana one(Mana cost) {
-        if(cost.getB() > 0) {
-            return B;
-        } else if(cost.getR() > 0) {
-            return R;
-        } else if(cost.getG() > 0) {
-            return G;
-        } else if(cost.getU() > 0) {
-            return U;
-        } else if(cost.getW() > 0) {
-            return W;
-        } else {
-            return ONE;
-        }
-    }
+//    static Mana pickOne(Mana cost) {
+//        if (cost.getB() > 0) {
+//            return B;
+//        } else if (cost.getR() > 0) {
+//            return R;
+//        } else if (cost.getG() > 0) {
+//            return G;
+//        } else if (cost.getU() > 0) {
+//            return U;
+//        } else if (cost.getW() > 0) {
+//            return W;
+//        } else {
+//            return ONE;
+//        }
+//    }
 
-    static Optional<Plan.Step> findFirst(Game game, List<ManaSource> sources, Mana one) {
+    static Optional<Plan.Step> findFirst(Game game, List<ManaSource> sources, Mana cost) {
         for (ManaSource source : sources) {
-            Set<Mana> produceable = source.canProduce(game);
-            for (Mana mana : produceable) {
-                if (mana.contains(one)) {
-                    // use this source to produce this mana
-                    sources.remove(source);
-                    return Optional.of(new Plan.Step(mana, source));
+            Set<Mana> produceable = source.produces(game);
+            for (Mana selectedProduction : produceable) {
+                Mana.Extraction extracted = selectedProduction.extract(cost);
+                if (!extracted.getExtracted().isEmpty()) {
+                    // yes, this source produces required mana
+                    Set<Mana> possibleCosts = source.costs(game);
+                    Mana selectedCost = null;
+                    if (possibleCosts.isEmpty() || possibleCosts.contains(Mana.zero())) {
+                        selectedCost = Mana.zero();
+                    } else {
+//                        // can we pay one of the costs ?
+//                        for (Mana aCost : costs) {
+//                            List<ManaSource> remainingSources = new ArrayList<>(sources);
+//                            remainingSources.remove(source);
+//                            findFirst(game, remainingSources, aCost); // TODO: not unitary
+//                            // TODO: pay from pool (ex: dark ritual)
+//                        }
+//                        TODO: need to try all alternative costs and sources until a solution is found
+                    }
+
+                    if (selectedCost != null) {
+                        sources.remove(source);
+                        return Optional.of(new Plan.Step(source, selectedCost, selectedProduction));
+                    }
                 }
             }
         }
@@ -85,8 +103,8 @@ public class ManaProductionPlanner {
         final List<Step> steps;
 
         public void execute(Game game) {
-            for (Step prod : steps) {
-                prod.source.doProduce(game, prod.mana);
+            for (Step step : steps) {
+                step.execute(game);
             }
         }
 
@@ -98,12 +116,17 @@ public class ManaProductionPlanner {
         @Builder
         @Value
         public static class Step {
-            final Mana mana;
             final ManaSource source;
+            final Mana cost;
+            final Mana produce;
+
+            void execute(Game game) {
+                source.doProduce(game, cost, produce);
+            }
 
             @Override
             public String toString() {
-                return source + " to produce " + mana;
+                return source + " to produce " + produce;
             }
         }
     }

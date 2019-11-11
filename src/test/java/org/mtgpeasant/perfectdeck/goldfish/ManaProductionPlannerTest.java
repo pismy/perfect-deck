@@ -47,10 +47,10 @@ public class ManaProductionPlannerTest {
         List<ManaSource> sources = new ArrayList<>();
         sources.addAll(getTapSources(game, CRUMBLING_VESTIGE, ONE));
         sources.addAll(getTapSources(game, LLANOWAR_ELVES, G));
+        sources.addAll(getTapSources(game, RAKDOS_CARNARIUM, Mana.of("BR")));
         sources.addAll(getTapSources(game, SWAMP, B));
         sources.addAll(getTapSources(game, MOUNTAIN, R));
         sources.addAll(getTapSources(game, RAKDOS_GUILDGATE, B, R));
-        sources.addAll(getTapSources(game, RAKDOS_CARNARIUM, Mana.of("BR")));
         sources.add(landing(
                 with(SWAMP, B),
                 with(MOUNTAIN, R),
@@ -60,7 +60,7 @@ public class ManaProductionPlannerTest {
         sources.addAll(getSacrificeSources(game, LOTUS_PETAL, R, B));
 
         // WHEN
-        Optional<ManaProductionPlanner.Plan> plan = ManaProductionPlanner.plan(game, sources, Mana.of("2BBB"));
+        Optional<ManaProductionPlanner.Plan> plan = ManaProductionPlanner.plan(game, sources, Mana.of("2BBR"));
 
         // THEN
         assertThat(plan).isPresent();

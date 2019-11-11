@@ -102,8 +102,8 @@ public class Game {
         currentTurn++;
         landed = false;
         _emptyPool();
-        // unset summoning sickness
-        find(withType(CardType.creature).and(withSickness())).forEach(creature -> creature.setSickness(false));
+        // cleanup cards state
+        board.forEach(Card::cleanup);
 
         // log
         currentPhase = null;

@@ -69,8 +69,8 @@ public class StompyDeckPilot extends DeckPilot<Game> {
     private static final String LAND_GRANT = "land grant";
     private static final String DISMEMBER = "dismember";
 
-    private static final String PERM_BOOST = "perm-boost";
-    private static final String TEMP_BOOST = "temp-boost";
+    private static final String PERM_BOOST = "+1/+1";
+    private static final String TEMP_BOOST = "*+1/+1";
 
 
     private static MulliganRules rules;
@@ -319,11 +319,6 @@ public class StompyDeckPilot extends DeckPilot<Game> {
 
     @Override
     public void endingPhase() {
-        // reset temporary boosts
-        game.find(withType(Game.CardType.creature)).forEach(card -> {
-            card.getCounters().remove(TEMP_BOOST);
-        });
-
         // discard to 7
         if (game.getHand().size() > 7) {
             discard(game.getHand().size() - 7);

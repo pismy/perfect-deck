@@ -75,41 +75,41 @@ public class ManaTest {
 
     @Test
     public void remove_test1() {
-        Mana.ManaPull result = of("1BU").pull(of("1BR"));
-        assertThat(result.getRemoved()).isEqualTo(of("1B"));
-        assertThat(result.getNotRemoved()).isEqualTo(of("R"));
+        Mana.Extraction result = of("1BU").extract(of("1BR"));
+        assertThat(result.getExtracted()).isEqualTo(of("1B"));
+        assertThat(result.getNotExtracted()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(of("U"));
     }
 
     @Test
     public void remove_test2() {
-        Mana.ManaPull result = of("1BU").pull(of("2BR"));
-        assertThat(result.getRemoved()).isEqualTo(of("1BU"));
-        assertThat(result.getNotRemoved()).isEqualTo(of("R"));
+        Mana.Extraction result = of("1BU").extract(of("2BR"));
+        assertThat(result.getExtracted()).isEqualTo(of("1BU"));
+        assertThat(result.getNotExtracted()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(Mana.zero());
     }
 
     @Test
     public void remove_test3() {
-        Mana.ManaPull result = of("2BU").pull(of("1BR"));
-        assertThat(result.getRemoved()).isEqualTo(of("1B"));
-        assertThat(result.getNotRemoved()).isEqualTo(of("R"));
+        Mana.Extraction result = of("2BU").extract(of("1BR"));
+        assertThat(result.getExtracted()).isEqualTo(of("1B"));
+        assertThat(result.getNotExtracted()).isEqualTo(of("R"));
         assertThat(result.getRest()).isEqualTo(of("1U"));
     }
 
     @Test
     public void remove_test4() {
-        Mana.ManaPull result = of("RRR").pull(of("2R"));
-        assertThat(result.getRemoved()).isEqualTo(of("RRR"));
-        assertThat(result.getNotRemoved()).isEqualTo(zero());
+        Mana.Extraction result = of("RRR").extract(of("2R"));
+        assertThat(result.getExtracted()).isEqualTo(of("RRR"));
+        assertThat(result.getNotExtracted()).isEqualTo(zero());
         assertThat(result.getRest()).isEqualTo(zero());
     }
 
     @Test
     public void remove_test5() {
-        Mana.ManaPull result = of("2R").pull(of("RRR"));
-        assertThat(result.getRemoved()).isEqualTo(of("R"));
-        assertThat(result.getNotRemoved()).isEqualTo(of("RR"));
+        Mana.Extraction result = of("2R").extract(of("RRR"));
+        assertThat(result.getExtracted()).isEqualTo(of("R"));
+        assertThat(result.getNotExtracted()).isEqualTo(of("RR"));
         assertThat(result.getRest()).isEqualTo(of("2"));
     }
 }

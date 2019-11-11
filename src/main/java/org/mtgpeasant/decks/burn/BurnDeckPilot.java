@@ -729,11 +729,6 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
     @Override
     public void endingPhase() {
-        // reset temporary boosts and summoning sickness
-        game.find(withType(Game.CardType.creature)).forEach(card -> {
-            card.getCounters().remove(TURN_BOOST);
-        });
-
         // then discard extra cards
         if (game.getHand().size() > 7) {
             discard(game.getHand().size() - 7);

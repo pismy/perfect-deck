@@ -97,6 +97,7 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
         // land
         // pendelhaven if no invigorate in hand and no forest on board
+        // TODO: land pendelhaven if it's the only land I have
         if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(INVIGORATE) || game.findFirst(withName(FOREST)).isPresent())) {
             game.land(PENDELHAVEN);
         } else if (game.getHand().contains(FOREST)) {

@@ -76,4 +76,17 @@ public class CardTest {
         assertThat(notWithTag("sickness").test(card)).isFalse();
     }
 
+    @Test
+    public void cleanup_should_work() {
+        // GIVEN
+        Card card = new Card(SKARRGAN_PIT_SKULK, Game.CardType.creature).setSickness(true).tag("*temp").tag("perm").addCounter("+1/+1", 3).addCounter("*+1/+1", 2);
+
+        // WHEN
+        card.cleanup();
+
+        // THEN
+        assertThat(card.getTags()).containsExactly("perm");
+        assertThat(card.getCounters().keySet()).containsExactly("+1/+1");
+    }
+
 }
