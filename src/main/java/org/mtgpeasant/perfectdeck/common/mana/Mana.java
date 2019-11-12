@@ -16,31 +16,52 @@ public class Mana {
     private static final Mana ONE = of(0, 0, 0, 0, 0, 1);
     private static final Mana ZERO = of(0, 0, 0, 0, 0, 0);
 
+    /**
+     * ⓿
+     */
     public static Mana zero() {
         return ZERO;
     }
 
+    /**
+     * ➊
+     */
     public static Mana one() {
         return ONE;
     }
 
-    public static Mana b() {
+    /**
+     * 🅑
+     */
+    public static Mana B() {
         return B;
     }
 
-    public static Mana r() {
+    /**
+     * 🅡
+     */
+    public static Mana R() {
         return R;
     }
 
-    public static Mana g() {
+    /**
+     * 🅖
+     */
+    public static Mana G() {
         return G;
     }
 
-    public static Mana u() {
+    /**
+     * 🅤
+     */
+    public static Mana U() {
         return U;
     }
 
-    public static Mana w() {
+    /**
+     * 🅦
+     */
+    public static Mana W() {
         return W;
     }
 
@@ -253,5 +274,64 @@ public class Mana {
                 + Strings.repeat("R", r)
                 + Strings.repeat("W", w)
                 + (x < 0 ? x : "");
+//        if (isEmpty()) {
+//            return "⓿";
+//        }
+//        return (x > 0 ? roundedNumber(x) : "")
+//                + Strings.repeat("\uD83C\uDD51", b)
+//                + Strings.repeat("\uD83C\uDD64", u)
+//                + Strings.repeat("\uD83C\uDD56", g)
+//                + Strings.repeat("\uD83C\uDD61", r)
+//                + Strings.repeat("\uD83C\uDD66", w)
+//                + (x < 0 ? x : "");
+    }
+
+    private static String roundedNumber(int nb) {
+        switch (nb) {
+            case 0:
+                return "⓿";
+            case 1:
+                return "❶";
+            case 2:
+                return "❷";
+            case 3:
+                return "❸";
+            case 4:
+                return "❹";
+            case 5:
+                return "❺";
+            case 6:
+                return "❻";
+            case 7:
+                return "❼";
+            case 8:
+                return "❽";
+            case 9:
+                return "❾";
+            case 10:
+                return "❿";
+            case 11:
+                return "⓫";
+            case 12:
+                return "⓬";
+            case 13:
+                return "⓭";
+            case 14:
+                return "⓮";
+            case 15:
+                return "⓯";
+            case 16:
+                return "⓰";
+            case 17:
+                return "⓱";
+            case 18:
+                return "⓲";
+            case 19:
+                return "⓳";
+            case 20:
+                return "⓴";
+            default:
+                return String.valueOf(nb);
+        }
     }
 }
