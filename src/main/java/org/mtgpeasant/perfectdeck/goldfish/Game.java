@@ -168,33 +168,41 @@ public class Game {
             }
             permanents.remove(card.get());
         }
-        // add to
-        Object toArea = area(to);
-        Permanent moved = null;
-        if (toArea instanceof Cards) {
-            Cards cards = (Cards) toArea;
-            if (side == Side.top) {
-                cards.addFirst(cardName);
-            } else {
-                cards.addLast(cardName);
-            }
+
+        // special: a token can't be moved
+        if (permanentOrCardName instanceof Permanent && ((Permanent) permanentOrCardName).hasType(CardType.token)) {
+            // trigger event
+            trigger(new GameEvent.CardMovedEvent(GameEvent.Type.leave, from, permanentOrCardName));
+            return null;
         } else {
-            List<Permanent> permanents = (List<Permanent>) toArea;
-            moved = permanent(cardName, types);
-            if (side == Side.top) {
-                permanents.add(0, moved);
+            // add to
+            Object toArea = area(to);
+            Permanent moved = null;
+            if (toArea instanceof Cards) {
+                Cards cards = (Cards) toArea;
+                if (side == Side.top) {
+                    cards.addFirst(cardName);
+                } else {
+                    cards.addLast(cardName);
+                }
             } else {
-                permanents.add(moved);
+                List<Permanent> permanents = (List<Permanent>) toArea;
+                moved = permanent(cardName, types);
+                if (side == Side.top) {
+                    permanents.add(0, moved);
+                } else {
+                    permanents.add(moved);
+                }
+                // set summoning sickness on creatures (by default)
+                if (to == Area.battlefield && moved.hasType(CardType.creature)) {
+                    moved.setSickness(true);
+                }
             }
-            // set summoning sickness on creatures (by default)
-            if (to == Area.battlefield && moved.hasType(CardType.creature)) {
-                moved.setSickness(true);
-            }
+            // trigger events
+            trigger(new GameEvent.CardMovedEvent(GameEvent.Type.leave, from, permanentOrCardName));
+            trigger(new GameEvent.CardMovedEvent(GameEvent.Type.enter, to, moved == null ? cardName : moved));
+            return moved;
         }
-        // trigger events
-        trigger(new GameEvent.CardMovedEvent(GameEvent.Type.leave, from, permanentOrCardName));
-        trigger(new GameEvent.CardMovedEvent(GameEvent.Type.enter, to, moved == null ? cardName : moved));
-        return moved;
     }
 
     /**
@@ -546,9 +554,9 @@ public class Game {
      */
     public void sacrifice(Permanent permanent) {
         log("sacrifice [" + permanent + "]");
-        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
         // trigger event
         trigger(new GameEvent.CardEvent(GameEvent.Type.sacrifice, permanent));
+        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
     }
 
     /**
@@ -558,9 +566,9 @@ public class Game {
      */
     public void destroy(Permanent permanent) {
         log("destroy [" + permanent + "]");
-        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
         // trigger event
         trigger(new GameEvent.CardEvent(GameEvent.Type.destroy, permanent));
+        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
     }
 
     /**
