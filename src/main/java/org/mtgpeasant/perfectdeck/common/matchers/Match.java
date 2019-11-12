@@ -12,7 +12,7 @@ public class Match {
     final Cards remaining;
 
     public static Match from(Cards cards) {
-        return Match.builder().remaining(cards).selected(Cards.none()).build();
+        return Match.builder().remaining(cards).selected(Cards.empty()).build();
     }
 
     @Override

@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -194,7 +195,6 @@ public class GoldfishSimulator {
             throw new RuntimeException("Couldn't instantiate game of type " + gameClass.getSimpleName(), e);
         }
 
-
         // instantiate deck pilot (from class)
         DeckPilot pilot = null;
         try {
@@ -203,6 +203,9 @@ public class GoldfishSimulator {
             pilot = constructor.newInstance(game);
         } catch (Exception e) {
             throw new RuntimeException("Couldn't instantiate pilot of type " + pilotClass.getSimpleName(), e);
+        }
+        if(pilot instanceof GameListener) {
+            game.addListener((GameListener) pilot);
         }
 
         writer.println("=====================");

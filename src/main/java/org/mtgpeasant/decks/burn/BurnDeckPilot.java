@@ -4,18 +4,17 @@ import lombok.ToString;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.utils.Permutations;
-import org.mtgpeasant.perfectdeck.goldfish.Card;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Permanent;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
 /**
  * TODO:
@@ -27,7 +26,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>
  */
-public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
+public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameListener {
 
     public static final Mana R = Mana.of("R");
     public static final Mana R1 = Mana.of("1R");
@@ -42,7 +41,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
             RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
 
-    public BurnDeckPilot(BurnGame game) {
+    public BurnDeckPilot(Game game) {
         super(game);
     }
 
@@ -72,14 +71,14 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     @Override
     public void upkeepStep() {
         // decrement all time counters and apply effects
-        game.find(withName(KELDON_MARAUDERS)).forEach(card -> {
+        game.getBattlefield().find(withName(KELDON_MARAUDERS)).forEach(card -> {
             card.decrCounter("vanishing");
             if (card.getCounter("vanishing") == 0) {
                 game.sacrifice(card);
                 game.damageOpponent(1, "keldon LTB trigger");
             }
         });
-        game.find(withName(ORCISH_HELLRAISER)).forEach(card -> {
+        game.getBattlefield().find(withName(ORCISH_HELLRAISER)).forEach(card -> {
             card.decrCounter("echo");
             if (card.getCounter("echo") == 0) {
                 // TODO: pay echo or let die ?
@@ -96,7 +95,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         // TODO: manage light up the stage ?
 
         // trigger curses
-        game.find(withName(CURSE_OF_THE_PIERCED_HEART)).forEach(curse -> {
+        game.getBattlefield().find(withName(CURSE_OF_THE_PIERCED_HEART)).forEach(curse -> {
             game.damageOpponent(1, "curse trigger(s)");
         });
     }
@@ -127,14 +126,14 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
         // is there a way to kill opponent this turn (only from turn 3)?
         if (game.getCurrentTurn() > 2) {
-            List<Card> creatures = game.find(creatureThatCanAttack().and(notWithTag(DEFENDER_SUBTYPE)));
+            List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
             int forseenDamage = creatures.stream().mapToInt(this::strength).sum()
                     // +1 per thermo (EOT)
-                    + game.count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
+                    + (int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
 
             if (game.getOpponentLife() > forseenDamage) {
                 Mana potentialPool = game.getPool()
-                        .plus(Mana.of(0, 0, 0, game.count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
+                        .plus(Mana.of(0, 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
 
                 Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
                 Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
@@ -145,7 +144,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                 if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
                     game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
                     // sacrifice all seals
-                    game.find(withName(SEAL_OF_FIRE)).forEach(seal -> {
+                    game.getBattlefield().find(withName(SEAL_OF_FIRE)).forEach(seal -> {
                         game.sacrifice(seal);
                         game.damageOpponent(2);
                     });
@@ -165,7 +164,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
      * Play the best card in case there is no kill option this turn
      */
     private boolean playBestCard() {
-        boolean ghituHasHaste = game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2;
+        boolean ghituHasHaste = countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2;
         return playOneOf(false,
                 MOUNTAIN,
                 MONASTERY_SWIFTSPEAR,
@@ -199,7 +198,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
     @Override
     public void combatPhase() {
-        List<Card> creatures = game.find(creatureThatCanAttack().and(notWithTag(DEFENDER_SUBTYPE)));
+        List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
         creatures.forEach(card -> game.tapForAttack(card, strength(card)));
     }
 
@@ -208,11 +207,11 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         // what is the best order to play my spells ?
         if (game.getCurrentTurn() > 2) {
             Mana potentialPool = game.getPool()
-                    .plus(Mana.of(0, 0, 0, game.count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
+                    .plus(Mana.of(0, 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
 
             int forseenDamage =
                     // +1 per thermo (EOT)
-                    +game.count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
+                    +(int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
 
             if (game.getOpponentLife() > forseenDamage) {
                 Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
@@ -235,10 +234,51 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         }
 
         // use untapped thermo a last time
-        game.find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(card -> {
+        game.getBattlefield().find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(card -> {
             game.tap(card);
             game.damageOpponent(1, "thermo");
         });
+    }
+
+    @Override
+    public void onEvent(GameEvent event) {
+        if (event.getType() == GameEvent.Type.cast) {
+            GameEvent.SpellEvent spellEvent = (GameEvent.SpellEvent) event;
+            // trigger instants and sorceries
+            if (spellEvent.hasType(Game.CardType.instant) || spellEvent.hasType(Game.CardType.sorcery)) {
+                // trigger all untapped thermo
+                game.getBattlefield().find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(crea -> game.damageOpponent(1, "thermo ability"));
+
+                // trigger all electrostatic fields
+                game.getBattlefield().find(withName(ELECTROSTATIC_FIELD)).forEach(crea -> game.damageOpponent(1, "electrostatic field trigger"));
+
+                // untap ghitu lavarunners if at least 2 instant and sorceries ?
+                int instantsAndSorceriesInGY = countInGraveyard(Game.CardType.instant, Game.CardType.sorcery);
+                if (instantsAndSorceriesInGY >= 2) {
+                    game.getBattlefield().find(withName(GHITU_LAVARUNNER).and(withSickness())).forEach(crea -> {
+                        crea.setSickness(false);
+                    });
+                }
+
+                // trigger all untapped kiln
+                game.getBattlefield().find(withName(KILN_FIEND)).forEach(crea -> crea.addCounter(TURN_BOOST, 3));
+            }
+
+            // trigger non-creatures
+            if (!spellEvent.hasType(Game.CardType.creature) && !spellEvent.hasType(Game.CardType.land)) {
+                // trigger all archer
+                game.getBattlefield().find(withName(FIREBRAND_ARCHER)).forEach(crea -> game.damageOpponent(1, "firebrand trigger"));
+
+                // monastery prowess
+                game.getBattlefield().find(withName(MONASTERY_SWIFTSPEAR)).forEach(crea -> crea.addCounter(TURN_BOOST, 1));
+            }
+        }
+    }
+
+    public int countInGraveyard(Game.CardType... types) {
+        List<Game.CardType> typesList = Arrays.asList(types);
+        return (int) game.getGraveyard().stream().filter(card -> typesList.contains(typeof(card))).count();
+//        return Arrays.stream(types).mapToInt(type -> getGraveyard().count(this.cardsOfType(type))).sum();
     }
 
     @ToString
@@ -247,12 +287,12 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
         int damage = 0;
 
-        int thermosOnBoard = game.count(withName(THERMO_ALCHEMIST).and(untapped()));
-        int kilnOnBoard = game.count(withName(KILN_FIEND).and(untapped()));
-        int archersOnBoard = game.count(withName(FIREBRAND_ARCHER));
-        int fieldsOnBoard = game.count(withName(ELECTROSTATIC_FIELD));
-        int swiftspearsOnBoard = game.count(withName(MONASTERY_SWIFTSPEAR));
-        int moutainsOnBoard = game.count(withName(MOUNTAIN));
+        int thermosOnBoard = (int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped()));
+        int kilnOnBoard = (int) game.getBattlefield().count(withName(KILN_FIEND).and(untapped()));
+        int archersOnBoard = (int) game.getBattlefield().count(withName(FIREBRAND_ARCHER));
+        int fieldsOnBoard = (int) game.getBattlefield().count(withName(ELECTROSTATIC_FIELD));
+        int swiftspearsOnBoard = (int) game.getBattlefield().count(withName(MONASTERY_SWIFTSPEAR));
+        int moutainsOnBoard = (int) game.getBattlefield().count(withName(MOUNTAIN));
         int dartsInGy = game.getGraveyard().count(LAVA_DART);
 
         void damage(int damage) {
@@ -297,7 +337,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     private TurnSimulation simulate(Mana potentialPool, List<String> spells) {
         TurnSimulation sim = new TurnSimulation();
         // sacrifice all seals
-        int sealsOnBoard = game.count(withName(SEAL_OF_FIRE));
+        int sealsOnBoard = (int) game.getBattlefield().count(withName(SEAL_OF_FIRE));
         sim.damage(sealsOnBoard * 2);
 
         for (String spell : spells) {
@@ -465,17 +505,17 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
         return sim;
     }
 
-    private int strength(Card creature) {
+    private int strength(Permanent creature) {
         // strength is base strength + +1/1 counters + temporary boosts + 2 * rancors
         return baseStrength(creature)
                 + creature.getCounters().getOrDefault(PERM_BOOST, 0)
                 + creature.getCounters().getOrDefault(TURN_BOOST, 0);
     }
 
-    private int baseStrength(Card creature) {
-        switch (creature.getName()) {
+    private int baseStrength(Permanent creature) {
+        switch (creature.getCard()) {
             case GHITU_LAVARUNNER:
-                return game.countInGraveyard(Game.CardType.instant, Game.CardType.sorcery) >= 2 ? 2 : 1;
+                return countInGraveyard(Game.CardType.instant, Game.CardType.sorcery) >= 2 ? 2 : 1;
             case MONASTERY_SWIFTSPEAR:
             case KILN_FIEND:
                 return 1;
@@ -540,9 +580,9 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
             case VOLCANIC_FALLOUT:
                 return canPay(RR1);
             case FIREBLAST:
-                return (game.count(withName(MOUNTAIN)) >= 2);
+                return ((int) game.getBattlefield().count(withName(MOUNTAIN)) >= 2);
             case LAVA_DART_FB:
-                return (game.count(withName(MOUNTAIN)) >= 1);
+                return ((int) game.getBattlefield().count(withName(MOUNTAIN)) >= 1);
             case SKEWER_THE_CRITICS:
                 return game.getDamageDealtThisTurn() > 0 ? canPay(R) : canPay(R2);
             case NEEDLE_DROP:
@@ -575,8 +615,8 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
                 return true;
             case GHITU_LAVARUNNER:
                 produce(R);
-                Card crd = game.castCreature(card, R);
-                if (game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2) {
+                Permanent crd = game.castCreature(card, R);
+                if (countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2) {
                     crd.setSickness(false);
                 }
                 return true;
@@ -715,7 +755,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
 
     private void sacrificeAMoutain() {
         // preferably sacrifice a moutain that is tapped
-        Card mountainToSac = game.findFirst(withName(MOUNTAIN).and(tapped())).orElse(game.findFirst(withName(MOUNTAIN)).get());
+        Permanent mountainToSac = game.getBattlefield().findFirst(withName(MOUNTAIN).and(tapped())).orElse(game.getBattlefield().findFirst(withName(MOUNTAIN)).get());
         if (!mountainToSac.isTapped()) {
             // produce mana before sac
             game.tapLandForMana(mountainToSac, R);
@@ -756,7 +796,7 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     void discard(int number) {
         for (int i = 0; i < number; i++) {
             // discard extra lands
-            if (game.count(withName(LANDS)) + game.getHand().count(LANDS) > 3 && game.discardOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
+            if ((int) game.getBattlefield().count(withName(LANDS)) + game.getHand().count(LANDS) > 3 && game.discardOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
                 continue;
             }
             // discard extra creatures
@@ -774,13 +814,13 @@ public class BurnDeckPilot extends DeckPilot<BurnGame> implements BurnCards {
     boolean canPay(Mana cost) {
         // potential mana pool is current pool + untapped lands
         Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, 0, game.count(withName(LANDS).and(untapped())), 0, 0));
+                .plus(Mana.of(0, 0, 0, (int) game.getBattlefield().count(withName(LANDS).and(untapped())), 0, 0));
         return potentialPool.contains(cost);
     }
 
     void produce(Mana cost) {
         while (!game.canPay(cost)) {
-            Optional<Card> producer = game.findFirst(withName(LANDS).and(untapped()));
+            Optional<Permanent> producer = game.getBattlefield().findFirst(withName(LANDS).and(untapped()));
             if (producer.isPresent()) {
                 game.tapLandForMana(producer.get(), R);
             } else {

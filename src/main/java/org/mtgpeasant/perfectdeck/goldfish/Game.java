@@ -4,15 +4,13 @@ import lombok.Getter;
 import lombok.ToString;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.*;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
 @Getter
 @ToString(exclude = "library")
@@ -32,31 +30,35 @@ public class Game {
         }
     }
 
-    public enum Area {hand, library, board, exile, graveyard}
+    public enum Area {hand, library, battlefield, exile, graveyard}
 
     public enum Side {top, bottom}
 
     public enum CardType {artifact, creature, enchantment, instant, land, planeswalker, sorcery, token}
 
     // game state
-    private final boolean onThePlay;
-    private final PrintWriter logs;
-    private int mulligans = 0;
-    private int currentTurn = 0;
-    private int opponentLife = 20;
-    private int opponentPoisonCounters = 0;
+    protected final boolean onThePlay;
+    protected final PrintWriter logs;
+    protected int mulligans = 0;
+    protected int currentTurn = 0;
+    protected int opponentLife = 20;
+    protected int opponentPoisonCounters = 0;
 
-    private Cards library;
-    private Cards hand;
+    protected Cards library;
+    protected Cards hand;
 
-    private List<Card> board = new ArrayList<>();
-    private List<Card> exile = new ArrayList<>();
-    private Cards graveyard = Cards.none();
+    protected Permanents battlefield = new Permanents();
+    protected Permanents exile = new Permanents();
+    protected Cards graveyard = Cards.empty();
 
     // turn and phase state
-    private Phase currentPhase;
-    private boolean landed = false;
-    private Mana pool = Mana.zero();
+    protected Phase currentPhase;
+    protected boolean landed = false;
+    protected Mana pool = Mana.zero();
+    private int damageDealtThisTurn = 0;
+
+    // listeners
+    protected Set<GameListener> listeners = new HashSet<>();
 
 
     protected Game(boolean onThePlay, PrintWriter logs) {
@@ -81,14 +83,14 @@ public class Game {
      * @param area area
      * @return cards
      */
-    protected Object area(Area area) {
+    protected Collection<? extends Object> area(Area area) {
         switch (area) {
             case hand:
                 return hand;
             case library:
                 return library;
-            case board:
-                return board;
+            case battlefield:
+                return battlefield;
             case exile:
                 return exile;
             case graveyard:
@@ -102,8 +104,9 @@ public class Game {
         currentTurn++;
         landed = false;
         _emptyPool();
+        damageDealtThisTurn = 0;
         // cleanup cards state
-        board.forEach(Card::cleanup);
+        battlefield.forEach(Permanent::cleanup);
 
         // log
         currentPhase = null;
@@ -113,7 +116,7 @@ public class Game {
             log("> opponent poison counters: " + opponentPoisonCounters);
         }
         log("> hand: " + hand);
-        log("> board: " + board);
+        log("> battlefield: " + battlefield);
         if (!graveyard.isEmpty()) {
             log("> graveyard: " + graveyard);
         }
@@ -142,30 +145,15 @@ public class Game {
         pool = pool.plus(mana);
     }
 
-//    protected void _tap(String cardName) {
-//        Optional<Card> untapped = findFirst(withName(cardName).and(untapped()));
-//        if (untapped.isPresent()) {
-//            untapped.get().setTapped(true);
-//        } else {
-//            throw new IllegalActionException("Can't tap [" + cardName + "]: not on board or all tapped");
-//        }
-//    }
-
-//    protected void _untap(String cardName) {
-//        Optional<Card> tapped = findFirst(withName(cardName).and(tapped()));
-//        if (tapped.isPresent()) {
-//            tapped.get().setTapped(false);
-//        }
-//    }
-
     protected void _damageOpponent(int damage) {
         opponentLife -= damage;
+        damageDealtThisTurn += damage;
     }
 
-    protected Card _move(Object cardOrName, Area from, Area to, Side side, CardType... types) {
+    protected Permanent _move(Object permanentOrCardName, Area from, Area to, Side side, CardType... types) {
         // remove from
         Object fromArea = area(from);
-        String cardName = cardOrName instanceof String ? (String) cardOrName : ((Card) cardOrName).getName();
+        String cardName = permanentOrCardName instanceof String ? (String) permanentOrCardName : ((Permanent) permanentOrCardName).getCard();
         if (fromArea instanceof Cards) {
             Cards cards = (Cards) fromArea;
             if (!cards.contains(cardName)) {
@@ -173,15 +161,16 @@ public class Game {
             }
             cards.remove(cardName);
         } else {
-            List<Card> cards = (List<Card>) fromArea;
-            Optional<Card> card = cardOrName instanceof String ? cards.stream().filter(withName(cardName)).findFirst() : Optional.of((Card) cardOrName);
+            List<Permanent> permanents = (List<Permanent>) fromArea;
+            Optional<Permanent> card = permanentOrCardName instanceof String ? permanents.stream().filter(withName(cardName)).findFirst() : Optional.of((Permanent) permanentOrCardName);
             if (!card.isPresent()) {
                 throw new IllegalActionException("Can't move [" + cardName + "]: not in " + from);
             }
-            cards.remove(card.get());
+            permanents.remove(card.get());
         }
         // add to
         Object toArea = area(to);
+        Permanent moved = null;
         if (toArea instanceof Cards) {
             Cards cards = (Cards) toArea;
             if (side == Side.top) {
@@ -189,51 +178,38 @@ public class Game {
             } else {
                 cards.addLast(cardName);
             }
-            return null;
         } else {
-            List<Card> cards = (List<Card>) toArea;
-            Card moved = card(cardName, types);
+            List<Permanent> permanents = (List<Permanent>) toArea;
+            moved = permanent(cardName, types);
             if (side == Side.top) {
-                cards.add(0, moved);
+                permanents.add(0, moved);
             } else {
-                cards.add(moved);
+                permanents.add(moved);
             }
             // set summoning sickness on creatures (by default)
-            if (to == Area.board && moved.hasType(CardType.creature)) {
+            if (to == Area.battlefield && moved.hasType(CardType.creature)) {
                 moved.setSickness(true);
             }
-            return moved;
         }
+        // trigger events
+        trigger(new GameEvent.CardMovedEvent(GameEvent.Type.leave, from, permanentOrCardName));
+        trigger(new GameEvent.CardMovedEvent(GameEvent.Type.enter, to, moved == null ? cardName : moved));
+        return moved;
     }
 
     /**
-     * Finds first card on board matching the given filter
-     *
-     * @param filter card filter
-     * @return matching card
+     * Triggers a game event
      */
-    public Optional<Card> findFirst(Predicate<Card> filter) {
-        return board.stream().filter(filter).findFirst();
+    public void trigger(GameEvent event) {
+        listeners.forEach(listener -> listener.onEvent(event));
     }
 
-    /**
-     * Finds all cards on board matching the given filter
-     *
-     * @param filter card filter
-     * @return matching cards
-     */
-    public List<Card> find(Predicate<Card> filter) {
-        return board.stream().filter(filter).collect(Collectors.toList());
+    public void addListener(GameListener listener) {
+        listeners.add(listener);
     }
 
-    /**
-     * Counts all cards on board matching the given filter
-     *
-     * @param filter card filter
-     * @return matching cards count
-     */
-    public int count(Predicate<Card> filter) {
-        return (int) board.stream().filter(filter).count();
+    public void removeListener(GameListener listener) {
+        listeners.remove(listener);
     }
 
     /**
@@ -268,44 +244,44 @@ public class Game {
     /**
      * Tap the given cards
      *
-     * @param card card
+     * @param permanent card
      */
-    public void tap(Card card) {
-        log("tap [" + card + "]");
-        if (card.isTapped()) {
-            throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
+    public void tap(Permanent permanent) {
+        log("tap [" + permanent + "]");
+        if (permanent.isTapped()) {
+            throw new IllegalActionException("Can't tap [" + permanent + "]: already tapped");
         }
-        card.setTapped(true);
+        permanent.setTapped(true);
     }
 
     /**
      * Tap a land and produce mana
      *
-     * @param card land card
-     * @param mana produced mana
+     * @param permanent land card
+     * @param mana      produced mana
      */
-    public void tapLandForMana(Card card, Mana mana) {
-        log("tap [" + card + "] and add " + mana + " to mana pool");
-        if (card.isTapped()) {
-            throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
+    public void tapLandForMana(Permanent permanent, Mana mana) {
+        log("tap [" + permanent + "] and add " + mana + " to mana pool");
+        if (permanent.isTapped()) {
+            throw new IllegalActionException("Can't tap [" + permanent + "]: already tapped");
         }
-        card.setTapped(true);
+        permanent.setTapped(true);
         _add(mana);
     }
 
     /**
      * Tap a creature to attack (damage the opponent)
      *
-     * @param card     creature card
-     * @param strength creature strength
+     * @param permanent creature card
+     * @param strength  creature strength
      */
-    public void tapForAttack(Card card, int strength) {
-        log("attack with [" + card + "] for " + strength + " (" + (opponentLife - strength) + ")");
-        if (card.isTapped()) {
-            throw new IllegalActionException("Can't tap [" + card + "]: already tapped");
+    public void tapForAttack(Permanent permanent, int strength) {
+        log("attack with [" + permanent + "] for " + strength + " (" + (opponentLife - strength) + ")");
+        if (permanent.isTapped()) {
+            throw new IllegalActionException("Can't tap [" + permanent + "]: already tapped");
         }
         _damageOpponent(strength);
-        card.setTapped(true);
+        permanent.setTapped(true);
     }
 
 //    /**
@@ -323,7 +299,7 @@ public class Game {
      */
     public void untapAll() {
         log("untap all");
-        board.stream().filter(tapped()).forEach(card -> card.setTapped(false));
+        battlefield.stream().filter(tapped()).forEach(card -> card.setTapped(false));
     }
 
     /**
@@ -331,19 +307,17 @@ public class Game {
      *
      * @param cardName land card name
      */
-    public Card land(String cardName) {
-        if (!hand.contains(cardName)) {
-            throw new IllegalActionException("Can't land [" + cardName + "]: not in hand");
-        }
+    public Permanent land(String cardName) {
         if (landed) {
             throw new IllegalActionException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
         log("land [" + cardName + "]");
-        hand.remove(cardName);
-        Card card = card(cardName, CardType.land);
-        board.add(card);
+        Permanent land = _move(cardName, Area.hand, Area.battlefield, Side.top, CardType.land);
+//        hand.remove(cardName);
+//        Permanent permanent = permanent(cardName, CardType.land);
+//        battlefield.add(permanent);
         landed = true;
-        return card;
+        return land;
     }
 
     /**
@@ -351,18 +325,20 @@ public class Game {
      *
      * @param name the token card name
      */
-    public Card createToken(String name, CardType... types) {
+    public Permanent createToken(String name, CardType... types) {
         log("create token [" + name + "]");
         CardType[] types2 = new CardType[types.length + 1];
         types2[0] = CardType.token;
         System.arraycopy(types, 0, types2, 1, types.length);
-        Card card = card(name, types2);
-        board.add(card);
+        Permanent token = permanent(name, types2);
+        battlefield.add(token);
         // set summoning sickness on creatures (by default)
-        if (card.hasType(CardType.creature)) {
-            card.setSickness(true);
+        if (token.hasType(CardType.creature)) {
+            token.setSickness(true);
         }
-        return card;
+        // trigger event
+        trigger(new GameEvent.CardMovedEvent(GameEvent.Type.enter, Area.battlefield, token));
+        return token;
     }
 
     /**
@@ -423,7 +399,7 @@ public class Game {
      * @param side     side of the target area
      * @param types    card type(s)
      */
-    public Card move(String cardName, Area from, Area to, Side side, CardType... types) {
+    public Permanent move(String cardName, Area from, Area to, Side side, CardType... types) {
         log("move [" + cardName + "] from " + from + " to " + (side == Side.top ? "" : "bottom of ") + to);
         return _move(cardName, from, to, side, types);
     }
@@ -436,7 +412,7 @@ public class Game {
      * @param to       target area
      * @param types    card type(s)
      */
-    public Card move(String cardName, Area from, Area to, CardType... types) {
+    public Permanent move(String cardName, Area from, Area to, CardType... types) {
         return move(cardName, from, to, Side.top, types);
     }
 
@@ -449,9 +425,11 @@ public class Game {
      * @param cost     mana cost
      * @param types    card type(s)
      */
-    public Card cast(String cardName, Area from, Area to, Mana cost, CardType... types) {
+    public Permanent cast(String cardName, Area from, Area to, Mana cost, CardType... types) {
         log("cast [" + cardName + "]" + (from == Area.hand ? "" : " from " + from) + (to == Area.graveyard ? "" : " to " + to) + " for " + cost);
         _pay(cost);
+        // trigger event
+        trigger(new GameEvent.SpellEvent(GameEvent.Type.cast, cardName, cost, new HashSet<>(Arrays.asList(types))));
         return _move(cardName, from, to, Side.top, types);
     }
 
@@ -462,8 +440,8 @@ public class Game {
      * @param cost     mana cost
      * @param types    card type(s)
      */
-    protected Card castPermanent(String cardName, Mana cost, CardType... types) {
-        return cast(cardName, Area.hand, Area.board, cost, types);
+    protected Permanent castPermanent(String cardName, Mana cost, CardType... types) {
+        return cast(cardName, Area.hand, Area.battlefield, cost, types);
     }
 
     /**
@@ -472,7 +450,7 @@ public class Game {
      * @param cardName spell name
      * @param cost     mana cost
      */
-    public Card castArtifact(String cardName, Mana cost) {
+    public Permanent castArtifact(String cardName, Mana cost) {
         return castPermanent(cardName, cost, CardType.artifact);
     }
 
@@ -482,7 +460,7 @@ public class Game {
      * @param cardName spell name
      * @param cost     mana cost
      */
-    public Card castCreature(String cardName, Mana cost) {
+    public Permanent castCreature(String cardName, Mana cost) {
         return castPermanent(cardName, cost, CardType.creature);
     }
 
@@ -492,7 +470,7 @@ public class Game {
      * @param cardName spell name
      * @param cost     mana cost
      */
-    public Card castEnchantment(String cardName, Mana cost) {
+    public Permanent castEnchantment(String cardName, Mana cost) {
         return castPermanent(cardName, cost, CardType.enchantment);
     }
 
@@ -502,7 +480,7 @@ public class Game {
      * @param cardName spell name
      * @param cost     mana cost
      */
-    public Card castPlaneswalker(String cardName, Mana cost) {
+    public Permanent castPlaneswalker(String cardName, Mana cost) {
         return castPermanent(cardName, cost, CardType.planeswalker);
     }
 
@@ -545,6 +523,8 @@ public class Game {
     public void discard(String cardName) {
         log("discard [" + cardName + "]");
         _move(cardName, Area.hand, Area.graveyard, Side.top);
+        // trigger event
+        trigger(new GameEvent.CardEvent(GameEvent.Type.discard, cardName));
     }
 
     /**
@@ -562,21 +542,25 @@ public class Game {
     /**
      * Sacrifice a permanent
      *
-     * @param card permanent card
+     * @param permanent permanent card
      */
-    public void sacrifice(Card card) {
-        log("sacrifice [" + card + "]");
-        _move(card, Area.board, Area.graveyard, Side.top);
+    public void sacrifice(Permanent permanent) {
+        log("sacrifice [" + permanent + "]");
+        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
+        // trigger event
+        trigger(new GameEvent.CardEvent(GameEvent.Type.sacrifice, permanent));
     }
 
     /**
      * Sacrifice a permanent
      *
-     * @param card permanent name
+     * @param permanent permanent name
      */
-    public void destroy(Card card) {
-        log("destroy [" + card + "]");
-        _move(card, Area.board, Area.graveyard, Side.top);
+    public void destroy(Permanent permanent) {
+        log("destroy [" + permanent + "]");
+        _move(permanent, Area.battlefield, Area.graveyard, Side.top);
+        // trigger event
+        trigger(new GameEvent.CardEvent(GameEvent.Type.destroy, permanent));
     }
 
     /**

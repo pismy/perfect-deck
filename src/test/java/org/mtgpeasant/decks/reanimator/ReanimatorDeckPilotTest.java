@@ -5,7 +5,6 @@ import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
-import org.mtgpeasant.perfectdeck.goldfish.Card;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.GameMock;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
@@ -17,7 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.card;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.permanent;
 
 public class ReanimatorDeckPilotTest {
     @Test
@@ -31,7 +30,7 @@ public class ReanimatorDeckPilotTest {
                 Cards.of("animate dead", "exhume", "animate dead", "crumbling vestige", "greater sandwurm"),
                 deck.getMain().shuffle(),
                 Cards.of("faithless looting"),
-                Arrays.asList(card("mountain", Game.CardType.land), card("swamp", Game.CardType.land)),
+                Arrays.asList(permanent("mountain", Game.CardType.land), permanent("swamp", Game.CardType.land)),
                 new ArrayList<>()
         );
         ReanimatorDeckPilot pilot = new ReanimatorDeckPilot(game);
@@ -60,7 +59,7 @@ public class ReanimatorDeckPilotTest {
 //        pilot.produce(Mana.of("2"));
 //
 //        // THEN
-//        assertThat(game.getBoard()).containsExactlyInAnyOrder("mountain", "swamp");
+//        assertThat(game.getBattlefield()).containsExactlyInAnyOrder("mountain", "swamp");
 //        assertThat(game.getTapped()).containsExactlyInAnyOrder("mountain", "swamp");
 //    }
 

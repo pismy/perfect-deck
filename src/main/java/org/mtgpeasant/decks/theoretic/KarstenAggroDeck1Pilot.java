@@ -5,8 +5,8 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withType;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withType;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.hand;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;
 
@@ -78,15 +78,15 @@ public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
 
     @Override
     public void combatPhase() {
-        // attack with all creatures on board
-        game.find(withName(LIONS)).forEach(crea -> game.tapForAttack(crea, 2));
-        game.find(withName(LEECH)).forEach(crea -> game.tapForAttack(crea, 4));
+        // attack with all creatures on battlefield
+        game.getBattlefield().find(withName(LIONS)).forEach(crea -> game.tapForAttack(crea, 2));
+        game.getBattlefield().find(withName(LEECH)).forEach(crea -> game.tapForAttack(crea, 4));
     }
 
     @Override
     public void secondMainPhase() {
         // draw all mana
-        game.find(withType(Game.CardType.land)).forEach(land -> game.tapLandForMana(land, ONE));
+        game.getBattlefield().find(withType(Game.CardType.land)).forEach(land -> game.tapLandForMana(land, ONE));
 
         int castableBolts = Math.min(game.getPool().ccm(), game.getHand().count(BOLT));
         if (castableBolts * 3 >= game.getOpponentLife()) {

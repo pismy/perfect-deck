@@ -117,11 +117,11 @@ public class Cards extends ArrayDeque<String> {
         return new Cards(Arrays.asList(cards));
     }
 
-    public static Cards of(List<String> cards) {
+    public static Cards of(Collection<String> cards) {
         return new Cards(cards);
     }
 
-    public static Cards none() {
+    public static Cards empty() {
         return new Cards();
     }
 }

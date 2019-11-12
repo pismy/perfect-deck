@@ -6,8 +6,8 @@ import org.mtgpeasant.perfectdeck.common.Mana;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.untapped;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.untapped;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
 
 public interface ManaSource {
     /**
@@ -32,14 +32,14 @@ public interface ManaSource {
     void doProduce(Game game, Mana cost, Mana produce);
 
     static List<ManaSource> getTapSources(Game game, String cardName, Mana... produceable) {
-        return game.getBoard().stream()
+        return game.getBattlefield().stream()
                 .filter(withName(cardName).and(untapped())) // TODO: filter out creatures with summoning sickness
                 .map(card -> tap(card, produceable))
                 .collect(Collectors.toList());
     }
 
     static List<ManaSource> getSacrificeSources(Game game, String cardName, Mana... produceable) {
-        return game.getBoard().stream()
+        return game.getBattlefield().stream()
                 .filter(withName(cardName).and(untapped()))
                 .map(card -> sacrifice(card, produceable))
                 .collect(Collectors.toList());
@@ -55,10 +55,10 @@ public interface ManaSource {
     /**
      * Mana source when a card is tapped (either a land or mana source such as Llanowar Elves)
      *
-     * @param card        the card that produces mana when tapped
+     * @param permanent        the card that produces mana when tapped
      * @param produceable mana that can be produced by the card when tapped
      */
-    static ManaSource tap(Card card, Mana... produceable) {
+    static ManaSource tap(Permanent permanent, Mana... produceable) {
         Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
         return new ManaSource() {
             @Override
@@ -68,17 +68,17 @@ public interface ManaSource {
 
             @Override
             public void doProduce(Game game, Mana cost, Mana produce) {
-                if (card.hasType(Game.CardType.land)) {
-                    game.tapLandForMana(card, produce);
+                if (permanent.hasType(Game.CardType.land)) {
+                    game.tapLandForMana(permanent, produce);
                 } else {
-                    game.tap(card);
+                    game.tap(permanent);
                     game.add(produce);
                 }
             }
 
             @Override
             public String toString() {
-                return "tap [" + card + "]";
+                return "tap [" + permanent + "]";
             }
         };
     }
@@ -86,10 +86,10 @@ public interface ManaSource {
     /**
      * Mana source when a card is sacrificed
      *
-     * @param card        the card that produces mana when sacrificed
+     * @param permanent        the card that produces mana when sacrificed
      * @param produceable mana that can be produced by the card when sacrificed
      */
-    static ManaSource sacrifice(Card card, Mana... produceable) {
+    static ManaSource sacrifice(Permanent permanent, Mana... produceable) {
         Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
         return new ManaSource() {
             @Override
@@ -99,13 +99,13 @@ public interface ManaSource {
 
             @Override
             public void doProduce(Game game, Mana cost, Mana produce) {
-                game.sacrifice(card);
+                game.sacrifice(permanent);
                 game.add(produce);
             }
 
             @Override
             public String toString() {
-                return "sacrifice [" + card + "]";
+                return "sacrifice [" + permanent + "]";
             }
         };
     }
@@ -200,7 +200,7 @@ public interface ManaSource {
             List<Option> landable = landable(game);
             for (Option opt : landable) {
                 if (opt.produceable.contains(produce)) {
-                    Card land = game.land(opt.card);
+                    Permanent land = game.land(opt.card);
                     game.tapLandForMana(land, produce);
                     return;
                 }

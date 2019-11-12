@@ -11,10 +11,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.untapped;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withName;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.untapped;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
 
 public class ReanimatorDeckPilot extends DeckPilot<Game> {
     //    boolean firstCreaKilled = false;
@@ -100,12 +100,12 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             if (game.getHand().contains(REANIMATE) && maybeProduce(B)) {
                 game.castSorcery(REANIMATE, B);
                 String monster = monstersInGy.getFirst();
-                game.move(monster, Game.Area.graveyard, Game.Area.board);
+                game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
                 return true;
             } else if (!reanimators.isEmpty() && maybeProduce(B1)) {
                 game.castSorcery(reanimators.getFirst(), B1);
                 String monster = monstersInGy.getFirst();
-                game.move(monster, Game.Area.graveyard, Game.Area.board);
+                game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
                 game.castSorcery(FAITHLESS_LOOTING, R);
@@ -143,7 +143,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             }
         } else {
             // I have a creature in hand
-            if (game.findFirst(withName(PUTRID_IMP)).isPresent()) {
+            if (game.getBattlefield().findFirst(withName(PUTRID_IMP)).isPresent()) {
                 // I can discard a monster (any)
                 game.discard(monstersInHand.getFirst());
                 return true;
@@ -188,7 +188,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             game.land(CRUMBLING_VESTIGE);
         }
         // cast imp if none
-        if (!game.findFirst(withName(PUTRID_IMP)).isPresent() && game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
+        if (!game.getBattlefield().findFirst(withName(PUTRID_IMP)).isPresent() && game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
             game.castCreature(PUTRID_IMP, B);
         }
         // EOT
@@ -325,10 +325,10 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     Mana landsProduction(boolean untapped) {
         if (untapped) {
             // untapped lands only
-            return Mana.of(game.count(withName(SWAMP).and(untapped())), 0, 0, game.count(withName(MOUNTAIN).and(untapped())), 0, game.count(withName(CRUMBLING_VESTIGE).and(untapped())));
+            return Mana.of((int) game.getBattlefield().count(withName(SWAMP).and(untapped())), 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN).and(untapped())), 0, (int) game.getBattlefield().count(withName(CRUMBLING_VESTIGE).and(untapped())));
         } else {
             // total lands production
-            return Mana.of(game.count(withName(SWAMP)), 0, 0, game.count(withName(MOUNTAIN)), 0, game.count(withName(CRUMBLING_VESTIGE)));
+            return Mana.of((int) game.getBattlefield().count(withName(SWAMP)), 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN)), 0, (int) game.getBattlefield().count(withName(CRUMBLING_VESTIGE)));
         }
     }
 
@@ -529,8 +529,8 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     @Override
     public String checkWin() {
         super.checkWin();
-        // consider I won as soon as I have a monster on the board
-        Optional<Card> monstersOnBoard = game.findFirst(withName(CREATURES));
+        // consider I won as soon as I have a monster on the battlefield
+        Optional<Permanent> monstersOnBoard = game.getBattlefield().findFirst(withName(CREATURES));
 //        if (!monstersOnBoard.isEmpty() && !firstCreaKilled) {
 //            // kill first creature
 //            game.destroy(monstersOnBoard.draw());

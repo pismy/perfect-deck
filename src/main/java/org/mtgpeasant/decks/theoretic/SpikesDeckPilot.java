@@ -5,7 +5,7 @@ import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.withType;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withType;
 
 /**
  * A deck made of mountains and lava spikes
@@ -97,7 +97,7 @@ public class SpikesDeckPilot extends DeckPilot<Game> {
         }
 
         // draw all mana
-        game.find(withType(Game.CardType.land)).forEach(land -> game.tapLandForMana(land, R));
+        game.getBattlefield().find(withType(Game.CardType.land)).forEach(land -> game.tapLandForMana(land, R));
 
         // cast all bolts
         while (game.getHand().contains(BOLT) && game.canPay(R)) {

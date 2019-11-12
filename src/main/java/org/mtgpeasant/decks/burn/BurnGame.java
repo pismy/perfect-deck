@@ -2,14 +2,14 @@ package org.mtgpeasant.decks.burn;
 
 import lombok.Getter;
 import org.mtgpeasant.perfectdeck.common.Mana;
-import org.mtgpeasant.perfectdeck.goldfish.Card;
+import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.mtgpeasant.perfectdeck.goldfish.Card.*;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
 /**
  * Extends {@link Game} and manages several burn specific stuff:
@@ -50,38 +50,38 @@ class BurnGame extends Game implements BurnCards {
      * Override to implement triggers
      */
     @Override
-    public Card cast(String cardName, Area from, Area to, Mana cost, CardType... types) {
-        Card card = super.cast(cardName, from, to, cost, types);
+    public Permanent cast(String cardName, Area from, Area to, Mana cost, CardType... types) {
+        Permanent permanent = super.cast(cardName, from, to, cost, types);
 
         CardType type = typeof(cardName);
 
         // trigger instants and sorceries
         if (type == CardType.instant || type == CardType.sorcery) {
             // trigger all untapped thermo
-            find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(crea -> damageOpponent(1, "thermo ability"));
+            getBattlefield().find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(crea -> damageOpponent(1, "thermo ability"));
 
             // trigger all electrostatic fields
-            find(withName(ELECTROSTATIC_FIELD)).forEach(crea -> damageOpponent(1, "electrostatic field trigger"));
+            getBattlefield().find(withName(ELECTROSTATIC_FIELD)).forEach(crea -> damageOpponent(1, "electrostatic field trigger"));
 
             // untap ghitu lavarunners if at least 2 instant and sorceries ?
             int instantsAndSorceriesInGY = countInGraveyard(CardType.instant, CardType.sorcery);
             if (instantsAndSorceriesInGY >= 2) {
-                find(withName(GHITU_LAVARUNNER).and(withSickness())).forEach(crea -> {
+                getBattlefield().find(withName(GHITU_LAVARUNNER).and(withSickness())).forEach(crea -> {
                     crea.setSickness(false);
                 });
             }
 
             // trigger all untapped kiln
-            find(withName(KILN_FIEND)).forEach(crea -> crea.addCounter(TURN_BOOST, 3));
+            getBattlefield().find(withName(KILN_FIEND)).forEach(crea -> crea.addCounter(TURN_BOOST, 3));
         }
 
         // trigger non-creatures
         if (type != CardType.creature && type != CardType.land) {
             // trigger all archer
-            find(withName(FIREBRAND_ARCHER)).forEach(crea -> damageOpponent(1, "firebrand trigger"));
+            getBattlefield().find(withName(FIREBRAND_ARCHER)).forEach(crea -> damageOpponent(1, "firebrand trigger"));
 
             // monastery prowess
-            find(withName(MONASTERY_SWIFTSPEAR)).forEach(crea -> crea.addCounter(TURN_BOOST, 1));
+            getBattlefield().find(withName(MONASTERY_SWIFTSPEAR)).forEach(crea -> crea.addCounter(TURN_BOOST, 1));
         }
 
 //        // if it was a creature: tap it unless it has haste (to simulate summoning sickness)
@@ -93,7 +93,7 @@ class BurnGame extends Game implements BurnCards {
 //                tap(cardName);
 //            }
 //        }
-        return card;
+        return permanent;
     }
 
     public int countInGraveyard(CardType... types) {

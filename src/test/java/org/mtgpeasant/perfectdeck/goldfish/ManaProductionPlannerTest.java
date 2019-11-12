@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mtgpeasant.perfectdeck.goldfish.Card.card;
+import static org.mtgpeasant.perfectdeck.goldfish.Permanent.permanent;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
 
@@ -35,13 +35,13 @@ public class ManaProductionPlannerTest {
         Cards hand = Cards.of(SWAMP, SIMIAN_SPIRIT_GUIDE, RAKDOS_GUILDGATE, MOUNTAIN, CRUMBLING_VESTIGE);
         Game game = new Game(true, null);
         game.keepHandAndStart(library, hand);
-        game.getBoard().add(card(CRUMBLING_VESTIGE, Game.CardType.land));
-        game.getBoard().add(card(SWAMP, Game.CardType.land));
-        game.getBoard().add(card(MOUNTAIN, Game.CardType.land));
-        game.getBoard().add(card(RAKDOS_GUILDGATE, Game.CardType.land));
-        game.getBoard().add(card(RAKDOS_CARNARIUM, Game.CardType.land));
-        game.getBoard().add(card(LOTUS_PETAL, Game.CardType.land));
-        game.getBoard().add(card(LLANOWAR_ELVES, Game.CardType.creature));
+        game.getBattlefield().add(permanent(CRUMBLING_VESTIGE, Game.CardType.land));
+        game.getBattlefield().add(permanent(SWAMP, Game.CardType.land));
+        game.getBattlefield().add(permanent(MOUNTAIN, Game.CardType.land));
+        game.getBattlefield().add(permanent(RAKDOS_GUILDGATE, Game.CardType.land));
+        game.getBattlefield().add(permanent(RAKDOS_CARNARIUM, Game.CardType.land));
+        game.getBattlefield().add(permanent(LOTUS_PETAL, Game.CardType.land));
+        game.getBattlefield().add(permanent(LLANOWAR_ELVES, Game.CardType.creature));
 
         // define sources in order of preference
         List<ManaSource> sources = new ArrayList<>();
@@ -74,8 +74,8 @@ public class ManaProductionPlannerTest {
         Cards hand = Cards.of(SWAMP, SIMIAN_SPIRIT_GUIDE);
         Game game = new Game(true, null);
         game.keepHandAndStart(library, hand);
-        game.getBoard().add(card(SWAMP, Game.CardType.land));
-        game.getBoard().add(card(MOUNTAIN, Game.CardType.land));
+        game.getBattlefield().add(permanent(SWAMP, Game.CardType.land));
+        game.getBattlefield().add(permanent(MOUNTAIN, Game.CardType.land));
 
         // define sources in order of preference
         List<ManaSource> sources = new ArrayList<>();

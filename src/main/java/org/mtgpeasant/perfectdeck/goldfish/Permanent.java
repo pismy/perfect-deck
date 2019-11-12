@@ -9,24 +9,24 @@ import java.util.function.Predicate;
  * A card with its state
  */
 @Data
-public class Card {
-    final String name;
+public class Permanent {
+    final String card;
     final Set<Game.CardType> types;
     boolean tapped = false;
     Boolean sickness = false;
     Set<String> tags = new HashSet<>();
     Map<String, Integer> counters = new HashMap<>();
 
-    Card(String name, Game.CardType... types) {
-        this.name = name;
+    Permanent(String card, Game.CardType... types) {
+        this.card = card;
         this.types = new HashSet<>(Arrays.asList(types));
     }
 
     /**
      * Creates a card with specified name and types
      */
-    public static Card card(String name, Game.CardType... types) {
-        return new Card(name, types);
+    public static Permanent permanent(String name, Game.CardType... types) {
+        return new Permanent(name, types);
     }
 
     /**
@@ -65,7 +65,7 @@ public class Card {
      * @param name  counter name
      * @param count number of counter to add
      */
-    public Card addCounter(String name, int count) {
+    public Permanent addCounter(String name, int count) {
         Integer newCount = counters.getOrDefault(name, 0) + count;
         if (newCount == 0) {
             counters.remove(name);
@@ -78,14 +78,14 @@ public class Card {
     /**
      * Increments the given counter by 1
      */
-    public Card incrCounter(String name) {
+    public Permanent incrCounter(String name) {
         return addCounter(name, 1);
     }
 
     /**
      * Decrements the given counter by 1
      */
-    public Card decrCounter(String name) {
+    public Permanent decrCounter(String name) {
         return addCounter(name, -1);
     }
 
@@ -94,7 +94,7 @@ public class Card {
      * <p>
      * <strong>Important</strong>: a tag starting with {@code '*'} is automatically cleaned-up at end of turn
      */
-    public Card tag(String name) {
+    public Permanent tag(String name) {
         tags.add(name);
         return this;
     }
@@ -102,7 +102,7 @@ public class Card {
     /**
      * Sets the card tapped state
      */
-    public Card setTapped(boolean tapped) {
+    public Permanent setTapped(boolean tapped) {
         this.tapped = tapped;
         return this;
     }
@@ -110,7 +110,7 @@ public class Card {
     /**
      * Sets the card summoning sickness
      */
-    public Card setSickness(boolean sickness) {
+    public Permanent setSickness(boolean sickness) {
         this.sickness = sickness;
         return this;
     }
@@ -149,7 +149,7 @@ public class Card {
         if (sickness == Boolean.TRUE) {
             sb.append("\uD83C\uDF00");
         }
-        sb.append(name);
+        sb.append(card);
         boolean first = true;
         if (!tags.isEmpty() || !counters.isEmpty()) {
             sb.append(" <");
@@ -174,10 +174,10 @@ public class Card {
         return sb.toString();
     }
 
-    public static Predicate<Card> withName(String... names) {
+    public static Predicate<Permanent> withName(String... names) {
         return card -> {
             for (String name : names) {
-                if (name.equals(card.name)) {
+                if (name.equals(card.card)) {
                     return true;
                 }
             }
@@ -186,41 +186,41 @@ public class Card {
     }
 
     /**
-     * Composite filter
+     * Composite filter that selects untapped creatures without summoning sickness
      */
-    public static Predicate<Card> creatureThatCanAttack() {
+    public static Predicate<Permanent> creaturesThatCanBeTapped() {
         return withType(Game.CardType.creature).and(untapped()).and(withoutSickness());
     }
 
-    public static Predicate<Card> withType(Game.CardType type) {
+    public static Predicate<Permanent> withType(Game.CardType type) {
         return card -> card.hasType(type);
     }
 
-    public static Predicate<Card> withTag(String name) {
+    public static Predicate<Permanent> withTag(String name) {
         return card -> card.hasTag(name);
     }
 
-    public static Predicate<Card> withSickness() {
+    public static Predicate<Permanent> withSickness() {
         return card -> card.sickness == Boolean.TRUE;
     }
 
-    public static Predicate<Card> withoutSickness() {
+    public static Predicate<Permanent> withoutSickness() {
         return card -> card.sickness != Boolean.TRUE;
     }
 
-    public static Predicate<Card> notWithTag(String name) {
+    public static Predicate<Permanent> notWithTag(String name) {
         return withTag(name).negate();
     }
 
-    public static Predicate<Card> tapped(boolean tapped) {
+    public static Predicate<Permanent> tapped(boolean tapped) {
         return card -> card.isTapped() == tapped;
     }
 
-    public static Predicate<Card> tapped() {
+    public static Predicate<Permanent> tapped() {
         return tapped(true);
     }
 
-    public static Predicate<Card> untapped() {
+    public static Predicate<Permanent> untapped() {
         return tapped(false);
     }
 }
