@@ -2,7 +2,7 @@ package org.mtgpeasant.decks.reanimator;
 
 import org.junit.Test;
 import org.mtgpeasant.perfectdeck.Tools;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
 import org.mtgpeasant.perfectdeck.goldfish.Game;

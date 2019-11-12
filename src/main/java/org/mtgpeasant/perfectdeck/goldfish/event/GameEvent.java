@@ -2,7 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish.event;
 
 import lombok.Value;
 import lombok.experimental.NonFinal;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 

@@ -1,11 +1,12 @@
-package org.mtgpeasant.perfectdeck.common;
+package org.mtgpeasant.perfectdeck.common.mana;
 
 import org.junit.Test;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.mtgpeasant.perfectdeck.common.Mana.of;
-import static org.mtgpeasant.perfectdeck.common.Mana.zero;
+import static org.mtgpeasant.perfectdeck.common.mana.Mana.of;
+import static org.mtgpeasant.perfectdeck.common.mana.Mana.zero;
 
 public class ManaTest {
     @Test

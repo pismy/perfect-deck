@@ -1,6 +1,6 @@
 package org.mtgpeasant.decks.stompy;
 
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static org.mtgpeasant.perfectdeck.common.Mana.zero;
+import static org.mtgpeasant.perfectdeck.common.mana.Mana.zero;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
 /**

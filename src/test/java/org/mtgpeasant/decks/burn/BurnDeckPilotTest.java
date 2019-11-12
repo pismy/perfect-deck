@@ -1,6 +1,7 @@
 package org.mtgpeasant.decks.burn;
 
 import org.assertj.core.api.Assertions;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mtgpeasant.perfectdeck.Tools;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
@@ -19,6 +20,7 @@ public class BurnDeckPilotTest {
         Assertions.assertThat(game.countInGraveyard(Game.CardType.sorcery, Game.CardType.instant)).isEqualTo(2);
     }
 
+    @Ignore
     @Test
     public void thermo_burn_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
@@ -43,6 +45,7 @@ public class BurnDeckPilotTest {
                 true);
     }
 
+    @Ignore
     @Test
     public void walls_burn_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
@@ -67,6 +70,7 @@ public class BurnDeckPilotTest {
                 true);
     }
 
+    @Ignore
     @Test
     public void ghitu_burn_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
@@ -91,6 +95,7 @@ public class BurnDeckPilotTest {
                 true);
     }
 
+    @Ignore
     @Test
     public void kiln_burn_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(

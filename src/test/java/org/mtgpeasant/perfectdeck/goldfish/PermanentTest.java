@@ -1,6 +1,8 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.junit.Test;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;

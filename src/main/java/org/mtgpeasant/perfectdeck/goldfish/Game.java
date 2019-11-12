@@ -2,7 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Getter;
 import lombok.ToString;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;

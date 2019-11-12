@@ -2,7 +2,7 @@ package org.mtgpeasant.decks.infect;
 
 import lombok.Builder;
 import lombok.Value;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.common.utils.Permutations;

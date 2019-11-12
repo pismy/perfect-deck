@@ -1,7 +1,7 @@
 package org.mtgpeasant.decks.burn;
 
 import lombok.Getter;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 

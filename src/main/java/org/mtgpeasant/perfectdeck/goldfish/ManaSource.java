@@ -1,7 +1,7 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Value;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,11 +11,9 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
 
 public interface ManaSource {
     /**
-     * Returns the possible costs to activate this mana source
+     * Returns the cost to activate this mana source
      */
-    default Set<Mana> costs(Game game) {
-        return Collections.emptySet();
-    }
+    Mana cost(Game game);
 
     /**
      * Returns the possible ammounts of mana this mana source can produce
@@ -31,39 +29,67 @@ public interface ManaSource {
      */
     void doProduce(Game game, Mana cost, Mana produce);
 
-    static List<ManaSource> getTapSources(Game game, String cardName, Mana... produceable) {
+    static List<ManaSource> getTapSources(Game game, String cardName, Mana cost, Set<Mana> produceable) {
         return game.getBattlefield().stream()
                 .filter(withName(cardName).and(untapped())) // TODO: filter out creatures with summoning sickness
-                .map(card -> tap(card, produceable))
+                .map(card -> tap(card, cost, produceable))
                 .collect(Collectors.toList());
     }
 
-    static List<ManaSource> getSacrificeSources(Game game, String cardName, Mana... produceable) {
+//    static List<ManaSource> getTapSources(Game game, String cardName, Set<Mana> produceable) {
+//        return getTapSources(game, cardName, Mana.zero(), produceable);
+//    }
+
+    static List<ManaSource> getSacrificeSources(Game game, String cardName, Mana cost, Set<Mana> produceable) {
         return game.getBattlefield().stream()
                 .filter(withName(cardName).and(untapped()))
-                .map(card -> sacrifice(card, produceable))
+                .map(card -> sacrifice(card, cost, produceable))
                 .collect(Collectors.toList());
     }
 
-    static List<ManaSource> getDiscardSources(Game game, String cardName, Mana... produceable) {
+//    static List<ManaSource> getSacrificeSources(Game game, String cardName, Set<Mana> produceable) {
+//        return getSacrificeSources(game, cardName, Mana.zero(), produceable);
+//    }
+
+    static List<ManaSource> getDiscardSources(Game game, String cardName, Set<Mana> produceable) {
         return game.getHand().stream()
                 .filter(card -> card.equals(cardName))
                 .map(card -> discard(card, produceable))
                 .collect(Collectors.toList());
     }
 
+    static List<ManaSource> getCastSources(Game game, String cardName, Game.Area from, Game.Area to, Mana cost, Set<Mana> produceable, Game.CardType... types) {
+        return game.getHand().stream()
+                .filter(card -> card.equals(cardName))
+                .map(card -> cast(card, from, to, cost, produceable, types))
+                .collect(Collectors.toList());
+    }
+
+    static List<ManaSource> getCastSorcerySources(Game game, String cardName, Mana cost, Set<Mana> produceable) {
+        return getCastSources(game, cardName, Game.Area.hand, Game.Area.graveyard, cost, produceable, Game.CardType.sorcery);
+    }
+
+    static List<ManaSource> getCastInstantSources(Game game, String cardName, Mana cost, Set<Mana> produceable) {
+        return getCastSources(game, cardName, Game.Area.hand, Game.Area.graveyard, cost, produceable, Game.CardType.instant);
+    }
+
     /**
      * Mana source when a card is tapped (either a land or mana source such as Llanowar Elves)
      *
-     * @param permanent        the card that produces mana when tapped
-     * @param produceable mana that can be produced by the card when tapped
+     * @param permanent   the card that produces mana when tapped
+     * @param cost        mana cost to activate the mana source
+     * @param produceable all possible amounts of mana that can be produced by the card when tapped
      */
-    static ManaSource tap(Permanent permanent, Mana... produceable) {
-        Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
+    static ManaSource tap(Permanent permanent, Mana cost, Set<Mana> produceable) {
         return new ManaSource() {
             @Override
+            public Mana cost(Game game) {
+                return cost;
+            }
+
+            @Override
             public Set<Mana> produces(Game game) {
-                return mana;
+                return produceable;
             }
 
             @Override
@@ -84,17 +110,32 @@ public interface ManaSource {
     }
 
     /**
+     * Mana source when a card is tapped (either a land or mana source such as Llanowar Elves)
+     *
+     * @param permanent   the card that produces mana when tapped
+     * @param produceable all possible amounts of mana that can be produced by the card when tapped
+     */
+    static ManaSource tap(Permanent permanent, Set<Mana> produceable) {
+        return tap(permanent, Mana.zero(), produceable);
+    }
+
+    /**
      * Mana source when a card is sacrificed
      *
-     * @param permanent        the card that produces mana when sacrificed
-     * @param produceable mana that can be produced by the card when sacrificed
+     * @param permanent   the card that produces mana when sacrificed
+     * @param cost        mana cost to activate the mana source
+     * @param produceable all possible amounts of mana that can be produced by the card when tapped
      */
-    static ManaSource sacrifice(Permanent permanent, Mana... produceable) {
-        Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
+    static ManaSource sacrifice(Permanent permanent, Mana cost, Set<Mana> produceable) {
         return new ManaSource() {
             @Override
+            public Mana cost(Game game) {
+                return cost;
+            }
+
+            @Override
             public Set<Mana> produces(Game game) {
-                return mana;
+                return produceable;
             }
 
             @Override
@@ -111,22 +152,71 @@ public interface ManaSource {
     }
 
     /**
+     * Mana source when a card is sacrificed
+     *
+     * @param permanent   the card that produces mana when sacrificed
+     * @param produceable all possible amounts of mana that can be produced by the card when sacrificed
+     */
+    static ManaSource sacrifice(Permanent permanent, Set<Mana> produceable) {
+        return sacrifice(permanent, Mana.zero(), produceable);
+    }
+
+    /**
      * Mana source when a card is discarded
      *
      * @param card        the card that produces mana when discarded
-     * @param produceable mana that can be produced by the card when discarded
+     * @param produceable all possible amounts of mana that can be produced by the card when discarded
      */
-    static ManaSource discard(String card, Mana... produceable) {
-        Set<Mana> mana = new HashSet<>(Arrays.asList(produceable));
+    static ManaSource discard(String card, Set<Mana> produceable) {
         return new ManaSource() {
             @Override
+            public Mana cost(Game game) {
+                return Mana.zero();
+            }
+
+            @Override
             public Set<Mana> produces(Game game) {
-                return mana;
+                return produceable;
             }
 
             @Override
             public void doProduce(Game game, Mana cost, Mana produce) {
                 game.discard(card);
+                game.add(produce);
+            }
+
+            @Override
+            public String toString() {
+                return "discard [" + card + "]";
+            }
+        };
+    }
+
+    /**
+     * Mana source when a card is cast
+     *
+     * @param card        spell card name
+     * @param from        origin area
+     * @param to          target area
+     * @param cost        mana cost
+     * @param produceable all possible amounts of mana that can be produced by the card when cast
+     * @param types       card type(s)
+     */
+    static ManaSource cast(String card, Game.Area from, Game.Area to, Mana cost, Set<Mana> produceable, Game.CardType... types) {
+        return new ManaSource() {
+            @Override
+            public Mana cost(Game game) {
+                return cost;
+            }
+
+            @Override
+            public Set<Mana> produces(Game game) {
+                return produceable;
+            }
+
+            @Override
+            public void doProduce(Game game, Mana cost, Mana produce) {
+                game.cast(card, from, to, cost, types);
                 game.add(produce);
             }
 
@@ -146,7 +236,7 @@ public interface ManaSource {
 
             Option(String card, Mana... produceable) {
                 this.card = card;
-                this.produceable = new HashSet<>(Arrays.asList(produceable));
+                this.produceable = oneOf(produceable);
             }
 
             @Override
@@ -175,6 +265,11 @@ public interface ManaSource {
                 }
             }
             return applicable;
+        }
+
+        @Override
+        public Mana cost(Game game) {
+            return Mana.zero();
         }
 
         @Override
@@ -210,9 +305,12 @@ public interface ManaSource {
 
         @Override
         public String toString() {
-            return "land one of " + Arrays.toString(options);
+            return "land one of " + Arrays.toString(options) + " and tap";
         }
+    }
 
+    static HashSet<Mana> oneOf(Mana... manas) {
+        return new HashSet<>(Arrays.asList(manas));
     }
 
     /**

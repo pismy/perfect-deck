@@ -2,7 +2,7 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Builder;
 import lombok.Value;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,30 +66,30 @@ public class ManaProductionPlanner {
 //    }
 
     static Optional<Plan.Step> findFirst(Game game, List<ManaSource> sources, Mana cost) {
+        // TODO: start with coloured mana
         for (ManaSource source : sources) {
             Set<Mana> produceable = source.produces(game);
             for (Mana selectedProduction : produceable) {
-                Mana.Extraction extracted = selectedProduction.extract(cost);
-                if (!extracted.getExtracted().isEmpty()) {
+                Mana.Extraction extraction = selectedProduction.extract(cost);
+                if (!extraction.getExtracted().isEmpty()) {
                     // yes, this source produces required mana
-                    Set<Mana> possibleCosts = source.costs(game);
-                    Mana selectedCost = null;
-                    if (possibleCosts.isEmpty() || possibleCosts.contains(Mana.zero())) {
-                        selectedCost = Mana.zero();
-                    } else {
-//                        // can we pay one of the costs ?
-//                        for (Mana aCost : costs) {
-//                            List<ManaSource> remainingSources = new ArrayList<>(sources);
-//                            remainingSources.remove(source);
-//                            findFirst(game, remainingSources, aCost); // TODO: not unitary
-//                            // TODO: pay from pool (ex: dark ritual)
-//                        }
-//                        TODO: need to try all alternative costs and sources until a solution is found
-                    }
+                    Mana sourceCost = source.cost(game);
+//                    if (sourceCost.isEmpty()) {
+//                        selectedCost = Mana.zero();
+//                    } else {
+////                        // can we pay one of the cost ?
+////                        for (Mana aCost : cost) {
+////                            List<ManaSource> remainingSources = new ArrayList<>(sources);
+////                            remainingSources.remove(source);
+////                            findFirst(game, remainingSources, aCost); // TODO: not unitary
+////                            // TODO: pay from pool (ex: dark ritual)
+////                        }
+////                        TODO: need to try all alternative cost and sources until a solution is found
+//                    }
 
-                    if (selectedCost != null) {
+                    if (sourceCost.isEmpty()) {
                         sources.remove(source);
-                        return Optional.of(new Plan.Step(source, selectedCost, selectedProduction));
+                        return Optional.of(new Plan.Step(source, sourceCost, selectedProduction));
                     }
                 }
             }
@@ -126,7 +126,7 @@ public class ManaProductionPlanner {
 
             @Override
             public String toString() {
-                return source + " to produce " + produce;
+                return source + (cost.isEmpty() ? "" : ", pay " + cost) + ": produce " + produce;
             }
         }
     }

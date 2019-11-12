@@ -1,7 +1,7 @@
 package org.mtgpeasant.decks.reanimator;
 
-import org.mtgpeasant.perfectdeck.common.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.*;
 
@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Collections.singleton;
+import static org.mtgpeasant.perfectdeck.common.mana.Mana.zero;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.untapped;
@@ -334,16 +336,16 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
 
     boolean maybeProduce(Mana cost) {
         List<ManaSource> sources = new ArrayList<>();
-        sources.addAll(getTapSources(game, CRUMBLING_VESTIGE, X));
-        sources.addAll(getTapSources(game, SWAMP, B));
-        sources.addAll(getTapSources(game, MOUNTAIN, R));
+        sources.addAll(getTapSources(game, CRUMBLING_VESTIGE, zero(), singleton(X)));
+        sources.addAll(getTapSources(game, SWAMP, zero(), singleton(B)));
+        sources.addAll(getTapSources(game, MOUNTAIN, zero(), singleton(R)));
         sources.add(landing(
                 with(SWAMP, B),
                 with(MOUNTAIN, R),
                 with(CRUMBLING_VESTIGE, B, R)
         ));
-        sources.addAll(getDiscardSources(game, SIMIAN_SPIRIT_GUIDE, R));
-        sources.addAll(getDiscardSources(game, LOTUS_PETAL, R, B));
+        sources.addAll(getDiscardSources(game, SIMIAN_SPIRIT_GUIDE, singleton(R)));
+        sources.addAll(getDiscardSources(game, LOTUS_PETAL, oneOf(R, B)));
 
         return ManaProductionPlanner.maybeProduce(game, sources, cost);
     }

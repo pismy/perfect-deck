@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common;
+package org.mtgpeasant.perfectdeck.common.mana;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -246,17 +246,12 @@ public class Mana {
         if (isEmpty()) {
             return "0";
         }
-        return new StringBuilder()
-                .append(x > 0 ? x : "") // Character.toString((char)(x+9311))
-                .append(Strings.repeat("B", b))
-                .append(Strings.repeat("U", u))
-                .append(Strings.repeat("G", g))
-                .append(Strings.repeat("R", r))
-                .append(Strings.repeat("W", w))
-                .append(x < 0 ? x : "")
-//                .append("(")
-//                .append(ccm())
-//                .append(")")
-                .toString();
+        return (x > 0 ? x : "") // Character.toString((char)(x+9311))
+                + Strings.repeat("B", b)
+                + Strings.repeat("U", u)
+                + Strings.repeat("G", g)
+                + Strings.repeat("R", r)
+                + Strings.repeat("W", w)
+                + (x < 0 ? x : "");
     }
 }

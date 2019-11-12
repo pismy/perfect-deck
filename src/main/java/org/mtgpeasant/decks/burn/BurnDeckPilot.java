@@ -1,7 +1,7 @@
 package org.mtgpeasant.decks.burn;
 
 import lombok.ToString;
-import org.mtgpeasant.perfectdeck.common.Mana;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.utils.Permutations;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
