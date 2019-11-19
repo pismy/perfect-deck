@@ -41,7 +41,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
             RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, LAVA_DART_FB, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
 
-    private Seer.VictoryRoute victoryRoute;
+    private transient Seer.VictoryRoute victoryRoute;
 
     public BurnDeckPilot(Game game) {
         super(game);

@@ -34,7 +34,7 @@ public class Seer {
         public void play(DeckPilot pilot) {
             if (pilot.game.getCurrentPhase() == Game.Phase.first_main) {
                 firstMainPhaseSpells.forEach(card -> ((SpellsPlayer) pilot).play(card));
-            } else {
+            } else if (pilot.game.getCurrentPhase() == Game.Phase.second_main) {
                 secondMainPhaseSpells.forEach(card -> ((SpellsPlayer) pilot).play(card));
             }
         }
