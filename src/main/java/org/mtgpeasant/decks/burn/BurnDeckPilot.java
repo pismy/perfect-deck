@@ -1,18 +1,18 @@
 package org.mtgpeasant.decks.burn;
 
-import lombok.ToString;
-import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
-import org.mtgpeasant.perfectdeck.common.utils.Permutations;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.Permanent;
+import org.mtgpeasant.perfectdeck.goldfish.Seer;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
@@ -26,7 +26,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>
  */
-public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameListener {
+public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameListener, Seer.SpellsPlayer {
 
     public static final Mana R = Mana.of("R");
     public static final Mana R1 = Mana.of("1R");
@@ -39,7 +39,9 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     // all cards that could contribute to a kill in the turn
     private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
-            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
+            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, LAVA_DART_FB, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
+
+    private Seer.VictoryRoute victoryRoute;
 
     public BurnDeckPilot(Game game) {
         super(game);
@@ -118,82 +120,31 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     public void firstMainPhase() {
         // start by playing all probes
         // TODO: maybe not always optimal. Casting a Swiftspear before could be better
-        while (playOneOf(false, GITAXIAN_PROBE).isPresent()) {
+        while (playOneOf(GITAXIAN_PROBE).isPresent()) {
         }
 
         // then land
-        playOneOf(false, MOUNTAIN, FORGOTTEN_CAVE);
+        playOneOf(MOUNTAIN, FORGOTTEN_CAVE);
 
         // is there a way to kill opponent this turn (only from turn 3)?
         if (game.getCurrentTurn() > 2) {
-            List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
-            int forseenDamage = creatures.stream().mapToInt(this::strength).sum()
-                    // +1 per thermo (EOT)
-                    + (int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
+            victoryRoute = Seer.findRouteToVictory(this, RUSH).orElse(null);
+            if (victoryRoute != null) {
+                game.log(">>> I can kill now with: " + victoryRoute);
+                // sacrifice all seals
+                game.getBattlefield().find(withName(SEAL_OF_FIRE)).forEach(seal -> {
+                    game.sacrifice(seal);
+                    game.damageOpponent(2);
+                });
 
-            if (game.getOpponentLife() > forseenDamage) {
-                Mana potentialPool = game.getPool()
-                        .plus(Mana.of(0, 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
-
-                Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
-                Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
-                        .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
-                        .sorted(Comparator.reverseOrder())
-                        .findFirst();
-
-                if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
-                    game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
-                    // sacrifice all seals
-                    game.getBattlefield().find(withName(SEAL_OF_FIRE)).forEach(seal -> {
-                        game.sacrifice(seal);
-                        game.damageOpponent(2);
-                    });
-
-                    // then play spells
-                    optimalSpellsOrder.get().playedSpells.forEach(card -> play(true, card));
-                    return;
-                }
+                // then play spells
+                victoryRoute.play(this);
+                return;
             }
         }
 
         while (playBestCard()) {
         }
-    }
-
-    /**
-     * Play the best card in case there is no kill option this turn
-     */
-    private boolean playBestCard() {
-        boolean ghituHasHaste = countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2;
-        return playOneOf(false,
-                MOUNTAIN,
-                MONASTERY_SWIFTSPEAR,
-                GITAXIAN_PROBE,
-                NEEDLE_DROP,
-                FORGOTTEN_CAVE,
-                KILN_FIEND,
-                FIREBRAND_ARCHER,
-                THERMO_ALCHEMIST,
-                ELECTROSTATIC_FIELD,
-                KELDON_MARAUDERS,
-                VIASHINO_PYROMANCER,
-                ORCISH_HELLRAISER,
-                CURSE_OF_THE_PIERCED_HEART,
-                ghituHasHaste ? GHITU_LAVARUNNER : "_",
-                FLAME_RIFT,
-                game.isLanded() ? SEARING_BLAZE : "_",
-                game.getDamageDealtThisTurn() > 0 ? SKEWER_THE_CRITICS : "_",
-                RIFT_BOLT,
-                CHAIN_LIGHTNING,
-                LAVA_SPIKE,
-                LIGHTNING_BOLT,
-                FORKED_BOLT,
-                SEAL_OF_FIRE,
-                MAGMA_JET,
-                VOLCANIC_FALLOUT,
-                GHITU_LAVARUNNER,
-                SKEWER_THE_CRITICS
-        ).isPresent();
     }
 
     @Override
@@ -204,42 +155,33 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     @Override
     public void secondMainPhase() {
-        // what is the best order to play my spells ?
-        if (game.getCurrentTurn() > 2) {
-            Mana potentialPool = game.getPool()
-                    .plus(Mana.of(0, 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN, FORGOTTEN_CAVE).and(untapped())), 0, 0));
-
-            int forseenDamage =
-                    // +1 per thermo (EOT)
-                    +(int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped())) * 1;
-
-            if (game.getOpponentLife() > forseenDamage) {
-                Stream<Stream<String>> allSpellsOrderCombinations = Permutations.of(new ArrayList<>(game.getHand().findAll(RUSH)));
-                Optional<TurnSimulation> optimalSpellsOrder = allSpellsOrderCombinations
-                        .map(boosts -> simulate(potentialPool, boosts.collect(Collectors.toList())))
-                        .sorted(Comparator.reverseOrder())
-                        .findFirst();
-
-
-                if (optimalSpellsOrder.isPresent() && optimalSpellsOrder.get().damage + forseenDamage >= game.getOpponentLife()) {
-                    game.log(">>> I can kill now with: " + optimalSpellsOrder.get());
-                    // draw all mana I can from pool
-                    optimalSpellsOrder.get().playedSpells.forEach(card -> play(true, card));
-                    return;
-                }
-            }
+        if (victoryRoute != null) {
+            victoryRoute.play(this);
         }
 
         while (playBestCard()) {
         }
+    }
 
+    @Override
+    public void endingPhase() {
         // use untapped thermo a last time
         game.getBattlefield().find(withName(THERMO_ALCHEMIST).and(untapped()).and(withoutSickness())).forEach(card -> {
             game.tap(card);
             game.damageOpponent(1, "thermo");
         });
+
+        // then discard extra cards
+        if (game.getHand().size() > 7) {
+            discard(game.getHand().size() - 7);
+        }
     }
 
+    /**
+     * Manages all triggers
+     *
+     * @param event game event
+     */
     @Override
     public void onEvent(GameEvent event) {
         if (event.getType() == GameEvent.Type.cast) {
@@ -275,234 +217,46 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         }
     }
 
+    /**
+     * Play the best card in case there is no kill option this turn
+     */
+    private boolean playBestCard() {
+        boolean ghituHasHaste = countInGraveyard(Game.CardType.sorcery, Game.CardType.instant) >= 2;
+        return playOneOf(
+                MOUNTAIN,
+                MONASTERY_SWIFTSPEAR,
+                GITAXIAN_PROBE,
+                NEEDLE_DROP,
+                FORGOTTEN_CAVE,
+                KILN_FIEND,
+                FIREBRAND_ARCHER,
+                THERMO_ALCHEMIST,
+                ELECTROSTATIC_FIELD,
+                KELDON_MARAUDERS,
+                VIASHINO_PYROMANCER,
+                ORCISH_HELLRAISER,
+                CURSE_OF_THE_PIERCED_HEART,
+                ghituHasHaste ? GHITU_LAVARUNNER : "_",
+                FLAME_RIFT,
+                game.isLanded() ? SEARING_BLAZE : "_",
+                game.getDamageDealtThisTurn() > 0 ? SKEWER_THE_CRITICS : "_",
+                RIFT_BOLT_SP,
+                CHAIN_LIGHTNING,
+                LAVA_SPIKE,
+                LIGHTNING_BOLT,
+                FORKED_BOLT,
+                SEAL_OF_FIRE,
+                MAGMA_JET,
+                VOLCANIC_FALLOUT,
+                GHITU_LAVARUNNER,
+                SKEWER_THE_CRITICS
+        ).isPresent();
+    }
+
     public int countInGraveyard(Game.CardType... types) {
         List<Game.CardType> typesList = Arrays.asList(types);
         return (int) game.getGraveyard().stream().filter(card -> typesList.contains(typeof(card))).count();
 //        return Arrays.stream(types).mapToInt(type -> getGraveyard().count(this.cardsOfType(type))).sum();
-    }
-
-    @ToString
-    class TurnSimulation implements Comparable<TurnSimulation> {
-        List<String> playedSpells = new ArrayList<>();
-
-        int damage = 0;
-
-        int thermosOnBoard = (int) game.getBattlefield().count(withName(THERMO_ALCHEMIST).and(untapped()));
-        int kilnOnBoard = (int) game.getBattlefield().count(withName(KILN_FIEND).and(untapped()));
-        int archersOnBoard = (int) game.getBattlefield().count(withName(FIREBRAND_ARCHER));
-        int fieldsOnBoard = (int) game.getBattlefield().count(withName(ELECTROSTATIC_FIELD));
-        int swiftspearsOnBoard = (int) game.getBattlefield().count(withName(MONASTERY_SWIFTSPEAR));
-        int moutainsOnBoard = (int) game.getBattlefield().count(withName(MOUNTAIN));
-        int dartsInGy = game.getGraveyard().count(LAVA_DART);
-
-        void damage(int damage) {
-            this.damage += damage;
-        }
-
-        boolean haveSpectacle() {
-            return damageDealtThisTurn() > 0;
-        }
-
-        int damageDealtThisTurn() {
-            return game.getDamageDealtThisTurn() + damage;
-        }
-
-        void damageWithNonPermanent(int damage) {
-            damage(damage
-                    + thermosOnBoard
-                    + fieldsOnBoard
-                    + archersOnBoard
-                    + swiftspearsOnBoard
-                    + kilnOnBoard * 3);
-        }
-
-        @Override
-        public int compareTo(TurnSimulation other) {
-            return damage - other.damage;
-        }
-
-        public boolean maybeCastDartFlashback() {
-            if (dartsInGy > 0 && moutainsOnBoard > 0) {
-                playedSpells.add(LAVA_DART_FB);
-                dartsInGy--;
-                moutainsOnBoard--;
-                damageWithNonPermanent(1);
-                return true;
-            }
-            return false;
-        }
-
-    }
-
-    private TurnSimulation simulate(Mana potentialPool, List<String> spells) {
-        TurnSimulation sim = new TurnSimulation();
-        // sacrifice all seals
-        int sealsOnBoard = (int) game.getBattlefield().count(withName(SEAL_OF_FIRE));
-        sim.damage(sealsOnBoard * 2);
-
-        for (String spell : spells) {
-            switch (spell) {
-                // CREATURES
-                case MONASTERY_SWIFTSPEAR:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.swiftspearsOnBoard += 1;
-                        sim.damage(1); // haste -> additional combat damage
-                    }
-                    break;
-                case KELDON_MARAUDERS:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.damage(1);
-                    }
-                    break;
-                case GHITU_LAVARUNNER:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        // haste and +1/+0
-                        // TODO
-                        sim.damage(2); // haste -> additional combat damage
-                    }
-                    break;
-                case VIASHINO_PYROMANCER:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.damage(2);
-                    }
-                    break;
-                case FIREBRAND_ARCHER:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.archersOnBoard++;
-                    }
-                    break;
-                case ELECTROSTATIC_FIELD:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.fieldsOnBoard++;
-                    }
-                    break;
-                // BURN
-                case FIREBLAST:
-                    if (sim.moutainsOnBoard >= 2) {
-                        sim.moutainsOnBoard -= 2;
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(4);
-                    }
-                    break;
-                case LAVA_SPIKE:
-                case CHAIN_LIGHTNING:
-                case LIGHTNING_BOLT:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(3);
-                    }
-                    break;
-                case SEAL_OF_FIRE:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(2); // TODO: not exactly that...
-                    }
-                    break;
-                case SKEWER_THE_CRITICS:
-                    if (!sim.haveSpectacle() && potentialPool.contains(R)) {
-                        // can I cast a dart from GY to have spectacle ?
-                        sim.maybeCastDartFlashback();
-                    }
-                    if (sim.haveSpectacle() && potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(3);
-                    } else if (potentialPool.contains(R2)) {
-                        potentialPool = potentialPool.minus(R2);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(3);
-                    }
-                    break;
-                case LAVA_DART:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.dartsInGy++;
-                        sim.damageWithNonPermanent(1);
-                    }
-                    break;
-                case NEEDLE_DROP:
-                    if (sim.damageDealtThisTurn() == 0 && potentialPool.contains(R)) {
-                        // can I cast a dart from GY to have spectacle ?
-                        sim.maybeCastDartFlashback();
-                    }
-                    if (sim.damageDealtThisTurn() > 0 && potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(1);
-                    }
-                    break;
-                case FORKED_BOLT:
-                    if (potentialPool.contains(R)) {
-                        potentialPool = potentialPool.minus(R);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(2);
-                    }
-                    break;
-                case SEARING_BLAZE:
-                    if (potentialPool.contains(RR)) {
-                        potentialPool = potentialPool.minus(RR);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent((game.isLanded() ? 3 : 1));
-                    }
-                    break;
-                case MAGMA_JET:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(2);
-                    }
-                    break;
-                case VOLCANIC_FALLOUT:
-                    if (potentialPool.contains(RR1)) {
-                        potentialPool = potentialPool.minus(RR1);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(2);
-                    }
-                    break;
-                case FLAME_RIFT:
-                    if (potentialPool.contains(R1)) {
-                        potentialPool = potentialPool.minus(R1);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(4);
-                    }
-                    break;
-                case RIFT_BOLT:
-                    if (potentialPool.contains(R2)) {
-                        potentialPool = potentialPool.minus(R2);
-                        sim.playedSpells.add(spell);
-                        sim.damageWithNonPermanent(3);
-                    }
-                    break;
-            }
-        }
-
-        // simulate playing darts from graveyard
-        int playableDarts = Math.min(sim.dartsInGy, sim.moutainsOnBoard);
-        if (playableDarts > 0) {
-            for (int i = 0; i < playableDarts; i++) {
-                sim.playedSpells.add(LAVA_DART_FB);
-                sim.dartsInGy--;
-                sim.moutainsOnBoard--;
-                sim.damageWithNonPermanent(1);
-            }
-        }
-
-        return sim;
     }
 
     private int strength(Permanent creature) {
@@ -536,17 +290,37 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
      * @param cards cards ordered by preference
      * @return the successfully cast card
      */
-    Optional<String> playOneOf(boolean rush, String... cards) {
+    Optional<String> playOneOf(String... cards) {
         for (String card : cards) {
-            if (game.getHand().contains(card) && canPlay(rush, card)) {
-                play(rush, card);
+            if (canPlay(card)) {
+                play(card);
                 return Optional.of(card);
             }
         }
         return Optional.empty();
     }
 
-    boolean canPlay(boolean rush, String card) {
+    @Override
+    public boolean canPlay(String card) {
+        // first check has card
+        switch (card) {
+            case LAVA_DART_FB:
+                if (!game.getGraveyard().contains(LAVA_DART)) {
+                    return false;
+                }
+                break;
+            case RIFT_BOLT_SP:
+                if (!game.getHand().contains(RIFT_BOLT)) {
+                    return false;
+                }
+                break;
+            default:
+                // for all other cards: must be in hand
+                if (!game.getHand().contains(card)) {
+                    return false;
+                }
+                break;
+        }
         switch (card) {
             case MOUNTAIN:
             case FORGOTTEN_CAVE:
@@ -576,7 +350,9 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case SEARING_BLAZE:
                 return canPay(RR);
             case RIFT_BOLT:
-                return rush ? canPay(R) : canPay(R2);
+                return canPay(R2);
+            case RIFT_BOLT_SP:
+                return canPay(R);
             case VOLCANIC_FALLOUT:
                 return canPay(RR1);
             case FIREBLAST:
@@ -594,7 +370,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         return false;
     }
 
-    boolean play(boolean rush, String card) {
+    @Override
+    public boolean play(String card) {
         switch (card) {
             case MOUNTAIN:
                 game.land(card);
@@ -659,7 +436,6 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case KELDON_MARAUDERS:
                 produce(R1);
                 game.castCreature(card, R1)
-
                         // 2 vanishing counters
                         .addCounter("vanishing", 2);
                 game.damageOpponent(1, "Keldon ETB");
@@ -672,7 +448,6 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case ORCISH_HELLRAISER:
                 produce(R1);
                 game.castCreature(card, R1)
-
                         // time counter for echo
                         .addCounter("echo", 1);
                 return true;
@@ -736,17 +511,16 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 game.damageOpponent(2, null);
                 return true;
             case RIFT_BOLT:
-                if (rush) {
-                    // cast now
-                    produce(R2);
-                    game.castSorcery(card, R2);
-                    game.damageOpponent(3, null);
-                } else {
-                    // suspend
-                    produce(R);
-                    game.pay(R);
-                    game.move(card, Game.Area.hand, Game.Area.exile).addCounter("suspend", 1);
-                }
+                // cast now
+                produce(R2);
+                game.castSorcery(card, R2);
+                game.damageOpponent(3, null);
+                return true;
+            case RIFT_BOLT_SP:
+                // suspend
+                produce(R);
+                game.pay(R);
+                game.move(RIFT_BOLT, Game.Area.hand, Game.Area.exile).addCounter("suspend", 1);
                 return true;
         }
         game.log("oops, unsupported card [" + card + "]");
@@ -765,14 +539,6 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     private void scry(int number) {
         // TODO
-    }
-
-    @Override
-    public void endingPhase() {
-        // then discard extra cards
-        if (game.getHand().size() > 7) {
-            discard(game.getHand().size() - 7);
-        }
     }
 
     void putOnBottomOfLibrary(int number) {

@@ -1,12 +1,13 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
 /**
  * The abstract class you have to extend to implement your own goldfish player.
  */
-public abstract class DeckPilot<T extends Game> {
-    protected final T game;
+public abstract class DeckPilot<T extends Game> implements Cloneable {
+    protected T game;
 
     public DeckPilot(T game) {
         this.game = game;
@@ -127,5 +128,21 @@ public abstract class DeckPilot<T extends Game> {
             return "opponent is deadly poisoned";
         }
         return null;
+    }
+
+    /**
+     * Forks the pilot to perform brute-force future-exploration
+     */
+    public DeckPilot<T> fork() {
+        try {
+            DeckPilot<T> pilot = (DeckPilot<T>) super.clone();
+            pilot.game = (T) game.fork();
+            if (game.listeners.contains(this)) {
+                pilot.game.addListener((GameListener) pilot);
+            }
+            return pilot;
+        } catch (CloneNotSupportedException cnse) {
+            throw new RuntimeException("Failed forking pilot", cnse);
+        }
     }
 }

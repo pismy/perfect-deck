@@ -25,12 +25,13 @@ public interface BurnCards {
 
     // BURN
     String RIFT_BOLT = "rift bolt"; // 2R: 3 damage; suspend 1: R
+    String RIFT_BOLT_SP = "rift bolt (suspend)"; // 2R: 3 damage; suspend 1: R
     String FIREBLAST = "fireblast"; // sac 2 moutains: 4 damage
     String LAVA_SPIKE = "lava spike"; // R: 3 damage
     String LIGHTNING_BOLT = "lightning bolt"; // R: 3 damage
     String SKEWER_THE_CRITICS = "skewer the critics"; // 2R: 3 damage; spectacle: R
     String LAVA_DART = "lava dart"; // R: 1 damage; flashback: sac mountain
-    String LAVA_DART_FB = "lava dart - flashback"; // R: 1 damage; flashback: sac mountain
+    String LAVA_DART_FB = "lava dart (flashback)"; // R: 1 damage; flashback: sac mountain
     String NEEDLE_DROP = "needle drop"; // R: 1 damage + 1 draw
     String CHAIN_LIGHTNING = "chain lightning"; // R: 3 damage
     String FORKED_BOLT = "forked bolt"; // R: 2 damage

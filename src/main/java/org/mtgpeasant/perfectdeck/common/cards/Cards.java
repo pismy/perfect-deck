@@ -19,7 +19,7 @@ public class Cards extends ArrayDeque<String> {
      */
     @Override
     public Cards clone() {
-        return new Cards(this);
+        return (Cards) super.clone();
     }
 
     /**

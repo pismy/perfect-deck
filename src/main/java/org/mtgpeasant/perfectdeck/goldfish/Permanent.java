@@ -9,7 +9,7 @@ import java.util.function.Predicate;
  * A card with its state
  */
 @Data
-public class Permanent {
+public class Permanent implements Cloneable {
     final String card;
     final Set<Game.CardType> types;
     boolean tapped = false;
@@ -17,16 +17,36 @@ public class Permanent {
     Set<String> tags = new HashSet<>();
     Map<String, Integer> counters = new HashMap<>();
 
-    Permanent(String card, Game.CardType... types) {
+    Permanent(String card, Set<Game.CardType> types) {
         this.card = card;
-        this.types = new HashSet<>(Arrays.asList(types));
+        this.types = types;
+    }
+
+    /**
+     * Deep cloning
+     */
+    @Override
+    protected Permanent clone() {
+        try {
+            Permanent clone = (Permanent) super.clone();
+            clone.tags = (Set<String>) ((HashSet) tags).clone();
+            clone.counters = (Map<String, Integer>) ((HashMap) counters).clone();
+            return clone;
+        } catch (CloneNotSupportedException cnse) {
+            Permanent copy = new Permanent(card, types)
+                    .setSickness(sickness)
+                    .setTapped(tapped);
+            copy.setTags((Set<String>) ((HashSet) tags).clone());
+            copy.setCounters((Map<String, Integer>) ((HashMap) counters).clone());
+            return copy;
+        }
     }
 
     /**
      * Creates a card with specified name and types
      */
     public static Permanent permanent(String name, Game.CardType... types) {
-        return new Permanent(name, types);
+        return new Permanent(name, new HashSet<>(Arrays.asList(types)));
     }
 
     /**
@@ -140,6 +160,7 @@ public class Permanent {
      * haste: ⚡
      * tap: ⟳ ↱↴
      * sickness: 🌀😵🐌🌪🤢
+     * temporary:  ⌚ / ⌛ / ⧖ / ⧗
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -159,7 +180,13 @@ public class Permanent {
                 } else {
                     sb.append(", ");
                 }
-                sb.append("#" + tag);
+                sb.append("#");
+                if (isTemporary(tag)) {
+                    sb.append("⌛");
+                    sb.append(tag.substring(1));
+                } else {
+                    sb.append(tag);
+                }
             }
             for (Map.Entry<String, Integer> ctr : counters.entrySet()) {
                 if (first) {
@@ -167,7 +194,14 @@ public class Permanent {
                 } else {
                     sb.append(", ");
                 }
-                sb.append(ctr.getKey() + ": " + ctr.getValue());
+                if (isTemporary(ctr.getKey())) {
+                    sb.append("⌛");
+                    sb.append(ctr.getKey().substring(1));
+                } else {
+                    sb.append(ctr.getKey());
+                }
+                sb.append(": ");
+                sb.append(ctr.getValue());
             }
             sb.append(">");
         }

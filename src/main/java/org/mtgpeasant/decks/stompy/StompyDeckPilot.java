@@ -1,11 +1,12 @@
 package org.mtgpeasant.decks.stompy;
 
-import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.Permanent;
+import org.mtgpeasant.perfectdeck.goldfish.Seer;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
@@ -14,7 +15,6 @@ import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.mtgpeasant.perfectdeck.common.mana.Mana.zero;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
@@ -26,7 +26,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
  * <li>use Quirion to untap Nettle or mana producers</li>
  * </ul>
  */
-public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
+public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Seer.SpellsPlayer {
 
     private static final Mana ONE = Mana.of("1");
     private static final Mana G = Mana.of("G");
@@ -64,7 +64,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
     private static final String ASPECT_OF_HYDRA = "aspect of hydra";
     private static final String SAVAGE_SWIPE = "savage swipe";
 
-    private static final String[] BOOSTS = {HUNGER_OF_THE_HOWLPACK, ASPECT_OF_HYDRA, SAVAGE_SWIPE, RANCOR, VINES_OF_VASTWOOD};
+    private static final String[] BOOSTS = {STRANGLEROOT_GEIST, CURSE_OF_PREDATION, HUNGER_OF_THE_HOWLPACK, ASPECT_OF_HYDRA, SAVAGE_SWIPE, RANCOR, VINES_OF_VASTWOOD};
 
     // OTHERS
     private static final String GITAXIAN_PROBE = "gitaxian probe";
@@ -131,10 +131,18 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
         }
 
         // simulate if I can rush now
-        if (game.getCurrentTurn() > 2 && canIRushNow()) {
-            game.log(">> I can rush now");
-            maybeSacrificeForHunger();
-            while (playOneOf(BOOSTS).isPresent()) {
+//        if (game.getCurrentTurn() > 2 && canIRushNow()) {
+//            game.log(">> I can rush now");
+//            maybeSacrificeForHunger();
+//            while (playOneOf(BOOSTS).isPresent()) {
+//            }
+//        }
+        if (game.getCurrentTurn() > 2) {
+            Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, BOOSTS);
+            if (victoryRoute.isPresent()) {
+                game.log(">> I can rush now with: " + victoryRoute);
+                maybeSacrificeForHunger();
+                victoryRoute.get().play(this);
             }
         }
 
@@ -199,82 +207,82 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
         }
     }
 
-    boolean canIRushNow() {
-        List<String> playableBoosts = game.getHand().findAll(BOOSTS).stream().filter(this::canPlay).collect(Collectors.toList());
-        if (playableBoosts.isEmpty()) {
-            return false;
-        }
-
-        List<Permanent> creatures = game.getBattlefield().find(creatureThatCanAttackOrNettle());
-
-        // foresee combat damage
-        int curses = (int) game.getBattlefield().count(withName(CURSE_OF_PREDATION));
-        int combatDamage = creatures.stream().mapToInt(card -> strength(card) + curses).sum();
-
-        // can I kill now with instant boosts ?
-        boolean canUseQuirion = game.getBattlefield().findFirst(withName(QUIRION_RANGER)).isPresent() && game.getBattlefield().findFirst(withName(FOREST)).isPresent() && !game.isLanded();
-        Mana potentialPool = game.getPool()
-                .plus(Mana.of(
-                        0,
-                        0,
-                        (int) game.getBattlefield().count(withName(FOREST).and(untapped())) + (canUseQuirion ? 1 : 0) + (int) game.getBattlefield().count(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())),
-                        0,
-                        0,
-                        (int) game.getBattlefield().count(withName(ELDRAZI_SPAWN)))
-                );
-        int instantBoosts = 0;
-
-        // TODO: which order ?
-
-        int countHydra = game.getHand().count(ASPECT_OF_HYDRA);
-        int devotion = devotion();
-        while (potentialPool.contains(G) && countHydra > 0) {
-            instantBoosts += devotion;
-            countHydra--;
-            potentialPool = potentialPool.minus(G);
-        }
-
-        int countHungers = game.getHand().count(HUNGER_OF_THE_HOWLPACK);
-        boolean aCreatureIsDeadOrCanBeKilled = aCreatureIsDead || game.getBattlefield().findFirst(withName(ELDRAZI_SPAWN)).isPresent();
-        if (aCreatureIsDeadOrCanBeKilled) {
-            while (potentialPool.contains(G) && countHungers > 0) {
-                instantBoosts += 3;
-                countHungers--;
-                potentialPool = potentialPool.minus(G);
-            }
-        }
-
-        int countRancors = game.getHand().count(RANCOR);
-        while (potentialPool.contains(G) && countRancors > 0) {
-            instantBoosts += 2;
-            countRancors--;
-            potentialPool = potentialPool.minus(G);
-        }
-
-        int countVines = game.getHand().count(VINES_OF_VASTWOOD);
-        while (potentialPool.contains(GG) && countVines > 0) {
-            instantBoosts += 4;
-            countVines--;
-            potentialPool = potentialPool.minus(GG);
-        }
-
-        int countSwipes = game.getHand().count(SAVAGE_SWIPE);
-        while (potentialPool.contains(G) && countSwipes > 0) {
-            instantBoosts += 2;
-            countSwipes--;
-            potentialPool = potentialPool.minus(G);
-        }
-
-        if (!aCreatureIsDeadOrCanBeKilled) {
-            while (potentialPool.contains(G) && countHungers > 0) {
-                instantBoosts += 1;
-                countHungers--;
-                potentialPool = potentialPool.minus(G);
-            }
-        }
-
-        return combatDamage + instantBoosts >= game.getOpponentLife();
-    }
+//    boolean canIRushNow() {
+//        List<String> playableBoosts = game.getHand().findAll(BOOSTS).stream().filter(this::canPlay).collect(Collectors.toList());
+//        if (playableBoosts.isEmpty()) {
+//            return false;
+//        }
+//
+//        List<Permanent> creatures = game.getBattlefield().find(creatureThatCanAttackOrNettle());
+//
+//        // foresee combat damage
+//        int curses = (int) game.getBattlefield().count(withName(CURSE_OF_PREDATION));
+//        int combatDamage = creatures.stream().mapToInt(card -> strength(card) + curses).sum();
+//
+//        // can I kill now with instant boosts ?
+//        boolean canUseQuirion = game.getBattlefield().findFirst(withName(QUIRION_RANGER)).isPresent() && game.getBattlefield().findFirst(withName(FOREST)).isPresent() && !game.isLanded();
+//        Mana potentialPool = game.getPool()
+//                .plus(Mana.of(
+//                        0,
+//                        0,
+//                        (int) game.getBattlefield().count(withName(FOREST).and(untapped())) + (canUseQuirion ? 1 : 0) + (int) game.getBattlefield().count(withName(LLANOWAR_ELVES, FYNDHORN_ELVES).and(untapped())),
+//                        0,
+//                        0,
+//                        (int) game.getBattlefield().count(withName(ELDRAZI_SPAWN)))
+//                );
+//        int instantBoosts = 0;
+//
+//        // TODO: which order ?
+//
+//        int countHydra = game.getHand().count(ASPECT_OF_HYDRA);
+//        int devotion = devotion();
+//        while (potentialPool.contains(G) && countHydra > 0) {
+//            instantBoosts += devotion;
+//            countHydra--;
+//            potentialPool = potentialPool.minus(G);
+//        }
+//
+//        int countHungers = game.getHand().count(HUNGER_OF_THE_HOWLPACK);
+//        boolean aCreatureIsDeadOrCanBeKilled = aCreatureIsDead || game.getBattlefield().findFirst(withName(ELDRAZI_SPAWN)).isPresent();
+//        if (aCreatureIsDeadOrCanBeKilled) {
+//            while (potentialPool.contains(G) && countHungers > 0) {
+//                instantBoosts += 3;
+//                countHungers--;
+//                potentialPool = potentialPool.minus(G);
+//            }
+//        }
+//
+//        int countRancors = game.getHand().count(RANCOR);
+//        while (potentialPool.contains(G) && countRancors > 0) {
+//            instantBoosts += 2;
+//            countRancors--;
+//            potentialPool = potentialPool.minus(G);
+//        }
+//
+//        int countVines = game.getHand().count(VINES_OF_VASTWOOD);
+//        while (potentialPool.contains(GG) && countVines > 0) {
+//            instantBoosts += 4;
+//            countVines--;
+//            potentialPool = potentialPool.minus(GG);
+//        }
+//
+//        int countSwipes = game.getHand().count(SAVAGE_SWIPE);
+//        while (potentialPool.contains(G) && countSwipes > 0) {
+//            instantBoosts += 2;
+//            countSwipes--;
+//            potentialPool = potentialPool.minus(G);
+//        }
+//
+//        if (!aCreatureIsDeadOrCanBeKilled) {
+//            while (potentialPool.contains(G) && countHungers > 0) {
+//                instantBoosts += 1;
+//                countHungers--;
+//                potentialPool = potentialPool.minus(G);
+//            }
+//        }
+//
+//        return combatDamage + instantBoosts >= game.getOpponentLife();
+//    }
 
     @Override
     public void combatPhase() {
@@ -489,7 +497,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
      */
     Optional<String> playOneOf(String... cards) {
         for (String card : cards) {
-            if (game.getHand().contains(card) && canPlay(card)) {
+            if (canPlay(card)) {
                 play(card);
                 return Optional.of(card);
             }
@@ -501,7 +509,12 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
         return creaturesThatCanBeTapped().or(withName(NETTLE_SENTINEL).and(withoutSickness()));
     }
 
-    boolean canPlay(String card) {
+    @Override
+    public boolean canPlay(String card) {
+        // first check card is in hand
+        if (!game.getHand().contains(card)) {
+            return false;
+        }
         switch (card) {
             case FOREST:
                 return !game.isLanded();
@@ -554,7 +567,8 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener {
         return false;
     }
 
-    boolean play(String card) {
+    @Override
+    public boolean play(String card) {
         switch (card) {
             case FOREST:
                 game.land(card);

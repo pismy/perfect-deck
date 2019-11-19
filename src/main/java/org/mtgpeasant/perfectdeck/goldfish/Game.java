@@ -2,8 +2,8 @@ package org.mtgpeasant.perfectdeck.goldfish;
 
 import lombok.Getter;
 import lombok.ToString;
-import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
@@ -14,7 +14,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
 @Getter
 @ToString(exclude = "library")
-public class Game {
+public class Game implements Cloneable {
 
     public enum Phase {
         beginning("beg"),
@@ -38,7 +38,8 @@ public class Game {
 
     // game state
     protected final boolean onThePlay;
-    protected final PrintWriter logs;
+    private boolean isFork = false;
+    protected PrintWriter logs;
     protected int mulligans = 0;
     protected int currentTurn = 0;
     protected int opponentLife = 20;
@@ -64,6 +65,24 @@ public class Game {
     protected Game(boolean onThePlay, PrintWriter logs) {
         this.onThePlay = onThePlay;
         this.logs = logs;
+    }
+
+    /**
+     * Forks the game state to perform brute-force future-exploration
+     */
+    public Game fork() throws CloneNotSupportedException {
+        Game game = (Game) super.clone();
+        game.logs = null;
+        // make library unmodifiable
+        game.library = Cards.of(Collections.unmodifiableCollection(game.library));
+        game.isFork = true;
+        game.hand = hand.clone();
+        game.battlefield = battlefield.clone();
+        game.exile = exile.clone();
+        game.graveyard = graveyard.clone();
+        // unset listeners
+        game.listeners = new HashSet<>();
+        return game;
     }
 
     protected void keepHandAndStart(Cards library, Cards hand) {
@@ -392,6 +411,10 @@ public class Game {
      * @param cards number of cards to draw
      */
     public Cards draw(int cards) {
+        if (isFork) {
+            // no draw when exploring future
+            return Cards.empty();
+        }
         Cards drawn = library.draw(cards);
         log("draw " + cards + ": " + drawn);
         hand.addAll(drawn);

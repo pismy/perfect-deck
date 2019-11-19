@@ -8,8 +8,7 @@ import java.util.*;
 
 import static java.util.Collections.singleton;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mtgpeasant.perfectdeck.common.mana.Mana.one;
-import static org.mtgpeasant.perfectdeck.common.mana.Mana.zero;
+import static org.mtgpeasant.perfectdeck.common.mana.Mana.*;
 import static org.mtgpeasant.perfectdeck.goldfish.Game.CardType.*;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
@@ -40,7 +39,7 @@ public class ManaProductionPlannerTest {
         sources.addAll(getTapSources(game, SWAMP, zero(), singleton(B)));
         sources.addAll(getTapSources(game, MOUNTAIN, zero(), singleton(R)));
         sources.addAll(getTapSources(game, RAKDOS_GUILDGATE, zero(), oneOf(B, R)));
-        sources.addAll(getTapSources(game, PROPHETIC_PRISM, one(), oneOf(B, R)));
+        sources.addAll(getTapSources(game, PROPHETIC_PRISM, one(), oneOf(B, R, G, W(), U())));
         sources.add(landing(
                 with(SWAMP, B),
                 with(MOUNTAIN, R),
@@ -74,7 +73,7 @@ public class ManaProductionPlannerTest {
 
         // THEN
         assertThat(plan).isPresent();
-        assertThat(plan.get().getSteps()).extracting(Objects::toString).containsExactly(
+        assertThat(plan.get()).extracting(Objects::toString).containsExactly(
                 "tap [" + CRUMBLING_VESTIGE + "]: produce 1",
                 "tap [" + LLANOWAR_ELVES + "]: produce G",
                 "tap [" + RAKDOS_CARNARIUM + "]: produce BR",
@@ -99,7 +98,7 @@ public class ManaProductionPlannerTest {
 
         // THEN
         assertThat(plan).isPresent();
-        assertThat(plan.get().getSteps()).extracting(Objects::toString).containsExactly(
+        assertThat(plan.get()).extracting(Objects::toString).containsExactly(
                 "tap [" + SWAMP + "]: produce B",
                 "tap [" + MOUNTAIN + "]: produce R",
                 "land one of [swamp, mountain, crumbling vestige] and tap: produce B"
@@ -123,7 +122,7 @@ public class ManaProductionPlannerTest {
 
         // THEN
         assertThat(plan).isPresent();
-        assertThat(plan.get().getSteps()).extracting(Objects::toString).containsExactly(
+        assertThat(plan.get()).extracting(Objects::toString).containsExactly(
                 "tap [" + SWAMP + "]: produce B",
                 "tap [" + MOUNTAIN + "]: produce R",
                 "land one of [swamp, mountain, crumbling vestige] and tap: produce B",
@@ -168,11 +167,34 @@ public class ManaProductionPlannerTest {
 
         // THEN
         assertThat(plan).isPresent();
-        assertThat(plan.get().getSteps()).extracting(Objects::toString).containsExactly(
+        assertThat(plan.get()).extracting(Objects::toString).containsExactly(
                 "tap [" + SWAMP + "]: produce B",
                 "tap [" + MOUNTAIN + "]: produce R",
-                "tap [" + PROPHETIC_PRISM + "], pay R: produce G"
+                "tap [" + PROPHETIC_PRISM + "], pay 1: produce G"
         );
     }
 
+    @Test
+    public void plan6_should_work() {
+        // GIVEN
+        Cards library = Cards.of();
+        Cards hand = Cards.of(SWAMP, DARK_RITUAL);
+        Game game = GameMock.mock(true, hand, library, Cards.empty(), Collections.emptyList(), Collections.emptyList());
+        game.getBattlefield().add(permanent(SWAMP, land));
+        game.getBattlefield().add(permanent(MOUNTAIN, land));
+        game.getBattlefield().add(permanent(PROPHETIC_PRISM, artifact));
+
+        // define sources in order of preference
+        List<ManaSource> sources = manaSources(game);
+
+        // WHEN
+        Optional<ManaProductionPlanner.Plan> plan = ManaProductionPlanner.plan(game, sources, Mana.of("BB"));
+
+        // THEN
+        assertThat(plan).isPresent();
+        assertThat(plan.get()).extracting(Objects::toString).containsExactly(
+                "tap [" + SWAMP + "]: produce B",
+                "cast [" + DARK_RITUAL + "], pay B: produce BBB"
+        );
+    }
 }
