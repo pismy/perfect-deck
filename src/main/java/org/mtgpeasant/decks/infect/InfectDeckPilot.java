@@ -1,24 +1,22 @@
 package org.mtgpeasant.decks.infect;
 
-import lombok.Builder;
-import lombok.Value;
-import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
+import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
-import org.mtgpeasant.perfectdeck.common.utils.Permutations;
-import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Permanent;
+import org.mtgpeasant.perfectdeck.goldfish.Seer;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
-public class InfectDeckPilot extends DeckPilot<Game> {
+public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlayer {
 
     private static final Mana G = Mana.of("G");
     private static final Mana G1 = Mana.of("1G");
@@ -55,9 +53,13 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     private static final String GITAXIAN_PROBE = "gitaxian probe";
     private static final String MENTAL_MISSTEP = "mental misstep";
     private static final String APOSTLE_S_BLESSING = "apostle's blessing";
+    public static final String SCALE_UP_TAG = "*scale up";
 
     private static String[] MANA_PRODUCERS = new String[]{PENDELHAVEN, FOREST, LOTUS_PETAL};
     private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA};
+    private static String[] BOOSTS = new String[]{RANCOR, SEAL_OF_STRENGTH, SCALE_UP, VINES_OF_VASTWOOD, GIANT_GROWTH, LARGER_THAN_LIFE, INVIGORATE, MUTAGENIC_GROWTH, GROUNDSWELL, RANCOR, MIGHT_OF_OLD_KROSA, BLOSSOMING_DEFENSE};
+
+    private static final String TEMP_BOOST = "*+1/+1";
 
     private static MulliganRules rules;
 
@@ -97,281 +99,84 @@ public class InfectDeckPilot extends DeckPilot<Game> {
 
         // land
         // pendelhaven if no invigorate in hand and no forest on battlefield
-        // TODO: land pendelhaven if it's the only land I have
-        if (game.getHand().contains(PENDELHAVEN) && (!game.getHand().contains(INVIGORATE) || game.getBattlefield().findFirst(withName(FOREST)).isPresent())) {
-            game.land(PENDELHAVEN);
-        } else if (game.getHand().contains(FOREST)) {
-            game.land(FOREST);
+        boolean needToLandForestForInvigorate = game.getHand().contains(INVIGORATE) && !game.getBattlefield().findFirst(withName(FOREST)).isPresent();
+        if (needToLandForestForInvigorate) {
+            playOneOf(FOREST);
         }
+        // else land pendelhaven in priority
+        playOneOf(PENDELHAVEN, FOREST);
 
         // play all petals
         while (game.getHand().contains(LOTUS_PETAL)) {
             game.castArtifact(LOTUS_PETAL, Mana.zero());
         }
+
+        if (game.getCurrentTurn() > 1) {
+            Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, BOOSTS);
+            if (victoryRoute.isPresent()) {
+                game.log(">> I can rush now with: " + victoryRoute);
+                victoryRoute.get().play(this);
+                return;
+            }
+        }
+
+        // else play boosts in best order
+        List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped());
+        if (creatures.isEmpty()) {
+            return;
+        }
+        Collection<String> boostsToPlay = game.isLanded() ?
+                game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
+                : game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
+        boostsToPlay.forEach(card -> {
+            if (canPlay(card)) {
+                play(card);
+            }
+        });
     }
 
     @Override
     public void combatPhase() {
-        // boost all creatures and attack
-        List<Permanent> creatures = game.getBattlefield().find(withType(Game.CardType.creature));
+        List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped());
         if (creatures.isEmpty()) {
             return;
         }
 
-        // first start by playing all free spells
-
-        // play all mutagenic
-        while (game.getHand().contains(MUTAGENIC_GROWTH)) {
-            game.castInstant(MUTAGENIC_GROWTH, Mana.zero());
-            game.poisonOpponent(2);
-        }
-
-        // play all invigorates (if forest)
-        if (game.getBattlefield().findFirst(withName(FOREST)).isPresent()) {
-            while (game.getHand().contains(INVIGORATE)) {
-                game.castInstant(INVIGORATE, Mana.zero());
-                game.poisonOpponent(4);
-                game.damageOpponent(-3);
-            }
-        }
-
-        // play all possible scale up (one per attacking creature max)
-        int castableScaleUp = Math.min(creatures.size(), game.getHand().count(SCALE_UP));
-        while (castableScaleUp > 0 && canPay(G)) {
-            produce(G);
-            game.castSorcery(SCALE_UP, G);
-            game.poisonOpponent(5);
-            castableScaleUp--;
-        }
-
-        // is there an optimal order to play my spells to kill this turn ?
-        int poisonCountersAtEOT = game.getOpponentPoisonCounters();
-        poisonCountersAtEOT += 3 * (int) game.getBattlefield().count(withName(SEAL_OF_STRENGTH));
-        poisonCountersAtEOT += 1 * creatures.size();
-        poisonCountersAtEOT += 2 * (int) game.getBattlefield().count(withName(RANCOR));
-
-        Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, (int) game.getBattlefield().count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
-
-        Collection<String> boostsToPlay = game.isLanded() ?
-                game.getHand().findAll(RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
-                : game.getHand().findAll(RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
-
-        if (simulateTurn(potentialPool, boostsToPlay).getCounters() + poisonCountersAtEOT < 10) {
-            // I can't kill with default order (rancors first): is there another order to play my boosts that can kill this turn ?
-            Stream<Stream<String>> allBoostsOrderCombinations = Permutations.of(new ArrayList<>(boostsToPlay));
-            Optional<TurnSimulation> bestOrder = allBoostsOrderCombinations
-                    .map(boosts -> simulateTurn(potentialPool, boosts.collect(Collectors.toList())))
-                    .sorted(Comparator.reverseOrder())
-                    .findFirst();
-
-            if (bestOrder.isPresent() && bestOrder.get().getCounters() + poisonCountersAtEOT >= 10) {
-//                System.out.println("I can rush with " + bestOrder.get().boosts + " instead of " + boostsToPlay);
-                boostsToPlay = bestOrder.get().boosts;
-            }
-        }
-
-        // now play boosts in optimal order (if I can kill) or fallback order (rancors first) if not
-        for (String boost : boostsToPlay) {
-            switch (boost) {
-                case RANCOR:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castEnchantment(RANCOR, G);
-                    }
-                    break;
-                case MIGHT_OF_OLD_KROSA:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castInstant(MIGHT_OF_OLD_KROSA, G);
-                        game.poisonOpponent(4);
-                    }
-                    break;
-                case GROUNDSWELL:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castInstant(GROUNDSWELL, G);
-                        game.poisonOpponent(game.isLanded() ? 4 : 2);
-                    }
-                    break;
-                case GIANT_GROWTH:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castInstant(GIANT_GROWTH, G);
-                        game.poisonOpponent(3);
-                    }
-                    break;
-                case SEAL_OF_STRENGTH:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castEnchantment(SEAL_OF_STRENGTH, G);
-                    }
-                    break;
-                case BLOSSOMING_DEFENSE:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castInstant(BLOSSOMING_DEFENSE, G);
-                        game.poisonOpponent(2);
-                    }
-                    break;
-                case LARGER_THAN_LIFE:
-                    if (canPay(G1)) {
-                        produce(G1);
-                        game.castInstant(LARGER_THAN_LIFE, G1);
-                        game.poisonOpponent(4);
-                    }
-                    break;
-                case VINES_OF_VASTWOOD:
-                    if (canPay(GG)) {
-                        produce(GG);
-                        game.castInstant(VINES_OF_VASTWOOD, GG);
-                        game.poisonOpponent(4);
-                    }
-                    break;
-                case RANGER_S_GUILE:
-                    if (canPay(G)) {
-                        produce(G);
-                        game.castInstant(RANGER_S_GUILE, G);
-                        game.poisonOpponent(1);
-                    }
-                    break;
-            }
-        }
+        // use untapped pendelhavens to boost
+        game.getBattlefield().find(withName(PENDELHAVEN).and(untapped())).forEach(card -> {
+            game.tap(card);
+            creatures.get(0).addCounter(TEMP_BOOST, 1);
+        });
 
         // sacrifice all seals
         game.getBattlefield().find(withName(SEAL_OF_STRENGTH)).forEach(card -> {
             game.sacrifice(card);
-            game.poisonOpponent(3);
+            creatures.get(0).addCounter(TEMP_BOOST, 3);
         });
 
         // attach with all creatures
         creatures.forEach(card -> {
-            game.tapForAttack(card, 1);
-            game.poisonOpponent(1);
+            int strength = strength(card);
+            game.tapForAttack(card, strength);
+            game.poisonOpponent(strength);
         });
-
-        // add rancors
-        game.getBattlefield().find(withName(RANCOR)).forEach(card -> {
-            game.tap(card);
-            game.poisonOpponent(2);
-        });
-
-        // use one untapped pendelhaven to boost
-        game.getBattlefield().find(withName(PENDELHAVEN).and(untapped())).forEach(card -> {
-            game.tap(card);
-            game.poisonOpponent(1);
-        });
-    }
-
-    private TurnSimulation simulateTurn(Mana potentialPool, Collection<String> spells) {
-        int counters = 0;
-        for (String boost : spells) {
-            switch (boost) {
-                case RANCOR:
-                    if (potentialPool.contains(G)) {
-                        counters += 2;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-                case MIGHT_OF_OLD_KROSA:
-                    if (potentialPool.contains(G)) {
-                        counters += 4;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-                case GROUNDSWELL:
-                    if (potentialPool.contains(G)) {
-                        counters += game.isLanded() ? 4 : 2;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-                case GIANT_GROWTH:
-                case SEAL_OF_STRENGTH:
-                    if (potentialPool.contains(G)) {
-                        counters += 3;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-                case BLOSSOMING_DEFENSE:
-                    if (potentialPool.contains(G)) {
-                        counters += 2;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-                case LARGER_THAN_LIFE:
-                    if (potentialPool.contains(G1)) {
-                        counters += 4;
-                        potentialPool = potentialPool.minus(G1);
-                    }
-                    break;
-                case VINES_OF_VASTWOOD:
-                    if (potentialPool.contains(GG)) {
-                        counters += 4;
-                        potentialPool = potentialPool.minus(GG);
-                    }
-                    break;
-                case RANGER_S_GUILE:
-                    if (potentialPool.contains(G)) {
-                        counters += 1;
-                        potentialPool = potentialPool.minus(G);
-                    }
-                    break;
-            }
-        }
-        return TurnSimulation.builder().counters(counters).boosts(spells).build();
-    }
-
-    @Builder
-    @Value
-    private static class TurnSimulation implements Comparable<TurnSimulation> {
-        final int counters;
-        final Collection<String> boosts;
-
-        @Override
-        public int compareTo(TurnSimulation other) {
-            return counters - other.counters;
-        }
     }
 
     @Override
     public void secondMainPhase() {
         // cast 1 creature if none on battlefield
-        if ((int) game.getBattlefield().count(withType(Game.CardType.creature)) == 0) {
-            if (game.getHand().contains(GLISTENER_ELF) && canPay(G)) {
-                produce(G);
-                game.castCreature(GLISTENER_ELF, G);
-            } else if (game.getHand().contains(BLIGHT_MAMBA) && canPay(G1)) {
-                produce(G1);
-                game.castCreature(BLIGHT_MAMBA, G1);
-            } else if (game.getHand().contains(ICHORCLAW_MYR) && canPay(TWO)) {
-                produce(TWO);
-                game.castCreature(ICHORCLAW_MYR, TWO);
-            }
+        if (game.getBattlefield().count(withType(Game.CardType.creature)) == 0) {
+            playOneOf(CREATURES);
         }
 
-        // play all seals
-        while (game.getHand().contains(SEAL_OF_STRENGTH) && canPay(G)) {
-            produce(G);
-            game.castEnchantment(SEAL_OF_STRENGTH, G);
-        }
+        // play all rancors & seals
+        while (playOneOf(RANCOR, SEAL_OF_STRENGTH).isPresent()) {
 
-        // play rancors
-        Optional<Permanent> creature = game.getBattlefield().findFirst(withType(Game.CardType.creature));
-        if (creature.isPresent()) {
-            while (game.getHand().contains(RANCOR) && canPay(G)) {
-                produce(G);
-                game.castEnchantment(RANCOR, G).tag("on:" + creature.get().getCard());
-                creature.get().incrCounter("rancors");
-            }
         }
 
         // cast extra creatures
-        for (String crea : game.getHand().findAll(CREATURES)) {
-            Mana cost = crea.equals(GLISTENER_ELF) ? G : crea.equals(BLIGHT_MAMBA) ? G1 : TWO;
-            if (canPay(cost)) {
-                produce(cost);
-                game.castCreature(crea, cost);
-            }
+        while (playOneOf(CREATURES).isPresent()) {
+
         }
     }
 
@@ -379,6 +184,257 @@ public class InfectDeckPilot extends DeckPilot<Game> {
     public void endingPhase() {
         if (game.getHand().size() > 7) {
             discard(game.getHand().size() - 7);
+        }
+    }
+
+    boolean canPay(Mana cost) {
+        // potential mana pool is current pool + untapped lands + petals on battlefield
+        Mana potentialPool = game.getPool()
+                .plus(Mana.of(0, 0, game.getBattlefield().count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
+        return potentialPool.contains(cost);
+    }
+
+    void produce(Mana cost) {
+        while (!game.canPay(cost)) {
+            Optional<Permanent> producer = game.getBattlefield().findFirst(withName(FOREST, PENDELHAVEN, LOTUS_PETAL).and(untapped()));
+            if (producer.isPresent()) {
+                if (producer.get().getCard().equals(LOTUS_PETAL)) {
+                    game.sacrifice(producer.get());
+                    game.add(G);
+                } else {
+                    // a land
+                    game.tapLandForMana(producer.get(), G);
+                }
+            } else {
+                // can't preparePool !!!
+                return;
+            }
+        }
+    }
+
+    /**
+     * Casts the first possible card from the list
+     *
+     * @param cards cards ordered by preference
+     * @return the successfully cast card
+     */
+    Optional<String> playOneOf(String... cards) {
+        for (String card : cards) {
+            if (canPlay(card)) {
+                play(card);
+                return Optional.of(card);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean canPlay(String card) {
+        // first check card is in hand
+        if (!game.getHand().contains(card)) {
+            return false;
+        }
+        switch (card) {
+            case FOREST:
+            case PENDELHAVEN:
+                return !game.isLanded();
+            // FREE MANA
+            case LOTUS_PETAL:
+                return true;
+
+            case GITAXIAN_PROBE:
+                return true;
+
+            // creatures
+            case GLISTENER_ELF:
+                return canPay(G);
+            case ICHORCLAW_MYR:
+                return canPay(TWO);
+            case BLIGHT_MAMBA:
+                return canPay(G1);
+
+            // BOOSTS
+            case MUTAGENIC_GROWTH: // (-2 life): +2/+2
+                // need a target creature ready to attack
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped()).isPresent();
+            case INVIGORATE: // (free if forest on battlefield) +4/+4
+                // need a target creature ready to attack and a forest
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped()).isPresent() && game.getBattlefield().findFirst(withName(FOREST)).isPresent();
+            case SCALE_UP: // G: crea become 6/4
+                // need a target creature ready to attack & G
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(notWithTag(SCALE_UP_TAG))).isPresent() && canPay(G);
+            case GIANT_GROWTH: // G: +3/+3
+            case GROUNDSWELL: // G: +2/+2; landfall: +4/+4
+            case RANGER_S_GUILE: // G: +1/+1
+            case MIGHT_OF_OLD_KROSA: // G: +4/+4 on your turn
+            case BLOSSOMING_DEFENSE: // G: +2/+2
+                // need a target creature ready to attack & G
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped()).isPresent() && canPay(G);
+            case LARGER_THAN_LIFE: // 1G: +4/+4
+                // need a target creature ready to attack & 1G
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped()).isPresent() && canPay(G1);
+            case VINES_OF_VASTWOOD: // (instant) GG: +4/+4
+                // need a target creature && GG
+                return game.getBattlefield().findFirst(creaturesThatCanBeTapped()).isPresent() && canPay(GG);
+
+            // enchantments
+            case RANCOR:
+                // need a target creature (any)
+                return game.getBattlefield().findFirst(withType(Game.CardType.creature)).isPresent() && canPay(G);
+            case SEAL_OF_STRENGTH: // (enchant) G: sacrifice: +3/+3
+                return canPay(G);
+        }
+        game.log("oops, unsupported card [" + card + "]");
+        return false;
+    }
+
+    @Override
+    public boolean play(String card) {
+        switch (card) {
+            case FOREST:
+            case PENDELHAVEN:
+                game.land(card);
+                return true;
+
+            case LOTUS_PETAL:
+                game.castArtifact(card, Mana.zero());
+                return true;
+
+            case GITAXIAN_PROBE:
+                game.castSorcery(card, Mana.zero());
+                game.draw(1);
+                return true;
+
+            // creatures
+            case GLISTENER_ELF:
+                produce(G);
+                game.castCreature(card, G);
+                return true;
+            case ICHORCLAW_MYR:
+                produce(TWO);
+                game.castCreature(card, TWO);
+                return true;
+            case BLIGHT_MAMBA:
+                produce(G1);
+                game.castCreature(card, G1);
+                return true;
+
+            // BOOSTS
+            case MUTAGENIC_GROWTH: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                game.castInstant(card, Mana.zero());
+                targetCreature.addCounter(TEMP_BOOST, 2);
+                return true;
+            }
+            case INVIGORATE: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                game.castInstant(card, Mana.zero());
+                targetCreature.addCounter(TEMP_BOOST, 4);
+                return true;
+            }
+            case SCALE_UP: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(notWithTag(SCALE_UP_TAG))).get();
+                produce(G);
+                game.castSorcery(card, G);
+                targetCreature.tag(SCALE_UP_TAG);
+                return true;
+            }
+            case GIANT_GROWTH: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G);
+                game.castInstant(card, G);
+                targetCreature.addCounter(TEMP_BOOST, 3);
+                return true;
+            }
+            case GROUNDSWELL: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G);
+                game.castInstant(card, G);
+                targetCreature.addCounter(TEMP_BOOST, game.isLanded() ? 4 : 3);
+                return true;
+            }
+            case RANGER_S_GUILE: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G);
+                game.castInstant(card, G);
+                targetCreature.addCounter(TEMP_BOOST, 1);
+                return true;
+            }
+            case MIGHT_OF_OLD_KROSA: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G);
+                game.castInstant(card, G);
+                targetCreature.addCounter(TEMP_BOOST, 4);
+                return true;
+            }
+            case BLOSSOMING_DEFENSE: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G);
+                game.castInstant(card, G);
+                targetCreature.addCounter(TEMP_BOOST, 2);
+                return true;
+            }
+            case LARGER_THAN_LIFE: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(G1);
+                game.castSorcery(card, G1);
+                targetCreature.addCounter(TEMP_BOOST, 4);
+                return true;
+            }
+            case VINES_OF_VASTWOOD: {
+                // target a creature ready to attack
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
+                produce(GG);
+                game.castSorcery(card, GG);
+                targetCreature.addCounter(TEMP_BOOST, 4);
+                return true;
+            }
+
+            // enchantments
+            case RANCOR: {
+                // target preferably a creature ready to attack, or else any creature
+                Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped())
+                        .orElseGet(() -> game.getBattlefield().findFirst(withType(Game.CardType.creature)).get());
+                produce(G);
+                game.castEnchantment(card, G).tag("on:" + targetCreature.getCard());
+                targetCreature.incrCounter(RANCOR);
+                return true;
+            }
+            case SEAL_OF_STRENGTH: {
+                produce(G);
+                game.castEnchantment(card, G);
+                return true;
+            }
+        }
+        game.log("oops, unsupported card [" + card + "]");
+        return false;
+    }
+
+    int strength(Permanent creature) {
+        // strength is base strength + temporary boosts + 2 * rancors
+        return baseStrength(creature)
+                + creature.getCounter(TEMP_BOOST)
+                + 2 * creature.getCounter(RANCOR);
+    }
+
+    int baseStrength(Permanent creature) {
+        switch (creature.getCard()) {
+            case GLISTENER_ELF:
+            case ICHORCLAW_MYR:
+            case BLIGHT_MAMBA:
+                return creature.hasTag(SCALE_UP_TAG) ? 6 : 1;
+
+            default:
+                return 0;
         }
     }
 
@@ -406,40 +462,15 @@ public class InfectDeckPilot extends DeckPilot<Game> {
                 continue;
             }
             // discard extra lands
-            if ((int) game.getBattlefield().count(withName(MANA_PRODUCERS)) + game.getHand().count(MANA_PRODUCERS) > 3 && game.discardOneOf(MANA_PRODUCERS).isPresent()) {
+            if (game.getBattlefield().count(withName(MANA_PRODUCERS)) + game.getHand().count(MANA_PRODUCERS) > 3 && game.discardOneOf(MANA_PRODUCERS).isPresent()) {
                 continue;
             }
             // discard extra creatures
-            if ((int) game.getBattlefield().count(withType(Game.CardType.creature)) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
+            if (game.getBattlefield().count(withType(Game.CardType.creature)) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(CREATURES).isPresent()) {
                 continue;
             }
             // TODO: choose better
             game.discard(game.getHand().getFirst());
-        }
-    }
-
-    boolean canPay(Mana cost) {
-        // potential mana pool is current pool + untapped lands + petals on battlefield
-        Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, (int) game.getBattlefield().count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
-        return potentialPool.contains(cost);
-    }
-
-    void produce(Mana cost) {
-        while (!game.canPay(cost)) {
-            Optional<Permanent> producer = game.getBattlefield().findFirst(withName(FOREST, PENDELHAVEN, LOTUS_PETAL).and(untapped()));
-            if (producer.isPresent()) {
-                if (producer.get().getCard().equals(LOTUS_PETAL)) {
-                    game.sacrifice(producer.get());
-                    game.add(G);
-                } else {
-                    // a land
-                    game.tapLandForMana(producer.get(), G);
-                }
-            } else {
-                // can't preparePool !!!
-                return;
-            }
         }
     }
 }

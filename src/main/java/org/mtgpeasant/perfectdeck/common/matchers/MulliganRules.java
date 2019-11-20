@@ -15,6 +15,7 @@ public class MulliganRules implements MatcherContext {
     final List<ParseError> errors;
     final List<Matchers.NamedMatcher> criteria;
 
+    // TODO: cache
     public static MulliganRules parse(Reader input) throws IOException {
         List<Matchers.NamedMatcher> criteria = new ArrayList<>();
         Map<String, Matcher> matchers = new HashMap<>();
