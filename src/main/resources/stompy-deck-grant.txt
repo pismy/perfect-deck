@@ -1,6 +1,7 @@
-// https://mtg-peasant.com/top8/1110/2/
+// https://mtg-peasant.com/top8/1139/2/
 // Land Grant
 // Aspect of Hydra
+// Syr Faren, the Hengehammer
 
 // creatures
 4 Quirion Ranger
@@ -9,22 +10,19 @@
 4 Vault Skirge
 4 Nest Invader
 4 Burning-Tree Emissary
-2 Safehold Elite
-1 Silhana Ledgewalker
+1 Safehold Elite
+2 Syr Faren, the Hengehammer
 
 // boosts
 4 Rancor
-4 Curse of Predation
+3 Curse of Predation
 2 Vines of Vastwood
-1 Hunger of the Howlpack
 3 Aspect of Hydra
+3 Savage Swipe
 
 // mana
 14 Forest
 4 Land Grant
-
-// others
-1 Dismember
 
 SB: 1 Relic of Progenitus
 SB: 2 Scattershot Archer

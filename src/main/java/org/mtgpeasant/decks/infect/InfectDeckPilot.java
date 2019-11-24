@@ -92,9 +92,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
     @Override
     public void firstMainPhase() {
         // whichever the situation, if I have a probe in hand: play it
-        while (game.getHand().contains(GITAXIAN_PROBE)) {
-            game.castSorcery(GITAXIAN_PROBE, Mana.zero());
-            game.draw(1);
+        while (playOneOf(GITAXIAN_PROBE).isPresent()) {
         }
 
         // land

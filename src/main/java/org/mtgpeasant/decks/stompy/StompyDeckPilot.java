@@ -53,8 +53,9 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
     private static final String LLANOWAR_ELVES = "llanowar elves";
     private static final String FYNDHORN_ELVES = "fyndhorn elves";
     private static final String ELDRAZI_SPAWN = "eldrazi spawn";
+    public static final String SYR_FAREN_THE_HENGEHAMMER = "syr faren, the hengehammer";
 
-    private static final String[] CREATURES = {QUIRION_RANGER, NETTLE_SENTINEL, SKARRGAN_PIT_SKULK, VAULT_SKIRGE, NEST_INVADER, BURNING_TREE_EMISSARY, SAFEHOLD_ELITE, SILHANA_LEDGEWALKER, YOUNG_WOLF, RIVER_BOA, STRANGLEROOT_GEIST, LLANOWAR_ELVES, FYNDHORN_ELVES, ELDRAZI_SPAWN};
+    private static final String[] CREATURES = {QUIRION_RANGER, NETTLE_SENTINEL, SKARRGAN_PIT_SKULK, VAULT_SKIRGE, NEST_INVADER, BURNING_TREE_EMISSARY, SAFEHOLD_ELITE, SILHANA_LEDGEWALKER, YOUNG_WOLF, RIVER_BOA, STRANGLEROOT_GEIST, SYR_FAREN_THE_HENGEHAMMER, LLANOWAR_ELVES, FYNDHORN_ELVES, ELDRAZI_SPAWN};
 
     // BOOSTS
     private static final String RANCOR = "rancor";
@@ -144,7 +145,6 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 // then curse
                 CURSE_OF_PREDATION
         ).isPresent()) {
-
         }
 
         /*
@@ -180,6 +180,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 NEST_INVADER,
                 // then hunger if a creature is dead
                 aCreatureIsDead ? HUNGER_OF_THE_HOWLPACK : "_",
+                SYR_FAREN_THE_HENGEHAMMER,
                 SAFEHOLD_ELITE,
                 NETTLE_SENTINEL,
                 RIVER_BOA,
@@ -201,14 +202,20 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
     @Override
     public void combatPhase() {
-        List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped());
-        if (creatures.isEmpty()) {
+        List<Permanent> attackingCreatures = game.getBattlefield().find(creaturesThatCanBeTapped());
+        if (attackingCreatures.isEmpty()) {
             return;
         }
-        int curses = (int) game.getBattlefield().count(withName(CURSE_OF_PREDATION));
+        int curses = game.getBattlefield().count(withName(CURSE_OF_PREDATION));
+
+        // trigger Syr Faren effect
+        attackingCreatures.stream().filter(withName(SYR_FAREN_THE_HENGEHAMMER)).forEach(syr -> {
+            // find target (first "other" attacking creature)
+            attackingCreatures.stream().filter(crea -> crea != syr).findFirst().ifPresent(crea -> crea.addCounter(TEMP_BOOST, strength(syr)));
+        });
 
         // attack with all creatures
-        creatures.forEach(card -> {
+        attackingCreatures.forEach(card -> {
             // add one +1/+1 counter per curse
             card.addCounter(PERM_BOOST, curses);
             game.tapForAttack(card, strength(card));
@@ -227,6 +234,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 NEST_INVADER,
                 // then hunger if a creature is dead
                 aCreatureIsDead ? HUNGER_OF_THE_HOWLPACK : "_",
+                SYR_FAREN_THE_HENGEHAMMER,
                 SAFEHOLD_ELITE,
                 NETTLE_SENTINEL,
                 RIVER_BOA,
@@ -258,8 +266,6 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
     private int baseStrength(Permanent creature) {
         switch (creature.getCard()) {
-            case ELDRAZI_SPAWN:
-                return 0;
             case QUIRION_RANGER:
             case SKARRGAN_PIT_SKULK:
             case VAULT_SKIRGE:
@@ -268,15 +274,16 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             case LLANOWAR_ELVES:
             case FYNDHORN_ELVES:
                 return 1;
-
             case NETTLE_SENTINEL:
             case NEST_INVADER:
             case BURNING_TREE_EMISSARY:
             case SAFEHOLD_ELITE:
             case RIVER_BOA:
             case STRANGLEROOT_GEIST:
+            case SYR_FAREN_THE_HENGEHAMMER:
                 return 2;
 
+            case ELDRAZI_SPAWN:
             default:
                 return 0;
         }
@@ -304,6 +311,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
             case BURNING_TREE_EMISSARY:
             case STRANGLEROOT_GEIST:
+            case SYR_FAREN_THE_HENGEHAMMER:
                 return 2;
 
             default:
@@ -454,10 +462,10 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             case SAFEHOLD_ELITE:
             case RIVER_BOA:
             case SILHANA_LEDGEWALKER:
+            case BURNING_TREE_EMISSARY: // TODO: not quite exact
                 return canPay(G1);
-            case BURNING_TREE_EMISSARY:
-                return canPay(G1); // TODO: not quite exact
             case STRANGLEROOT_GEIST:
+            case SYR_FAREN_THE_HENGEHAMMER:
                 return canPay(GG);
 
             // enchantments
@@ -478,7 +486,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                         && canPay(G);
             case VINES_OF_VASTWOOD:
                 // need a target creature
-                return game.getBattlefield().count(withName(CREATURES)) > 0 && canPay(GG);
+                return game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).isPresent() && canPay(GG);
         }
         game.log("oops, unsupported card [" + card + "]");
         return false;
@@ -542,12 +550,21 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 produce(GG);
                 game.castCreature(card, GG).setSickness(false);
                 return true;
+            case SYR_FAREN_THE_HENGEHAMMER:
+                produce(GG);
+                game.castCreature(card, GG);
+                return true;
 
             // === enchantments
             case RANCOR: {
                 // target preferably a creature ready to attack, or else any creature
-                Permanent targetCreature = game.getBattlefield().findFirst(creatureThatCanAttackOrNettle())
-                        .orElseGet(() -> game.getBattlefield().findFirst(withType(Game.CardType.creature)).get());
+                Permanent targetCreature =
+                        // first choice: Syr Faren
+                        game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(withName(SYR_FAREN_THE_HENGEHAMMER)))
+                                // second choice: any creature ready to attack
+                                .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle())
+                                        // last choice: any creature (will attack next turn)
+                                        .orElseGet(() -> game.getBattlefield().findFirst(withType(Game.CardType.creature)).get()));
                 produce(G);
                 game.castEnchantment(card, G).tag("on:" + targetCreature.getCard());
                 targetCreature.incrCounter(RANCOR);
@@ -561,7 +578,11 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             // === boosts
             case ASPECT_OF_HYDRA: {
                 // target a creature ready to attack
-                Permanent targetCreature = game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get();
+                Permanent targetCreature =
+                        // first choice: Syr Faren
+                        game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(withName(SYR_FAREN_THE_HENGEHAMMER)))
+                                // second choice: any creature ready to attack
+                                .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(G);
                 game.castInstant(card, G);
                 int devotion = devotion();
@@ -570,7 +591,11 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             }
             case SAVAGE_SWIPE: {
                 // target a creature ready to attack with power 2
-                Permanent targetCreature = game.getBattlefield().findFirst(creatureThatCanAttackOrNettle().and(c -> strength(c) == 2)).get();
+                Permanent targetCreature =
+                        // first choice: Syr Faren (with power 2)
+                        game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(withName(SYR_FAREN_THE_HENGEHAMMER).and(c -> strength(c) == 2)))
+                                // second choice: any creature ready to attack (with power 2)
+                                .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle().and(c -> strength(c) == 2)).get());
                 produce(G);
                 game.castSorcery(card, G);
                 targetCreature.addCounter(TEMP_BOOST, 2);
@@ -578,7 +603,11 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             }
             case HUNGER_OF_THE_HOWLPACK: {
                 // target a creature ready to attack
-                Permanent targetCreature = game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get();
+                Permanent targetCreature =
+                        // first choice: Syr Faren
+                        game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(withName(SYR_FAREN_THE_HENGEHAMMER)))
+                                // second choice: any creature ready to attack
+                                .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(G);
                 game.castInstant(card, G);
                 targetCreature.addCounter(PERM_BOOST, aCreatureIsDead ? 3 : 1);
@@ -586,7 +615,11 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             }
             case VINES_OF_VASTWOOD: {
                 // target a creature ready to attack
-                Permanent targetCreature = game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get();
+                Permanent targetCreature =
+                        // first choice: Syr Faren
+                        game.getBattlefield().findFirst(creaturesThatCanBeTapped().and(withName(SYR_FAREN_THE_HENGEHAMMER)))
+                                // second choice: any creature ready to attack
+                                .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(GG);
                 game.castInstant(card, GG);
                 targetCreature.addCounter(TEMP_BOOST, 4);
