@@ -28,8 +28,8 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
  */
 public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Seer.SpellsPlayer {
 
-    private static final Mana ONE = Mana.of("1");
-    private static final Mana G = Mana.of("G");
+    private static final Mana ONE = Mana.one();
+    private static final Mana G = Mana.G();
     private static final Mana G1 = Mana.of("1G");
     private static final Mana GR = Mana.of("GR");
     private static final Mana G2 = Mana.of("2G");
@@ -54,8 +54,9 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
     private static final String FYNDHORN_ELVES = "fyndhorn elves";
     private static final String ELDRAZI_SPAWN = "eldrazi spawn";
     public static final String SYR_FAREN_THE_HENGEHAMMER = "syr faren, the hengehammer";
+    public static final String GINGERBRUTE = "gingerbrute";
 
-    private static final String[] CREATURES = {QUIRION_RANGER, NETTLE_SENTINEL, SKARRGAN_PIT_SKULK, VAULT_SKIRGE, NEST_INVADER, BURNING_TREE_EMISSARY, SAFEHOLD_ELITE, SILHANA_LEDGEWALKER, YOUNG_WOLF, RIVER_BOA, STRANGLEROOT_GEIST, SYR_FAREN_THE_HENGEHAMMER, LLANOWAR_ELVES, FYNDHORN_ELVES, ELDRAZI_SPAWN};
+    private static final String[] CREATURES = {QUIRION_RANGER, NETTLE_SENTINEL, SKARRGAN_PIT_SKULK, VAULT_SKIRGE, NEST_INVADER, BURNING_TREE_EMISSARY, SAFEHOLD_ELITE, SILHANA_LEDGEWALKER, YOUNG_WOLF, RIVER_BOA, STRANGLEROOT_GEIST, SYR_FAREN_THE_HENGEHAMMER, LLANOWAR_ELVES, FYNDHORN_ELVES, GINGERBRUTE, ELDRAZI_SPAWN};
 
     // BOOSTS
     private static final String RANCOR = "rancor";
@@ -188,7 +189,8 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 QUIRION_RANGER,
                 VAULT_SKIRGE,
                 SKARRGAN_PIT_SKULK,
-                YOUNG_WOLF
+                YOUNG_WOLF,
+                GINGERBRUTE
         ).isPresent()) {
 
         }
@@ -242,7 +244,8 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                 QUIRION_RANGER,
                 VAULT_SKIRGE,
                 SKARRGAN_PIT_SKULK,
-                YOUNG_WOLF
+                YOUNG_WOLF,
+                GINGERBRUTE
         ).isPresent()) {
 
         }
@@ -273,6 +276,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             case YOUNG_WOLF:
             case LLANOWAR_ELVES:
             case FYNDHORN_ELVES:
+            case GINGERBRUTE:
                 return 1;
             case NETTLE_SENTINEL:
             case NEST_INVADER:
@@ -450,6 +454,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
             // creatures
             case VAULT_SKIRGE:
+            case GINGERBRUTE:
                 return canPay(ONE);
             case QUIRION_RANGER:
             case LLANOWAR_ELVES:
@@ -513,6 +518,10 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
             case VAULT_SKIRGE:
                 produce(ONE);
                 game.castCreature(card, ONE);
+                return true;
+            case GINGERBRUTE:
+                produce(ONE);
+                game.castCreature(card, ONE).setSickness(false);
                 return true;
             case QUIRION_RANGER:
             case LLANOWAR_ELVES:

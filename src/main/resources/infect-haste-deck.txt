@@ -1,0 +1,21 @@
+// lands
+3 Simian Spirit Guide
+4 Lotus Petal
+4 Crumbling Vestige
+3 Mountain
+7 Forest
+1 Pendelhaven
+
+// creatures
+4 Ichorclaw Myr
+4 Blight Mamba
+4 Glistener Elf
+
+// boosts
+4 Mutagenic Growth
+4 Seal of Strength
+4 Scale Up
+4 Rancor
+2 Groundswell
+4 reckless charge
+4 temur battle rage
