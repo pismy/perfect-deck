@@ -3,7 +3,7 @@
 # ============
 <G>: [Forest] | [Land Grant]
 <+G>: [Forest] | [Land Grant] | [Quirion Ranger] | [Llanowar Elves] | [Fyndhorn Elves]
-<creature>: [Quirion Ranger] | [Nettle Sentinel] | [Skarrgan Pit-Skulk] | [Vault Skirge] | [Nest Invader] | [Burning-Tree Emissary] | [Safehold Elite] | [Silhana Ledgewalker] | [Young Wolf] | [River Boa] | [Strangleroot Geist] | [Llanowar Elves] | [Fyndhorn Elves]
+<creature>: [Quirion Ranger] | [Nettle Sentinel] | [Skarrgan Pit-Skulk] | [Vault Skirge] | [Nest Invader] | [Burning-Tree Emissary] | [Safehold Elite] | [Silhana Ledgewalker] | [Young Wolf] | [River Boa] | [Strangleroot Geist] | [syr faren, the hengehammer] | [Llanowar Elves] | [Fyndhorn Elves] | [Gingerbrute]
 <boost>: [Rancor] | [Curse of Predation] | [Vines of Vastwood] | [Hunger of the Howlpack] | [Aspect of Hydra] | [Savage Swipe]
 
 # ======================

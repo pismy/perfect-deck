@@ -66,7 +66,8 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
     private static final String ASPECT_OF_HYDRA = "aspect of hydra";
     private static final String SAVAGE_SWIPE = "savage swipe";
 
-    private static final String[] BOOSTS = {STRANGLEROOT_GEIST, CURSE_OF_PREDATION, HUNGER_OF_THE_HOWLPACK, ASPECT_OF_HYDRA, SAVAGE_SWIPE, RANCOR, VINES_OF_VASTWOOD};
+    // cards that allow to rush in the turn
+    private static final String[] RUSH = {STRANGLEROOT_GEIST, GINGERBRUTE, CURSE_OF_PREDATION, HUNGER_OF_THE_HOWLPACK, ASPECT_OF_HYDRA, SAVAGE_SWIPE, RANCOR, VINES_OF_VASTWOOD};
 
     // OTHERS
     private static final String GITAXIAN_PROBE = "gitaxian probe";
@@ -132,7 +133,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
         // simulate if I can rush now
         if (game.getCurrentTurn() > 2) {
-            Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, BOOSTS);
+            Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, RUSH);
             if (victoryRoute.isPresent()) {
                 game.log(">> I can rush now with: " + victoryRoute);
                 maybeSacrificeForHunger();
@@ -213,7 +214,10 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
         // trigger Syr Faren effect
         attackingCreatures.stream().filter(withName(SYR_FAREN_THE_HENGEHAMMER)).forEach(syr -> {
             // find target (first "other" attacking creature)
-            attackingCreatures.stream().filter(crea -> crea != syr).findFirst().ifPresent(crea -> crea.addCounter(TEMP_BOOST, strength(syr)));
+            attackingCreatures.stream().filter(crea -> crea != syr).findFirst().ifPresent(crea -> {
+                game.log("Syr Faren ability target: " + crea);
+                crea.addCounter(TEMP_BOOST, strength(syr));
+            });
         });
 
         // attack with all creatures
@@ -576,6 +580,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                                         .orElseGet(() -> game.getBattlefield().findFirst(withType(Game.CardType.creature)).get()));
                 produce(G);
                 game.castEnchantment(card, G).tag("on:" + targetCreature.getCard());
+                game.log("target: " + targetCreature);
                 targetCreature.incrCounter(RANCOR);
                 return true;
             }
@@ -594,8 +599,8 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                                 .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(G);
                 game.castInstant(card, G);
-                int devotion = devotion();
-                targetCreature.addCounter(TEMP_BOOST, devotion);
+                game.log("target: " + targetCreature);
+                targetCreature.addCounter(TEMP_BOOST, devotion());
                 return true;
             }
             case SAVAGE_SWIPE: {
@@ -607,6 +612,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                                 .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle().and(c -> strength(c) == 2)).get());
                 produce(G);
                 game.castSorcery(card, G);
+                game.log("target: " + targetCreature);
                 targetCreature.addCounter(TEMP_BOOST, 2);
                 return true;
             }
@@ -619,6 +625,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                                 .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(G);
                 game.castInstant(card, G);
+                game.log("target: " + targetCreature);
                 targetCreature.addCounter(PERM_BOOST, aCreatureIsDead ? 3 : 1);
                 return true;
             }
@@ -631,6 +638,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
                                 .orElseGet(() -> game.getBattlefield().findFirst(creatureThatCanAttackOrNettle()).get());
                 produce(GG);
                 game.castInstant(card, GG);
+                game.log("target: " + targetCreature);
                 targetCreature.addCounter(TEMP_BOOST, 4);
                 return true;
             }
