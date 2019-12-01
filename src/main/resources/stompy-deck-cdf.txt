@@ -4,20 +4,24 @@
 // Swipes
 
 4 Burning-Tree Emissary
-4 Curse of Predation
-1 Elvish Mystic
-16 Forest
-1 Llanowar Elves
 4 Nest Invader
 4 Nettle Sentinel
 4 Quirion Ranger
-4 Rancor
-1 River Boa
-4 Savage Swipe
-4 Skarrgan Pit-Skulk
-1 Dismember
 4 Vault Skirge
+4 Skarrgan Pit-Skulk
+1 River Boa
+1 Elvish Mystic
+1 Llanowar Elves
+
+4 Curse of Predation
+4 Rancor
+4 Savage Swipe
 4 Vines of Vastwood
+
+1 Dismember
+
+16 Forest
+
 SB: 2 Gleeful Sabotage
 SB: 2 Gut Shot
 SB: 2 Natural State

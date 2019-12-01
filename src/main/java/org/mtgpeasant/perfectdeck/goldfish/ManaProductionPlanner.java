@@ -11,13 +11,6 @@ import java.util.Set;
 
 public class ManaProductionPlanner {
 
-    public static final Mana B = Mana.of("B");
-    public static final Mana R = Mana.of("R");
-    public static final Mana G = Mana.of("G");
-    public static final Mana U = Mana.of("U");
-    public static final Mana W = Mana.of("W");
-    public static final Mana ONE = Mana.of("1");
-
     public static boolean maybeProduce(Game game, List<ManaSource> sources, Mana cost) {
         Optional<Plan> plan = plan(game, sources, cost);
         if (plan.isPresent()) {
@@ -41,7 +34,7 @@ public class ManaProductionPlanner {
                 return Optional.empty();
             }
             plan.addAll(next.get());
-            pool = pool.plus(plan.produce());
+            pool = pool.plus(next.get().produce());
         }
 
         // TODO: remove steps if we have too much mana
