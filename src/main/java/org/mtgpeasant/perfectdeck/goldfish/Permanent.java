@@ -234,6 +234,10 @@ public class Permanent implements Cloneable {
         return card -> card.hasTag(name);
     }
 
+    public static Predicate<Permanent> withCounter(String name) {
+        return card -> card.hasCounter(name);
+    }
+
     public static Predicate<Permanent> withSickness() {
         return card -> card.sickness == Boolean.TRUE;
     }

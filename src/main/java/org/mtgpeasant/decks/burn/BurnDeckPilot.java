@@ -20,9 +20,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
  * TODO:
  * <ul>
  * <li>manage [light up the stage]</li>
- * <li>manage [forgotten cave] cycling</li>
  * <li>manage [magma jet] scry</li>
- * <li>manage [seal of fire]</li>
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>
  */
@@ -171,6 +169,12 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             game.damageOpponent(1, "thermo");
         });
 
+        // decrement LUTS counter
+        game.getExile().stream().filter(withCounter(LIGHT_UP_THE_STAGE)).collect(Collectors.toList()).forEach(card -> {
+            card.decrCounter(LIGHT_UP_THE_STAGE);
+        });
+
+
         // then discard extra cards
         if (game.getHand().size() > 7) {
             discard(game.getHand().size() - 7);
@@ -240,6 +244,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 FLAME_RIFT,
                 game.isLanded() ? SEARING_BLAZE : "_",
                 game.getDamageDealtThisTurn() > 0 ? SKEWER_THE_CRITICS : "_",
+                game.getDamageDealtThisTurn() > 0 ? LIGHT_UP_THE_STAGE : "_",
                 RIFT_BOLT_SP,
                 CHAIN_LIGHTNING,
                 LAVA_SPIKE,
@@ -249,7 +254,9 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 MAGMA_JET,
                 VOLCANIC_FALLOUT,
                 GHITU_LAVARUNNER,
-                SKEWER_THE_CRITICS
+                LIGHT_UP_THE_STAGE,
+                SKEWER_THE_CRITICS,
+                FORGOTTEN_CAVE_CYCLE
         ).isPresent();
     }
 
@@ -300,6 +307,10 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         return Optional.empty();
     }
 
+    boolean hasInHand(String card) {
+        return game.getExile().findFirst(withName(card).and(withCounter(LIGHT_UP_THE_STAGE))).isPresent() || game.getHand().contains(card);
+    }
+
     @Override
     public boolean canPlay(String card) {
         // first check has card
@@ -310,13 +321,18 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 }
                 break;
             case RIFT_BOLT_SP:
-                if (!game.getHand().contains(RIFT_BOLT)) {
+                if (!hasInHand(RIFT_BOLT)) {
+                    return false;
+                }
+                break;
+            case FORGOTTEN_CAVE_CYCLE:
+                if (!hasInHand(FORGOTTEN_CAVE)) {
                     return false;
                 }
                 break;
             default:
                 // for all other cards: must be in hand
-                if (!game.getHand().contains(card)) {
+                if (!hasInHand(card)) {
                     return false;
                 }
                 break;
@@ -327,6 +343,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return !game.isLanded();
             case GITAXIAN_PROBE:
                 return true;
+            case FORGOTTEN_CAVE_CYCLE:
             case MONASTERY_SWIFTSPEAR:
             case GHITU_LAVARUNNER:
             case LAVA_SPIKE:
@@ -361,6 +378,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return ((int) game.getBattlefield().count(withName(MOUNTAIN)) >= 1);
             case SKEWER_THE_CRITICS:
                 return game.getDamageDealtThisTurn() > 0 ? canPay(R) : canPay(R2);
+            case LIGHT_UP_THE_STAGE:
+                return game.getDamageDealtThisTurn() > 0 ? canPay(R) : canPay(R2);
             case NEEDLE_DROP:
                 return game.getDamageDealtThisTurn() > 0 && canPay(R);
             case THUNDEROUS_WRATH:
@@ -372,6 +391,12 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     @Override
     public boolean play(String card) {
+        // maybe move card from exile (LUTS)
+        Optional<Permanent> cardFromExile = game.getExile().findFirst(withName(card).and(withCounter(LIGHT_UP_THE_STAGE)));
+        if (cardFromExile.isPresent()) {
+            game.move(card, Game.Area.exile, Game.Area.hand);
+        }
+
         switch (card) {
             case MOUNTAIN:
                 game.land(card);
@@ -382,6 +407,12 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
             case GITAXIAN_PROBE:
                 game.castSorcery(card, Mana.zero());
+                game.draw(1);
+                return true;
+
+            case FORGOTTEN_CAVE_CYCLE:
+                produce(R);
+                game.move(FORGOTTEN_CAVE, Game.Area.hand, Game.Area.graveyard);
                 game.draw(1);
                 return true;
 
@@ -482,12 +513,23 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 if (game.getDamageDealtThisTurn() > 0) {
                     produce(R);
                     game.castSorcery(card, R);
-                    game.damageOpponent(3, null);
                 } else {
                     produce(R2);
-                    game.castSorcery(card, R);
-                    game.damageOpponent(3, null);
+                    game.castSorcery(card, R2);
                 }
+                game.damageOpponent(3, null);
+                return true;
+            case LIGHT_UP_THE_STAGE:
+                if (game.getDamageDealtThisTurn() > 0) {
+                    produce(R);
+                    game.castSorcery(card, R);
+                } else {
+                    produce(R2);
+                    game.castSorcery(card, R2);
+                }
+                // move the top 2 cards from library to exile
+                game.move(game.getLibrary().getFirst(), Game.Area.library, Game.Area.exile).addCounter(LIGHT_UP_THE_STAGE, 2);
+                game.move(game.getLibrary().getFirst(), Game.Area.library, Game.Area.exile).addCounter(LIGHT_UP_THE_STAGE, 2);
                 return true;
             case NEEDLE_DROP:
                 if (game.getDamageDealtThisTurn() > 0) {

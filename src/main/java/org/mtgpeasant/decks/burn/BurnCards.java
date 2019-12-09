@@ -11,6 +11,7 @@ public interface BurnCards {
     // LANDS
     String MOUNTAIN = "mountain";
     String FORGOTTEN_CAVE = "forgotten cave";
+    String FORGOTTEN_CAVE_CYCLE = "forgotten cave (cycle)";
 
     // CREATURES
     String MONASTERY_SWIFTSPEAR = "monastery swiftspear"; // R: haste; prowess +1/+1; 1/2
