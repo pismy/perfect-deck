@@ -253,7 +253,7 @@ public interface ManaSource {
 
         private List<Option> landable(Game game) {
             // TODO: check current phase ?
-            // check if we hve already landed
+            // check if we have already landed
             if (game.isLanded()) {
                 return Collections.emptyList();
             }

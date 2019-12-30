@@ -3,7 +3,7 @@
 # ============
 <X>: [Forest] | [Pendelhaven] | [Lotus Petal]
 <creature>: [Glistener Elf] | [Ichorclaw Myr] | [Blight Mamba]
-<boost>: [Invigorate] | [Vines of Vastwood] | [Seal of Strength] | [Rancor] | [Larger Than Life] | [Mutagenic Growth] | [Giant Growth]
+<boost>: [Invigorate] | [Vines of Vastwood] | [Seal of Strength] | [Rancor] | [Larger Than Life] | [Mutagenic Growth] | [Giant Growth] | [Scale Up] | [Groundswell] | [might of old krosa] | [blossoming defense]
 
 # ======================
 # === Hand keeping rules

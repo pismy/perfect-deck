@@ -1,0 +1,15 @@
+# ============
+# === Matchers
+# ============
+<G>: [Forest] | [Pendelhaven] | [Lotus Petal] | [Crumbling Vestige]
+<R>: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [simian spirit guide]
+<X>: [Forest] | [Pendelhaven] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [simian spirit guide]
+<creature>: [Glistener Elf] | [Ichorclaw Myr] | [Blight Mamba]
+<boost>: [Invigorate] | [Vines of Vastwood] | [Seal of Strength] | [Rancor] | [Larger Than Life] | [Mutagenic Growth] | [Giant Growth] | [Scale Up] | [Groundswell] | [might of old krosa] | [blossoming defense] | [reckless charge] | [temur battle rage]
+
+# ======================
+# === Hand keeping rules
+# ======================
+<<castable glistener + a boost>>: <G> & [Glistener Elf] & <boost>
+<<castable mamba + a boost>>: <G> & <X> & [Blight Mamba] & <boost>
+<<castable myr + a boost>>: 2 <X> & [Ichorclaw Myr] & <boost>

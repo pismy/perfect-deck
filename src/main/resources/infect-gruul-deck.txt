@@ -1,9 +1,11 @@
-// lands
-3 Simian Spirit Guide
+// free mana
+2 Simian Spirit Guide
 4 Lotus Petal
+
+// lands
 4 Crumbling Vestige
-3 Mountain
-7 Forest
+1 Mountain
+8 Forest
 1 Pendelhaven
 
 // creatures
@@ -19,3 +21,9 @@
 2 Groundswell
 4 reckless charge
 4 temur battle rage
+
+// --- to try ?
+// Samut, Tyrant Smasher
+// Rhythm of the Wild
+// Orcish Lumberjack
+// Tinder Wall
