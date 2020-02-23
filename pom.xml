@@ -9,11 +9,11 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>org.mtgpeasant</groupId>
-    <artifactId>perfect-hand</artifactId>
+    <artifactId>perfect-deck</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <name>Mtg Perfect Hand</name>
+    <name>Mtg Perfect Deck</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
