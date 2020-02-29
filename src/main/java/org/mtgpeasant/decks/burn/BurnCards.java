@@ -23,6 +23,7 @@ public interface BurnCards {
     String FIREBRAND_ARCHER = "firebrand archer"; // 1R: 2/1; 1 damage for each non-crea spell
     String ELECTROSTATIC_FIELD = "electrostatic field"; // 1R: 0/4 wall; 1 damage for each instant or sorcery spell
     String KILN_FIEND = "kiln fiend";
+    String FURNACE_SCAMP = "furnace scamp"; // R: 1/1 sacrifice when it deals combat damage to deal 3 more damages
 
     // BURN
     String RIFT_BOLT = "rift bolt"; // 2R: 3 damage; suspend 1: R
@@ -42,6 +43,7 @@ public interface BurnCards {
     String FLAME_RIFT = "flame rift"; // 1R: 4 damage to each player
     String THUNDEROUS_WRATH = "thunderous wrath"; // 4RR: 5 damage; miracle: R
     String SEAL_OF_FIRE = "seal of fire";
+    String RECKLESS_ABANDON = "reckless abandon";
 
     // OTHERS
     String CURSE_OF_THE_PIERCED_HEART = "curse of the pierced heart";
@@ -62,6 +64,7 @@ public interface BurnCards {
             case VIASHINO_PYROMANCER:
             case FIREBRAND_ARCHER:
             case KILN_FIEND:
+            case FURNACE_SCAMP:
                 return Game.CardType.creature;
 
             case FIREBLAST:
@@ -83,6 +86,7 @@ public interface BurnCards {
             case FLAME_RIFT:
             case GITAXIAN_PROBE:
             case LIGHT_UP_THE_STAGE:
+            case RECKLESS_ABANDON:
                 return Game.CardType.sorcery;
 
             case CURSE_OF_THE_PIERCED_HEART:

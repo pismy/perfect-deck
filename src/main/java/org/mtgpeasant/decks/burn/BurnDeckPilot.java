@@ -2,10 +2,7 @@ package org.mtgpeasant.decks.burn;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.mana.Mana;
-import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
-import org.mtgpeasant.perfectdeck.goldfish.Game;
-import org.mtgpeasant.perfectdeck.goldfish.Permanent;
-import org.mtgpeasant.perfectdeck.goldfish.Seer;
+import org.mtgpeasant.perfectdeck.goldfish.*;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
@@ -32,12 +29,12 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     public static final Mana RR = Mana.of("RR");
     public static final Mana RR1 = Mana.of("1RR");
 
-    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER};
+    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER, FURNACE_SCAMP};
     private static String[] LANDS = {MOUNTAIN, FORGOTTEN_CAVE};
 
     // all cards that could contribute to a kill in the turn
     private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
-            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, LAVA_DART_FB, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE};
+            RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, LAVA_DART_FB, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE, FURNACE_SCAMP, RECKLESS_ABANDON};
 
     private transient Seer.VictoryRoute victoryRoute;
 
@@ -65,7 +62,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     @Override
     public void start() {
-        putOnBottomOfLibrary(game.getMulligans());
+        mulligan(game.getMulligans());
     }
 
     @Override
@@ -149,6 +146,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     public void combatPhase() {
         List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
         creatures.forEach(card -> game.tapForAttack(card, strength(card)));
+        creatures.stream().filter(p -> p.getCard().equals(FURNACE_SCAMP)).forEach(
+            card -> { game.sacrifice(card); game.damageOpponent(3, "Sacrifice " + FURNACE_SCAMP); });
     }
 
     @Override
@@ -229,6 +228,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         return playOneOf(
                 MOUNTAIN,
                 MONASTERY_SWIFTSPEAR,
+                FURNACE_SCAMP,
                 GITAXIAN_PROBE,
                 NEEDLE_DROP,
                 FORGOTTEN_CAVE,
@@ -279,6 +279,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return countInGraveyard(Game.CardType.instant, Game.CardType.sorcery) >= 2 ? 2 : 1;
             case MONASTERY_SWIFTSPEAR:
             case KILN_FIEND:
+            case FURNACE_SCAMP:
                 return 1;
             case VIASHINO_PYROMANCER:
             case FIREBRAND_ARCHER:
@@ -352,6 +353,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case LAVA_DART:
             case FORKED_BOLT:
             case SEAL_OF_FIRE:
+            case FURNACE_SCAMP:
                 return canPay(R);
             case THERMO_ALCHEMIST:
             case KELDON_MARAUDERS:
@@ -384,6 +386,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return game.getDamageDealtThisTurn() > 0 && canPay(R);
             case THUNDEROUS_WRATH:
                 return false;
+            case RECKLESS_ABANDON:
+                return canPay(R) && ((int) game.getBattlefield().count(withType(Game.CardType.creature)) >= 1);
         }
         game.log("oops, unsupported card [" + card + "]");
         return false;
@@ -455,6 +459,10 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case KILN_FIEND:
                 produce(R1);
                 game.castCreature(card, R1);
+                return true;
+            case FURNACE_SCAMP:
+                produce(R);
+                game.castCreature(card, R);
                 return true;
             case THERMO_ALCHEMIST:
             case ELECTROSTATIC_FIELD:
@@ -565,6 +573,18 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 game.pay(R);
                 game.move(RIFT_BOLT, Game.Area.hand, Game.Area.exile).addCounter("suspend", 1);
                 return true;
+            case RECKLESS_ABANDON:
+                produce(R);
+                // TODO - find best creature to sacrifice
+                Optional<Permanent> creature = game.getBattlefield().findFirst(withType(Game.CardType.creature));
+                if(creature.isPresent()) {
+                    game.sacrifice(creature.get());
+                    game.castSorcery(card, R);
+                    game.damageOpponent(4, null);
+                    return true;
+                } else {
+                    return false;
+                }
         }
         game.log("oops, unsupported card [" + card + "]");
         return false;
@@ -581,10 +601,44 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     }
 
     private void scry(int number) {
-        // TODO
+        Cards top_cards = Cards.empty();
+        for(int i = 0; i < Math.min(number, game.getLibrary().size()); i++){
+            top_cards.add(game.getLibrary().removeFirst());
+        }
+        for (String card: top_cards) {
+            // remove extra lands
+            if (typeof(card) == Game.CardType.land && game.getHand().count(LANDS) + game.getBattlefield().count(withType(Game.CardType.land)) > Math.max(2, 2 * game.getHand().count(FIREBLAST)) ) {
+                game.getLibrary().addLast(card);
+                continue;
+            }
+            // remove furnace scamp after turn 2
+            if (FURNACE_SCAMP.equals(card) && game.getCurrentTurn() > 2) {
+                game.getLibrary().addLast(card);
+                continue;
+            }
+            // remove extra thermo or archer because instant or sorceries are better options
+            if (THERMO_ALCHEMIST.equals(card) && (game.getHand().count(THERMO_ALCHEMIST) + game.getBattlefield().count(withName(THERMO_ALCHEMIST)) > 2 )) {
+                game.getLibrary().addLast(card);
+                continue;
+            }
+            if (FIREBRAND_ARCHER.equals(card) && (game.getHand().count(FIREBRAND_ARCHER) + game.getBattlefield().count(withName(FIREBRAND_ARCHER)) >= 2 )) {
+                game.getLibrary().addLast(card);
+                continue;
+            }
+            // remove fireblast if less than 2 mountains
+            if (FIREBLAST.equals(card) && (game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2 )) {
+                game.getLibrary().addLast(card);
+                continue;
+            }
+            // otherwise keep card
+            game.getLibrary().addFirst(card);
+
+            // TOOD: manage best cards order
+        }
+
     }
 
-    void putOnBottomOfLibrary(int number) {
+    void mulligan(int number) {
         for (int i = 0; i < number; i++) {
             // discard extra lands
             if (game.getHand().count(LANDS) > 2 && game.putOnBottomOfLibraryOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
