@@ -146,7 +146,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     public void combatPhase() {
         List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
         creatures.forEach(card -> game.tapForAttack(card, strength(card)));
-        creatures.stream().filter(p -> p.getCard().equals(FURNACE_SCAMP)).forEach(
+        creatures.stream().filter(withName(FURNACE_SCAMP)).forEach(
             card -> { game.sacrifice(card); game.damageOpponent(3, "Sacrifice " + FURNACE_SCAMP); });
     }
 
