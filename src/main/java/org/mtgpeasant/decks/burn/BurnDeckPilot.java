@@ -396,10 +396,22 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     @Override
     public boolean play(String card) {
         // maybe move card from exile (LUTS)
-        String real_card = RIFT_BOLT_SP.equals(card) ? RIFT_BOLT : card;
-        Optional<Permanent> cardFromExile = game.getExile().findFirst(withName(real_card).and(withCounter(LIGHT_UP_THE_STAGE)));
+        String actualCard;
+        switch (card) {
+            case RIFT_BOLT_SP:
+                actualCard = RIFT_BOLT;
+                break;
+            case FORGOTTEN_CAVE_CYCLE:
+                actualCard = FORGOTTEN_CAVE;
+                break;
+            default:
+                actualCard = card;
+                break;
+        }
+        Optional<Permanent> cardFromExile = game.getExile().findFirst(withName(actualCard).and(withCounter(LIGHT_UP_THE_STAGE)));
         if (cardFromExile.isPresent()) {
-            game.move(real_card, Game.Area.exile, Game.Area.hand);
+            game.move(actualCard, Game.Area.exile, Game.Area.hand);
+
         }
 
         switch (card) {
