@@ -601,10 +601,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     }
 
     private void scry(int number) {
-        Cards top_cards = Cards.empty();
-        for(int i = 0; i < Math.min(number, game.getLibrary().size()); i++){
-            top_cards.add(game.getLibrary().removeFirst());
-        }
+        Cards top_cards = game.getLibrary().draw(Math.min(number, game.getLibrary().size()));
         for (String card: top_cards) {
             // remove extra lands
             if (typeof(card) == Game.CardType.land && game.getHand().count(LANDS) + game.getBattlefield().count(withType(Game.CardType.land)) > Math.max(2, 2 * game.getHand().count(FIREBLAST)) ) {
