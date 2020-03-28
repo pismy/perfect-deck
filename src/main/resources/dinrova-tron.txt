@@ -1,0 +1,38 @@
+1 Artisan of Kozilek
+1 Bojuka Bog
+4 Cave of Temptation
+1 Condescend
+2 Crop Rotation
+2 Dinrova Horror
+1 Dismal Backwater
+3 Expedition Map
+1 Flame Sweep
+2 Forbidden Alchemy
+2 Ghostly Flicker
+1 Maze of Ith
+2 Mental Misstep
+2 Mnemonic Wall
+3 Moment's Peace
+4 Mulldrifter
+2 Mystical Teachings
+2 Navigator's Compass
+3 Prohibit
+3 Prophetic Prism
+1 Pulse of Murasa
+2 Sea Gate Oracle
+3 Thornwood Falls
+4 Urza's Mine
+4 Urza's Power Plant
+4 Urza's Tower
+
+Sideboard:
+1 Ancient Grudge
+1 Blue Elemental Blast
+1 Capsize
+2 Electrickery
+1 Moment's Peace
+1 Pulse of Murasa
+2 Ray of Revelation
+3 Red Elemental Blast
+3 Standard Bearer
+

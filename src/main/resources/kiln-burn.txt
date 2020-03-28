@@ -1,10 +1,15 @@
+// Top 1 in Toulouse - by pismy
+// https://mtg-peasant.com/top8/896/1/ (updated)
+
 4 Monastery Swiftspear
-// 4 Thermo-Alchemist
+1 Thermo-Alchemist
 3 Firebrand Archer
 4 Kiln Fiend
 
-3 Gitaxian Probe
+//3 Gitaxian Probe
 
+//2 Magma Jet
+2 Rift Bolt
 4 Chain Lightning
 2 Fireblast
 1 Forked Bolt

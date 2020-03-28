@@ -1,0 +1,30 @@
+// Urdjur list posted on Mtg Peasant forum
+// https://mtg-peasant.com/forum/topic/253/
+
+16 Mountain
+// TODO: 2 Simian Spirit Guide
+2 Mountain
+
+3 Ghitu Lavarunner
+4 Monastery Swiftspear
+3 Thermo-Alchemist
+
+4 Lightning Bolt
+4 Lava Spike
+4 Chain Lightning
+4 Rift Bolt
+4 Skewer the Critics
+
+3 Fireblast
+3 Lava Dart
+3 Magma Jet
+2 Flame Rift
+1 Light up the Stage
+
+Sideboard
+3 Martyr of Sands
+3 Pyroblast
+3 Smash to Smithereens
+2 Flaring Pain
+2 Relic of Progenitus
+2 Searing Blaze

@@ -1,3 +1,5 @@
+// 2nd place at Coupe de France Peasant 2019 - by Victor H
+// https://mtg-peasant.com/top8/1135/2/
 4 Monastery Swiftspear
 4 Viashino Pyromancer
 4 Ghitu Lavarunner

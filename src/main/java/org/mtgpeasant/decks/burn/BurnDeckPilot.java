@@ -2,7 +2,10 @@ package org.mtgpeasant.decks.burn;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.mana.Mana;
-import org.mtgpeasant.perfectdeck.goldfish.*;
+import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
+import org.mtgpeasant.perfectdeck.goldfish.Game;
+import org.mtgpeasant.perfectdeck.goldfish.Permanent;
+import org.mtgpeasant.perfectdeck.goldfish.Seer;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
@@ -17,7 +20,6 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
  * TODO:
  * <ul>
  * <li>manage [light up the stage]</li>
- * <li>manage [magma jet] scry</li>
  * <li>make [gitaxian probe] part of the turn simulation</li>
  * </ul>
  */
@@ -95,6 +97,11 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         game.getBattlefield().find(withName(CURSE_OF_THE_PIERCED_HEART)).forEach(curse -> {
             game.damageOpponent(1, "curse trigger(s)");
         });
+
+        // maybe play Magma Jet under certain conditions (if 2 lands on board) to avoid mana flood
+        if (game.getBattlefield().count(withType(Game.CardType.land)) == 2) {
+            playOneOf(MAGMA_JET);
+        }
     }
 
     /**
@@ -147,7 +154,10 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         List<Permanent> creatures = game.getBattlefield().find(creaturesThatCanBeTapped().and(notWithTag(DEFENDER_SUBTYPE)));
         creatures.forEach(card -> game.tapForAttack(card, strength(card)));
         creatures.stream().filter(withName(FURNACE_SCAMP)).forEach(
-            card -> { game.sacrifice(card); game.damageOpponent(3, "Sacrifice " + FURNACE_SCAMP); });
+                card -> {
+                    game.sacrifice(card);
+                    game.damageOpponent(3, "Sacrifice " + FURNACE_SCAMP);
+                });
     }
 
     @Override
@@ -589,7 +599,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 produce(R);
                 // TODO - find best creature to sacrifice
                 Optional<Permanent> creature = game.getBattlefield().findFirst(withType(Game.CardType.creature));
-                if(creature.isPresent()) {
+                if (creature.isPresent()) {
                     game.sacrifice(creature.get());
                     game.castSorcery(card, R);
                     game.damageOpponent(4, null);
@@ -612,39 +622,72 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         game.sacrifice(mountainToSac);
     }
 
+    /**
+     * Mainly use scry to find or avoid lands
+     */
     private void scry(int number) {
-        Cards top_cards = game.getLibrary().draw(Math.min(number, game.getLibrary().size()));
-        for (String card: top_cards) {
-            // remove extra lands
-            if (typeof(card) == Game.CardType.land && game.getHand().count(LANDS) + game.getBattlefield().count(withType(Game.CardType.land)) > Math.max(2, 2 * game.getHand().count(FIREBLAST)) ) {
+        Cards cardsToScry = game.getLibrary().draw(Math.min(number, game.getLibrary().size()));
+        Cards replacedOnTop = Cards.empty();
+        game.log("scry " + number + ": " + cardsToScry);
+        // I need 3 lands or 2 x fireblasts in hand
+        int landsNeeded = Math.max(3, 2 * game.getHand().count(FIREBLAST)) - (game.getHand().count(LANDS) + game.getBattlefield().count(withType(Game.CardType.land)));
+        while (landsNeeded > 0 && !cardsToScry.isEmpty()) {
+            Optional<String> land = cardsToScry.findFirst(LANDS);
+            if (land.isPresent()) {
+                cardsToScry.remove(land.get());
+                replacedOnTop.addLast(land.get());
+                landsNeeded--;
+            } else {
+                // we're looking for land(s): put all at bottom
+                while (!cardsToScry.isEmpty()) {
+                    String card = cardsToScry.removeFirst();
+                    game.log(" - put [" + card + "] at bottom (looking for land)");
+                    game.getLibrary().addLast(card);
+                }
+            }
+        }
+        // now choose the rest
+        while (!cardsToScry.isEmpty()) {
+            String card = cardsToScry.removeFirst();
+            Game.CardType cardType = typeof(card);
+            // at this stage, remove lands (required lands should already have been selected)
+            if (cardType == Game.CardType.land) {
+                game.log(" - put [" + card + "] at bottom");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove furnace scamp after turn 2
             if (FURNACE_SCAMP.equals(card) && game.getCurrentTurn() > 2) {
+                game.log(" - put [" + card + "] at bottom");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove extra thermo or archer because instant or sorceries are better options
-            if (THERMO_ALCHEMIST.equals(card) && (game.getHand().count(THERMO_ALCHEMIST) + game.getBattlefield().count(withName(THERMO_ALCHEMIST)) > 2 )) {
+            if (THERMO_ALCHEMIST.equals(card) && (game.getHand().count(THERMO_ALCHEMIST) + game.getBattlefield().count(withName(THERMO_ALCHEMIST)) > 2)) {
+                game.log(" - put [" + card + "] at bottom");
                 game.getLibrary().addLast(card);
                 continue;
             }
-            if (FIREBRAND_ARCHER.equals(card) && (game.getHand().count(FIREBRAND_ARCHER) + game.getBattlefield().count(withName(FIREBRAND_ARCHER)) >= 2 )) {
+            if (FIREBRAND_ARCHER.equals(card) && (game.getHand().count(FIREBRAND_ARCHER) + game.getBattlefield().count(withName(FIREBRAND_ARCHER)) >= 2)) {
+                game.log(" - put [" + card + "] at bottom");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove fireblast if less than 2 mountains
-            if (FIREBLAST.equals(card) && (game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2 )) {
+            if (FIREBLAST.equals(card) && (game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2)) {
+                game.log(" - put [" + card + "] at bottom");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // otherwise keep card
-            game.getLibrary().addFirst(card);
-
-            // TOOD: manage best cards order
+            replacedOnTop.addLast(card);
         }
 
+        // replace on top in order
+        for (String card : replacedOnTop) {
+            game.log(" - replace [" + card + "] on top");
+            game.getLibrary().addFirst(card);
+        }
     }
 
     void mulligan(int number) {

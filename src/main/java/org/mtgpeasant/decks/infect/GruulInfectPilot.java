@@ -308,10 +308,6 @@ public class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlay
                 }
                 break;
         }
-        // first check card is in hand
-        if (!game.getHand().contains(card)) {
-            return false;
-        }
         switch (card) {
             case FOREST:
             case MOUNTAIN:

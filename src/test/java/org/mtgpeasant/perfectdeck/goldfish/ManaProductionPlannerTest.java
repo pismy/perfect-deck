@@ -28,8 +28,10 @@ public class ManaProductionPlannerTest {
     public static final String RAKDOS_GUILDGATE = "rakdos guildgate";
     public static final String LLANOWAR_ELVES = "llanowar elves";
     public static final String RAKDOS_CARNARIUM = "rakdos carnarium";
+    public static final String RAKDOS_SIGNET = "rakdos signet";
     public static final String DARK_RITUAL = "dark ritual";
     public static final String PROPHETIC_PRISM = "prophetic prism";
+    public static final String CAVE_OF_TEMPTATION = "cave of temptation"; // TODO
 
     private List<ManaSource> manaSources(Game game) {
         List<ManaSource> sources = new ArrayList<>();
@@ -40,6 +42,7 @@ public class ManaProductionPlannerTest {
         sources.addAll(getTapSources(game, MOUNTAIN, zero(), singleton(R)));
         sources.addAll(getTapSources(game, RAKDOS_GUILDGATE, zero(), oneOf(B, R)));
         sources.addAll(getTapSources(game, PROPHETIC_PRISM, one(), oneOf(B, R, G, W(), U())));
+        sources.addAll(getTapSources(game, RAKDOS_SIGNET, one(), singleton(Mana.of("BR"))));
         sources.add(landing(
                 with(SWAMP, B),
                 with(MOUNTAIN, R),
