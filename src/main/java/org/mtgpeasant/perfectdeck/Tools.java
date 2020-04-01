@@ -11,36 +11,37 @@ import org.mtgpeasant.perfectdeck.common.utils.TableFormatter;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 import org.mtgpeasant.perfectdeck.mulligan.MulliganSimulator;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@ShellComponent
+//@ShellComponent
 public class Tools {
 
     private static String percent(long count, long total) {
         return String.format("%.1f%%", (100f * (float) count / (float) total));
+//        return String.format("%.1f%% (%d/%d)", (100f * (float) count / (float) total), count, total);
     }
 
     private static String f2d(double number) {
         return String.format("%.2f", number);
     }
 
-    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
+//    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
     public void mulligans(
-            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test") File deckFile,
-            @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules") File matchersFile,
-            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000") int iterations,
-            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false") boolean noStats,
-            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
+//            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
+                    File deckFile,
+//            @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules")
+                    File matchersFile,
+//            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
+                    int iterations,
+//            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
+                    boolean noStats,
+//            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
+                    boolean verbose
 
     ) throws IOException {
         Deck deck = Deck.parse(new FileReader(deckFile));
@@ -92,15 +93,22 @@ public class Tools {
         }
     }
 
-    @ShellMethod("Simulates hundreds of goldfish games and computes statistics")
+//    @ShellMethod("Simulates hundreds of goldfish games and computes statistics")
     public void goldfish(
-            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test") File deckFile,
-            @ShellOption(value = {"-P", "--pilot"}, help = "Deck pilot class name") String pilotClassName,
-            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000") int iterations,
-            @ShellOption(value = {"-s", "--start"}, help = "starting case (one of: OTP, OTD, BOTH)", defaultValue = "BOTH") GoldfishSimulator.Start start,
-            @ShellOption(value = {"-M", "--maxturns"}, help = "maximum number of turn in a game before giving up the simulation", defaultValue = "15") int maxTurns,
-            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false") boolean noStats,
-            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false") boolean verbose
+//            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
+                    File deckFile,
+//            @ShellOption(value = {"-P", "--pilot"}, help = "Deck pilot class name")
+                    String pilotClassName,
+//            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
+                    int iterations,
+//            @ShellOption(value = {"-s", "--start"}, help = "starting case (one of: OTP, OTD, BOTH)", defaultValue = "BOTH")
+                    GoldfishSimulator.Start start,
+//            @ShellOption(value = {"-M", "--maxturns"}, help = "maximum number of turn in a game before giving up the simulation", defaultValue = "15")
+                    int maxTurns,
+//            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
+                    boolean noStats,
+//            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
+                    boolean verbose
 
     ) throws IOException, ClassNotFoundException {
         Class<? extends DeckPilot> pilotClass = (Class<? extends DeckPilot>) Class.forName(pilotClassName);
@@ -115,16 +123,19 @@ public class Tools {
             System.out.println("=== SIMULATE " + iterations + " GAMES ===");
         }
         long startTime = System.currentTimeMillis();
+        StringWriter buffer = verbose ? new StringWriter() : null;
+        PrintWriter output = verbose ? new PrintWriter(buffer) : null;
         GoldfishSimulator simulator = GoldfishSimulator.builder()
                 .iterations(iterations)
                 .pilotClass(pilotClass)
                 .start(start)
                 .maxTurns(maxTurns)
-                .verbose(verbose)
+                .out(output)
                 .build();
 
         GoldfishSimulator.DeckStats stats = simulator.simulate(deck);
         if (verbose) {
+            System.out.println(buffer.toString());
             System.out.println();
         }
 
@@ -211,6 +222,7 @@ public class Tools {
             String cell = "";
             if (start != GoldfishSimulator.Start.OTD) {
                 long count = stats.count(gamesFilter.and(result -> result.getEndTurn() == turn && result.isOnThePlay()));
+                // TODO: erreur !!! pour un mulligan donné il n'y a pas autant de games OTP que OTD
                 long total = start == GoldfishSimulator.Start.BOTH ? totalGames / 2 : totalGames;
                 cell += Strings.padStart(percent(count, total), 5, ' ');
             }
@@ -219,6 +231,7 @@ public class Tools {
             }
             if (start != GoldfishSimulator.Start.OTP) {
                 long count = stats.count(gamesFilter.and(result -> result.getEndTurn() == turn && !result.isOnThePlay()));
+                // TODO: erreur !!! pour un mulligan donné il n'y a pas autant de games OTP que OTD
                 long total = start == GoldfishSimulator.Start.BOTH ? totalGames / 2 : totalGames;
                 cell += Strings.padStart(percent(count, total), 5, ' ');
             }
