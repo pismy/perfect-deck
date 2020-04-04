@@ -6,7 +6,6 @@ import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.*;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -73,16 +72,7 @@ public class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlay
     private static final String DOUBLE_STRIKE_TAG = "*double strike";
     private static final String TEMP_BOOST = "*+1/+1";
 
-    private static MulliganRules rules;
-
-    static {
-        try {
-            rules = MulliganRules.parse(new InputStreamReader(GruulInfectPilot.class.getResourceAsStream("/gruul-infect-rules.txt")));
-        } catch (IOException e) {
-            rules = null;
-            System.err.println(e);
-        }
-    }
+    private static MulliganRules rules = MulliganRules.load(GruulInfectPilot.class);
 
     public GruulInfectPilot(Game game) {
         super(game);
@@ -113,7 +103,7 @@ public class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlay
 
         Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, RUSH);
         if (victoryRoute.isPresent()) {
-            game.log(">> I can rush now with: " + victoryRoute);
+            game.log(">> I can win now with: " + victoryRoute.get());
             victoryRoute.get().play(this);
             return;
         }
@@ -222,14 +212,14 @@ public class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlay
         }
     }
 
-    @Override
-    public String checkWin() {
-        String win = super.checkWin();
-        if (win != null && game.getCurrentTurn() == 1) {
-            System.out.println("Win T1 !!!");
-        }
-        return win;
-    }
+//    @Override
+//    public String checkWin() {
+//        String win = super.checkWin();
+//        if (win != null && game.getCurrentTurn() == 1) {
+//            System.out.println("Win T1 !!!");
+//        }
+//        return win;
+//    }
 
     List<ManaSource> manaSources() {
         List<ManaSource> sources = new ArrayList<>();

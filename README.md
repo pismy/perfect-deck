@@ -4,49 +4,14 @@ This project provides a set of tools for optimizing a [Magic: The Gathering](htt
 
 ## Usage
 
-Clone the repository, install Maven, Java, and run:
+The tool is packaged in an auto executable jar, so all you need is:
 
-```bash
-mvn clean package -DskipTests
-```
+* Java installed (v>=8),
+* download the tool (jar) from the releases page,
+* double click the jar file.
 
-Then start the tool by running:
+![screen shot](perfect-deck-1.png)
 
-```bash
-java -jar target/perfect-deck-1.0.0-SNAPSHOT.jar
-```
-
-Once in the tool shell, you can use the following:
-
-```bash
-# global help
-help
-
-# help on commands
-help mulligans
-help goldfish
-
-# exit shell
-exit
-```
-
-You can run the mulligans simulator with a predefined deck and rules with:
-
-```bash
-mulligans -D src/main/resources/reanimator-deck2.txt -R src/main/resources/reanimator-rules.txt -I 50000
-```
-
-You can run the goldfish simulator with a predefined deck and rules with:
-
-```bash
-goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot -I 50000
-```
-
-You can run and follow 5 goldfish games with a predefined deck and rules with:
-
-```bash
-goldfish -D src/main/resources/reanimator-deck2.txt -P org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot -I 5 -n -v
-```
 
 ## Deck format
 

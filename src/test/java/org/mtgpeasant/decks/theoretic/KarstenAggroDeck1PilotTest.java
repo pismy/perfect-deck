@@ -11,7 +11,7 @@ public class KarstenAggroDeck1PilotTest {
     @Test
     public void karsten_aggro_deck1_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/karsten-deck-1.txt"),
+                KarstenAggroDeck1Pilot.class.getResourceAsStream("karsten-deck-1.txt"),
                 KarstenAggroDeck1Pilot.class.getName(),
                 50000,
                 GoldfishSimulator.Start.BOTH,
@@ -24,7 +24,7 @@ public class KarstenAggroDeck1PilotTest {
     @Test
     public void karsten_aggro_deck1_observe() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/karsten-deck-1.txt"),
+                KarstenAggroDeck1Pilot.class.getResourceAsStream("karsten-deck-1.txt"),
                 KarstenAggroDeck1Pilot.class.getName(),
                 3,
                 GoldfishSimulator.Start.BOTH,

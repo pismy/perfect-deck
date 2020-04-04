@@ -335,10 +335,10 @@ public class Game implements Cloneable {
      * @param cardName land card name
      */
     public Permanent land(String cardName) {
+        log("land [" + cardName + "]");
         if (landed) {
             throw new IllegalActionException("Can't land [" + cardName + "]: can't land twice the same turn");
         }
-        log("land [" + cardName + "]");
         Permanent land = _move(cardName, Area.hand, Area.battlefield, Side.top, CardType.land);
 //        hand.remove(cardName);
 //        Permanent permanent = permanent(cardName, CardType.land);
@@ -616,13 +616,12 @@ public class Game implements Cloneable {
     }
 
     public void log(String message) {
-        if (logs == null) {
-            return;
+        if (logs != null) {
+            if (currentPhase != null) {
+                logs.print(currentPhase.symbol);
+                logs.print("> ");
+            }
+            logs.println(message);
         }
-        if (currentPhase != null) {
-            logs.print(currentPhase.symbol);
-            logs.print("> ");
-        }
-        logs.println(message);
     }
 }

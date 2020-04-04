@@ -30,26 +30,26 @@ public class Tools {
         return String.format("%.2f", number);
     }
 
-//    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
+    //    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
     public void mulligans(
 //            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
-                    File deckFile,
+            InputStream deckFile,
 //            @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules")
-                    File matchersFile,
+            InputStream mulligansRules,
 //            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
-                    int iterations,
+            int iterations,
 //            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
-                    boolean noStats,
+            boolean noStats,
 //            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
-                    boolean verbose
+            boolean verbose
 
     ) throws IOException {
-        Deck deck = Deck.parse(new FileReader(deckFile));
+        Deck deck = Deck.parse(new InputStreamReader(deckFile));
 
         System.out.println("Deck loaded: " + deck.getMain().size() + " cards (" + deck.getSideboard().size() + " cards in sideboard)");
         System.out.println();
 
-        MulliganRules rules = MulliganRules.parse(new FileReader(matchersFile));
+        MulliganRules rules = MulliganRules.parse(new InputStreamReader(mulligansRules));
         if (!rules.getErrors().isEmpty()) {
             System.out.println("=== ERRORS ===");
             for (ParseError error : rules.getErrors()) {
@@ -93,27 +93,27 @@ public class Tools {
         }
     }
 
-//    @ShellMethod("Simulates hundreds of goldfish games and computes statistics")
+    //    @ShellMethod("Simulates hundreds of goldfish games and computes statistics")
     public void goldfish(
 //            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
-                    File deckFile,
+            InputStream deckFile,
 //            @ShellOption(value = {"-P", "--pilot"}, help = "Deck pilot class name")
-                    String pilotClassName,
+            String pilotClassName,
 //            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
-                    int iterations,
+            int iterations,
 //            @ShellOption(value = {"-s", "--start"}, help = "starting case (one of: OTP, OTD, BOTH)", defaultValue = "BOTH")
-                    GoldfishSimulator.Start start,
+            GoldfishSimulator.Start start,
 //            @ShellOption(value = {"-M", "--maxturns"}, help = "maximum number of turn in a game before giving up the simulation", defaultValue = "15")
-                    int maxTurns,
+            int maxTurns,
 //            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
-                    boolean noStats,
+            boolean noStats,
 //            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
-                    boolean verbose
+            boolean verbose
 
     ) throws IOException, ClassNotFoundException {
         Class<? extends DeckPilot> pilotClass = (Class<? extends DeckPilot>) Class.forName(pilotClassName);
 
-        Deck deck = Deck.parse(new FileReader(deckFile));
+        Deck deck = Deck.parse(new InputStreamReader(deckFile));
 
         System.out.println("Deck loaded: " + deck.getMain().size() + " cards (" + deck.getSideboard().size() + " cards in sideboard)");
         System.out.println();

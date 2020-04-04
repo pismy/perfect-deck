@@ -3,10 +3,9 @@ package org.mtgpeasant.perfectdeck.common.matchers;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
+import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.util.*;
 
 @Value
@@ -14,6 +13,18 @@ public class MulliganRules implements MatcherContext {
     final Map<String, Matcher> matchers;
     final List<ParseError> errors;
     final List<Matchers.NamedMatcher> criteria;
+
+    public static MulliganRules load(Class<? extends DeckPilot> pilotClass) {
+        InputStream stream = pilotClass.getResourceAsStream(pilotClass.getSimpleName() + "-mull.txt");
+        if (stream == null) {
+            throw new RuntimeException("Mulligan rules file for " + pilotClass + " not found (" + pilotClass.getSimpleName() + "-mull.txt" + ")!");
+        }
+        try {
+            return parse(new InputStreamReader(stream));
+        } catch (IOException e) {
+            throw new RuntimeException("Error occurred while parsing Mulligan rules file for " + pilotClass, e);
+        }
+    }
 
     // TODO: cache
     public static MulliganRules parse(Reader input) throws IOException {

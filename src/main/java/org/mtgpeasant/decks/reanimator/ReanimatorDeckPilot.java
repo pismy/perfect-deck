@@ -5,8 +5,6 @@ import org.mtgpeasant.perfectdeck.common.mana.Mana;
 import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.*;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,16 +48,8 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     // ordered by power / interest to discard
     private static String[] CREATURES = new String[]{PATHRAZER_OF_ULAMOG, ULAMOG_S_CRUSHER, HAND_OF_EMRAKUL, GREATER_SANDWURM};
 
-    private static MulliganRules rules;
-
-    static {
-        try {
-            rules = MulliganRules.parse(new InputStreamReader(ReanimatorDeckPilot.class.getResourceAsStream("/reanimator-rules.txt")));
-        } catch (IOException e) {
-            rules = null;
-            System.err.println(e);
-        }
-    }
+    private static Cards managedCards = DeckPilot.loadManagedCards(ReanimatorDeckPilot.class);
+    private static MulliganRules rules = MulliganRules.load(ReanimatorDeckPilot.class);
 
     public ReanimatorDeckPilot(Game game) {
         super(game);
@@ -206,6 +196,12 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
 
     void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
+            // look for an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.putOnBottomOfLibrary(unmanagedCard.get());
+                continue;
+            }
             // extra creatures
             Cards creatures = game.getHand().findAll(CREATURES);
             if (creatures.size() > 1) {
@@ -246,8 +242,8 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             if (game.putOnBottomOfLibraryOneOf(SIMIAN_SPIRIT_GUIDE, LOTUS_PETAL, MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
                 continue;
             }
-            System.out.println("Didn't find any suitable card to get rid of");
-            System.out.println(game);
+//            System.out.println("Didn't find any suitable card to get rid of");
+//            System.out.println(game);
             game.putOnBottomOfLibrary(game.getHand().getFirst());
         }
     }
@@ -261,6 +257,12 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             }
             // 2nd: discard a dragon breath
             if (game.discardOneOf(DRAGON_BREATH).isPresent()) {
+                continue;
+            }
+            // discard an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.discard(unmanagedCard.get());
                 continue;
             }
             // 3rd: discard any additional creature in hand

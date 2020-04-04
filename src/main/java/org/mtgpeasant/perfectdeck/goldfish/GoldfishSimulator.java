@@ -176,15 +176,10 @@ public class GoldfishSimulator {
 
     GameResult simulateGame(Deck deck, Start start) {
         // instantiate new game
-        StringWriter logsBuffers = null;
-        PrintWriter logsWriter = null;
-        if (out != null) {
-            logsBuffers = new StringWriter();
-            logsWriter = new PrintWriter(logsBuffers);
-        }
+        StringWriter logsBuffers = new StringWriter();
+        PrintWriter logsWriter = new PrintWriter(logsBuffers, true);
 
         // instantiate game (from class)
-//        Game game = new Game(onThePlay, writer);
         Class<? extends Game> gameClass = (Class) ((ParameterizedType) pilotClass.getGenericSuperclass()).getActualTypeArguments()[0];
         Game game = null;
         try {
@@ -208,11 +203,9 @@ public class GoldfishSimulator {
             game.addListener((GameListener) pilot);
         }
 
-        if (logsWriter != null) {
-            logsWriter.println("=====================");
-            logsWriter.println("=== New Game: " + start + " ===");
-            logsWriter.println("=====================");
-        }
+        logsWriter.println("=====================");
+        logsWriter.println("=== New Game: " + start + " ===");
+        logsWriter.println("=====================");
 
         // 1: select opening hand
         while (true) {
@@ -272,9 +265,7 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
-                    if (logsWriter != null) {
-                        logsWriter.println("===> WIN: " + winReason);
-                    }
+                    logsWriter.println("===> WIN: " + winReason);
                     return GameResult.builder()
                             .start(start)
                             .mulligans(game.getMulligans())
@@ -284,9 +275,7 @@ public class GoldfishSimulator {
                             .build();
                 }
             }
-            if (logsWriter != null) {
-                logsWriter.println("===> MAX TURNS REACHED");
-            }
+            logsWriter.println("===> MAX TURNS REACHED");
             return GameResult.builder()
                     .start(start)
                     .mulligans(game.getMulligans())
@@ -294,10 +283,14 @@ public class GoldfishSimulator {
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (Exception e) {
-            throw new GameInternalError("An unexpected error occurred in a game\n\n" + logsWriter.toString(), e);
+            logsWriter.flush();
+            logsWriter.close();
+            throw new GameInternalError("An unexpected error occurred in a game", logsBuffers.toString(), e);
         } finally {
             // flush buffered logs into (real) output
             if (out != null) {
+                logsWriter.flush();
+                logsWriter.close();
                 out.println(logsBuffers.toString());
                 out.println();
             }
