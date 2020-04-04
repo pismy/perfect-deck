@@ -38,6 +38,26 @@ public class Seer {
                 secondMainPhaseSpells.forEach(card -> ((SpellsPlayer) pilot).play(card));
             }
         }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            boolean first = !firstMainPhaseSpells.isEmpty();
+            boolean second = !secondMainPhaseSpells.isEmpty();
+            if (first) {
+                if (second)
+                    sb.append("(1) ");
+                sb.append(firstMainPhaseSpells.stream().map(s -> "[" + s + "]").collect(Collectors.joining(" > ")));
+                if (second)
+                    sb.append(" & ");
+            }
+            if (second) {
+                if (first)
+                    sb.append("(2) ");
+                sb.append(secondMainPhaseSpells.stream().map(s -> "[" + s + "]").collect(Collectors.joining(" > ")));
+            }
+            return sb.toString();
+        }
     }
 
     /**
@@ -52,6 +72,12 @@ public class Seer {
         return Optional.ofNullable(findRouteToVictory(pilot.fork(), new ArrayList<>(), cards));
     }
 
+    /**
+     * @param pilot        game pilot
+     * @param playedSpells spells played so far in this route
+     * @param cards        cards/spells allowing winning
+     * @return winning route if any or {@code null}
+     */
     private static VictoryRoute findRouteToVictory(DeckPilot pilot, List<String> playedSpells, String... cards) {
         // filter playable cards
         List<String> playableCards = Arrays.stream(cards)

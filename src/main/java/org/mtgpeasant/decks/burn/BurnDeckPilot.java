@@ -40,6 +40,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     private transient Seer.VictoryRoute victoryRoute;
 
+    private static Cards managedCards = DeckPilot.loadManagedCards(BurnDeckPilot.class);
+
     public BurnDeckPilot(Game game) {
         super(game);
     }
@@ -64,7 +66,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     @Override
     public void start() {
-        mulligan(game.getMulligans());
+        putOnBottomOfLibrary(game.getMulligans());
     }
 
     @Override
@@ -132,7 +134,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         if (game.getCurrentTurn() > 2) {
             victoryRoute = Seer.findRouteToVictory(this, RUSH).orElse(null);
             if (victoryRoute != null) {
-                game.log(">>> I can kill now with: " + victoryRoute);
+                game.log(">>> I can win now with: " + victoryRoute);
                 // sacrifice all seals
                 game.getBattlefield().find(withName(SEAL_OF_FIRE)).forEach(seal -> {
                     game.sacrifice(seal);
@@ -649,33 +651,39 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         // now choose the rest
         while (!cardsToScry.isEmpty()) {
             String card = cardsToScry.removeFirst();
+            // remove if not managed
+            if(!managedCards.contains(card)) {
+                game.log(" - put [" + card + "] at bottom (not managed)");
+                game.getLibrary().addLast(card);
+                continue;
+            }
             Game.CardType cardType = typeof(card);
             // at this stage, remove lands (required lands should already have been selected)
             if (cardType == Game.CardType.land) {
-                game.log(" - put [" + card + "] at bottom");
+                game.log(" - put [" + card + "] at bottom (enough lands)");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove furnace scamp after turn 2
             if (FURNACE_SCAMP.equals(card) && game.getCurrentTurn() > 2) {
-                game.log(" - put [" + card + "] at bottom");
+                game.log(" - put [" + card + "] at bottom (useless at this turn)");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove extra thermo or archer because instant or sorceries are better options
             if (THERMO_ALCHEMIST.equals(card) && (game.getHand().count(THERMO_ALCHEMIST) + game.getBattlefield().count(withName(THERMO_ALCHEMIST)) > 2)) {
-                game.log(" - put [" + card + "] at bottom");
+                game.log(" - put [" + card + "] at bottom (already enough thermo)");
                 game.getLibrary().addLast(card);
                 continue;
             }
             if (FIREBRAND_ARCHER.equals(card) && (game.getHand().count(FIREBRAND_ARCHER) + game.getBattlefield().count(withName(FIREBRAND_ARCHER)) >= 2)) {
-                game.log(" - put [" + card + "] at bottom");
+                game.log(" - put [" + card + "] at bottom (already enough archer)");
                 game.getLibrary().addLast(card);
                 continue;
             }
             // remove fireblast if less than 2 mountains
-            if (FIREBLAST.equals(card) && (game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2)) {
-                game.log(" - put [" + card + "] at bottom");
+            if (FIREBLAST.equals(card) && (replacedOnTop.count(MOUNTAIN) + game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2)) {
+                game.log(" - put [" + card + "] at bottom (more than I can cast)");
                 game.getLibrary().addLast(card);
                 continue;
             }
@@ -690,8 +698,15 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         }
     }
 
-    void mulligan(int number) {
+    void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
+            // look for an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if(unmanagedCard.isPresent()) {
+                game.putOnBottomOfLibrary(unmanagedCard.get());
+                continue;
+            }
+
             // discard extra lands
             if (game.getHand().count(LANDS) > 2 && game.putOnBottomOfLibraryOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
                 continue;
@@ -710,6 +725,12 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
 
     void discard(int number) {
         for (int i = 0; i < number; i++) {
+            // discard an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.discard(unmanagedCard.get());
+                continue;
+            }
             // discard extra lands
             if ((int) game.getBattlefield().count(withName(LANDS)) + game.getHand().count(LANDS) > 3 && game.discardOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
                 continue;

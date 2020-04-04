@@ -23,7 +23,7 @@ public class ReanimatorDeckPilotTest {
     public void can_pay_should_be_true() throws IOException {
         // GIVEN
 
-        Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("/reanimator-deck2.txt")));
+        Deck deck = Deck.parse(new InputStreamReader(getClass().getResourceAsStream("reanimator-deck2.txt")));
 
         Game game = GameMock.mock(
                 true,
@@ -63,25 +63,25 @@ public class ReanimatorDeckPilotTest {
 //        assertThat(game.getTapped()).containsExactlyInAnyOrder("mountain", "swamp");
 //    }
 
-    @Test
-    public void reanimator_deck1_mulligans() throws IOException {
-        new Tools().mulligans(
-                new File("src/main/resources/reanimator-deck.txt"),
-                new File("src/main/resources/reanimator-rules.txt"),
-                50000,
-                false,
-                false);
-    }
-
-    @Test
-    public void reanimator_deck2_mulligans() throws IOException {
-        new Tools().mulligans(
-                new File("src/main/resources/reanimator-deck2.txt"),
-                new File("src/main/resources/reanimator-rules.txt"),
-                50000,
-                false,
-                false);
-    }
+//    @Test
+//    public void reanimator_deck1_mulligans() throws IOException {
+//        new Tools().mulligans(
+//                new File("src/main/resources/reanimator-deck.txt"),
+//                new File("src/main/resources/ReanimatorDeckPilot-mull.txt"),
+//                50000,
+//                false,
+//                false);
+//    }
+//
+//    @Test
+//    public void reanimator_deck2_mulligans() throws IOException {
+//        new Tools().mulligans(
+//                new File("src/main/resources/reanimator-deck2.txt"),
+//                new File("src/main/resources/ReanimatorDeckPilot-mull.txt"),
+//                50000,
+//                false,
+//                false);
+//    }
 
 //    @Test
 //    public void reanimator_deck1_goldfish() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
@@ -98,7 +98,7 @@ public class ReanimatorDeckPilotTest {
     @Test
     public void reanimator_deck2_goldfish() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/reanimator-deck2.txt"),
+                ReanimatorDeckPilot.class.getResourceAsStream("reanimator-deck2.txt"),
                 ReanimatorDeckPilot.class.getName(),
                 100000,
                 GoldfishSimulator.Start.BOTH,
@@ -110,7 +110,7 @@ public class ReanimatorDeckPilotTest {
     @Test
     public void reanimator_deck_observe() throws IOException, ClassNotFoundException {
         new Tools().goldfish(
-                new File("src/main/resources/reanimator-deck2.txt"),
+                ReanimatorDeckPilot.class.getResourceAsStream("reanimator-deck2.txt"),
                 ReanimatorDeckPilot.class.getName(),
                 3,
                 GoldfishSimulator.Start.BOTH,

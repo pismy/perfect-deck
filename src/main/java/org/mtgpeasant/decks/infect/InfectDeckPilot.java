@@ -8,8 +8,6 @@ import org.mtgpeasant.perfectdeck.goldfish.Game;
 import org.mtgpeasant.perfectdeck.goldfish.Permanent;
 import org.mtgpeasant.perfectdeck.goldfish.Seer;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -51,8 +49,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
     // OTHERS
     private static final String GITAXIAN_PROBE = "gitaxian probe";
-    private static final String MENTAL_MISSTEP = "mental misstep";
-    private static final String APOSTLE_S_BLESSING = "apostle's blessing";
+    //    private static final String MENTAL_MISSTEP = "mental misstep";
+//    private static final String APOSTLE_S_BLESSING = "apostle's blessing";
     private static final String SCALE_UP_TAG = "*scale up";
 
     private static String[] MANA_PRODUCERS = new String[]{LOTUS_PETAL, FOREST, PENDELHAVEN};
@@ -61,16 +59,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
     private static final String TEMP_BOOST = "*+1/+1";
 
-    private static MulliganRules rules;
-
-    static {
-        try {
-            rules = MulliganRules.parse(new InputStreamReader(InfectDeckPilot.class.getResourceAsStream("/infect-rules.txt")));
-        } catch (IOException e) {
-            rules = null;
-            System.err.println(e);
-        }
-    }
+    private static Cards managedCards = DeckPilot.loadManagedCards(InfectDeckPilot.class);
+    private static MulliganRules rules = MulliganRules.load(InfectDeckPilot.class);
 
     public InfectDeckPilot(Game game) {
         super(game);
@@ -111,7 +101,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
         if (game.getCurrentTurn() > 1) {
             Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, BOOSTS);
             if (victoryRoute.isPresent()) {
-                game.log(">> I can rush now with: " + victoryRoute);
+                game.log(">> I can win now with: " + victoryRoute.get());
                 victoryRoute.get().play(this);
                 return;
             }
@@ -435,7 +425,13 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
     void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
-            if (game.putOnBottomOfLibraryOneOf(MENTAL_MISSTEP, APOSTLE_S_BLESSING, GITAXIAN_PROBE).isPresent()) {
+            // look for an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.putOnBottomOfLibrary(unmanagedCard.get());
+                continue;
+            }
+            if (game.putOnBottomOfLibraryOneOf(GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
             // discard extra lands
@@ -469,7 +465,13 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
     void discard(int number) {
         for (int i = 0; i < number; i++) {
-            if (game.discardOneOf(MENTAL_MISSTEP, APOSTLE_S_BLESSING).isPresent()) {
+            // discard an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.discard(unmanagedCard.get());
+                continue;
+            }
+            if (game.discardOneOf(GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
             // discard extra lands

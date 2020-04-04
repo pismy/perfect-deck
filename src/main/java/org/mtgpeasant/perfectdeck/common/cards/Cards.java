@@ -71,8 +71,43 @@ public class Cards extends ArrayDeque<String> {
      * @return found card, or {@code null} if none was found
      */
     public Optional<String> findFirst(String... cards) {
+        return findFirst(Arrays.asList(cards));
+    }
+
+    /**
+     * Looks for the first card matching one of the given names
+     *
+     * @param cards card names to look for
+     * @return found card, or {@code null} if none was found
+     */
+    public Optional<String> findFirst(Collection<String> cards) {
         for (String card : cards) {
             if (this.contains(card)) {
+                return Optional.of(card);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Looks for the first card not matching one of the given names
+     *
+     * @param cards card names to ignore
+     * @return found card, or {@code null} if none was found
+     */
+    public Optional<String> findFirstNotIn(String... cards) {
+        return findFirstNotIn(Arrays.asList(cards));
+    }
+
+    /**
+     * Looks for the first card not matching one of the given names
+     *
+     * @param cards card names to ignore
+     * @return found card, or {@code null} if none was found
+     */
+    public Optional<String> findFirstNotIn(Collection<String> cards) {
+        for (String card : this) {
+            if (!cards.contains(card)) {
                 return Optional.of(card);
             }
         }
@@ -86,10 +121,19 @@ public class Cards extends ArrayDeque<String> {
      * @return number of found cards
      */
     public int count(String... cards) {
-        Set<String> set = new HashSet<>(Arrays.asList(cards));
+        return count(Arrays.asList(cards));
+    }
+
+    /**
+     * Returns the number of cards matching the given names
+     *
+     * @param cards card names to look for
+     * @return number of found cards
+     */
+    public int count(Collection<String> cards) {
         int count = 0;
         for (String card : this) {
-            if (set.contains(card)) {
+            if (cards.contains(card)) {
                 count++;
             }
         }
@@ -103,10 +147,19 @@ public class Cards extends ArrayDeque<String> {
      * @return found cards
      */
     public Cards findAll(String... cards) {
-        Set<String> set = new HashSet<>(Arrays.asList(cards));
+        return findAll(Arrays.asList(cards));
+    }
+
+    /**
+     * Looks for all cards matching the given names
+     *
+     * @param cards card names to look for
+     * @return found cards
+     */
+    public Cards findAll(Collection cards) {
         Cards selected = new Cards();
         for (String card : this) {
-            if (set.contains(card)) {
+            if (cards.contains(card)) {
                 selected.add(card);
             }
         }

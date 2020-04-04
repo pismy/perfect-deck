@@ -1,7 +1,14 @@
 package org.mtgpeasant.perfectdeck.goldfish;
 
+import com.google.common.io.CharStreams;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.stream.Collectors;
 
 /**
  * The abstract class you have to extend to implement your own goldfish player.
@@ -145,4 +152,35 @@ public abstract class DeckPilot<T extends Game> implements Cloneable {
             throw new RuntimeException("Failed forking pilot", cnse);
         }
     }
+
+    /**
+     * Loads the list of cards managed by the given pilot
+     *
+     * @param pilotClass deck pilot class
+     * @return list of managed cards (if any)
+     */
+    public static Cards loadManagedCards(Class<? extends DeckPilot> pilotClass) {
+        return load(pilotClass.getResourceAsStream(pilotClass.getSimpleName() + "-cards.txt"));
+    }
+
+    static Cards load(InputStream in) {
+        if (in == null) {
+            return null;
+        }
+        try {
+            return Cards.of(
+                    CharStreams.readLines(new InputStreamReader(in, Charset.forName("utf-8")))
+                            .stream()
+                            .map(String::trim)
+                            .map(String::toLowerCase)
+                            .filter(s -> !s.isEmpty())
+                            .filter(s -> !s.startsWith("//"))
+                            .filter(s -> !s.startsWith("#"))
+                            .collect(Collectors.toList())
+            );
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
 }

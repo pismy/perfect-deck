@@ -10,8 +10,6 @@ import org.mtgpeasant.perfectdeck.goldfish.Seer;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -72,26 +70,17 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
     // OTHERS
     private static final String GITAXIAN_PROBE = "gitaxian probe";
     private static final String LAND_GRANT = "land grant";
-    private static final String DISMEMBER = "dismember";
+//    private static final String DISMEMBER = "dismember";
 
     private static final String PERM_BOOST = "+1/+1";
     private static final String TEMP_BOOST = "*+1/+1";
 
-
-    private static MulliganRules rules;
+    private static Cards managedCards = DeckPilot.loadManagedCards(StompyDeckPilot.class);
+    private static MulliganRules rules = MulliganRules.load(StompyDeckPilot.class);
 
     // turn state
     private boolean aCreatureIsDead = false;
 
-
-    static {
-        try {
-            rules = MulliganRules.parse(new InputStreamReader(StompyDeckPilot.class.getResourceAsStream("/stompy-rules.txt")));
-        } catch (IOException e) {
-            rules = null;
-            System.err.println(e);
-        }
-    }
 
     public StompyDeckPilot(Game game) {
         super(game);
@@ -135,7 +124,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
         if (game.getCurrentTurn() > 2) {
             Optional<Seer.VictoryRoute> victoryRoute = Seer.findRouteToVictory(this, RUSH);
             if (victoryRoute.isPresent()) {
-                game.log(">> I can rush now with: " + victoryRoute);
+                game.log(">> I can win now with: " + victoryRoute.get());
                 maybeSacrificeForHunger();
                 victoryRoute.get().play(this);
             }
@@ -329,7 +318,10 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
     void putOnBottomOfLibrary(int number) {
         for (int i = 0; i < number; i++) {
-            if (game.putOnBottomOfLibraryOneOf(DISMEMBER).isPresent()) {
+            // look for an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.putOnBottomOfLibrary(unmanagedCard.get());
                 continue;
             }
             // discard extra lands
@@ -347,7 +339,10 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
 
     void discard(int number) {
         for (int i = 0; i < number; i++) {
-            if (game.discardOneOf(DISMEMBER).isPresent()) {
+            // discard an unmanaged card
+            Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
+            if (unmanagedCard.isPresent()) {
+                game.discard(unmanagedCard.get());
                 continue;
             }
             // discard extra lands

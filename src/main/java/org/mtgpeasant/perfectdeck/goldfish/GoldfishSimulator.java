@@ -35,7 +35,7 @@ public class GoldfishSimulator {
     @Builder.Default
     final int maxTurns = 20;
     @Builder.Default
-    final boolean verbose = false;
+    final PrintWriter out = null;
 
     final Class<? extends DeckPilot> pilotClass;
 
@@ -150,13 +150,13 @@ public class GoldfishSimulator {
         List<GameResult> results = IntStream.range(0, iterations)
                 .parallel()
                 // simulate a game
-                .mapToObj(idx -> simulateGame(deck, onThePlay(start, idx)))
+                .mapToObj(idx -> simulateGame(deck, toss(start, idx)))
                 // aggregate results
                 .collect(Collectors.groupingBy(Function.identity()))
                 .entrySet().stream()
                 .map(entry -> GameResult.builder()
                         .mulligans(entry.getKey().mulligans)
-                        .onThePlay(entry.getKey().onThePlay)
+                        .start(entry.getKey().start)
                         .outcome(entry.getKey().outcome)
                         .endTurn(entry.getKey().endTurn)
                         .count(entry.getValue().size())
@@ -166,31 +166,26 @@ public class GoldfishSimulator {
         return DeckStats.builder().deck(deck).iterations(iterations).results(results).build();
     }
 
-    private boolean onThePlay(Start start, int idx) {
-        switch (start) {
-            case OTP:
-                return true;
-            case OTD:
-                return false;
-            case BOTH:
-            default:
-                return idx % 2 == 0;
+    private Start toss(Start policy, int idx) {
+        if (policy == Start.BOTH) {
+            return idx % 2 == 0 ? Start.OTP : Start.OTD;
+        } else {
+            return policy;
         }
     }
 
-    GameResult simulateGame(Deck deck, boolean onThePlay) {
+    GameResult simulateGame(Deck deck, Start start) {
         // instantiate new game
-        StringWriter output = new StringWriter();
-        PrintWriter writer = new PrintWriter(output);
+        StringWriter logsBuffers = new StringWriter();
+        PrintWriter logsWriter = new PrintWriter(logsBuffers, true);
 
         // instantiate game (from class)
-//        Game game = new Game(onThePlay, writer);
         Class<? extends Game> gameClass = (Class) ((ParameterizedType) pilotClass.getGenericSuperclass()).getActualTypeArguments()[0];
         Game game = null;
         try {
             Constructor<? extends Game> constructor = gameClass.getDeclaredConstructor(Boolean.TYPE, PrintWriter.class);
             constructor.setAccessible(true);
-            game = constructor.newInstance(onThePlay, writer);
+            game = constructor.newInstance(start == Start.OTP, logsWriter);
         } catch (Exception e) {
             throw new RuntimeException("Couldn't instantiate game of type " + gameClass.getSimpleName(), e);
         }
@@ -204,13 +199,13 @@ public class GoldfishSimulator {
         } catch (Exception e) {
             throw new RuntimeException("Couldn't instantiate pilot of type " + pilotClass.getSimpleName(), e);
         }
-        if(pilot instanceof GameListener) {
+        if (pilot instanceof GameListener) {
             game.addListener((GameListener) pilot);
         }
 
-        writer.println("=====================");
-        writer.println("=== New Game: " + (onThePlay ? "OTP" : "OTD") + " ===");
-        writer.println("=====================");
+        logsWriter.println("=====================");
+        logsWriter.println("=== New Game: " + start + " ===");
+        logsWriter.println("=====================");
 
         // 1: select opening hand
         while (true) {
@@ -270,9 +265,9 @@ public class GoldfishSimulator {
                 // check won
                 String winReason = pilot.checkWin();
                 if (winReason != null) {
-                    writer.println("===> WIN: " + winReason);
+                    logsWriter.println("===> WIN: " + winReason);
                     return GameResult.builder()
-                            .onThePlay(game.isOnThePlay())
+                            .start(start)
                             .mulligans(game.getMulligans())
                             .outcome(GameResult.Outcome.WON)
                             .endTurn(game.getCurrentTurn())
@@ -280,19 +275,24 @@ public class GoldfishSimulator {
                             .build();
                 }
             }
-            writer.println("===> MAX TURNS REACHED");
+            logsWriter.println("===> MAX TURNS REACHED");
             return GameResult.builder()
-                    .onThePlay(game.isOnThePlay())
+                    .start(start)
                     .mulligans(game.getMulligans())
                     .outcome(GameResult.Outcome.TIMEOUT)
                     .endTurn(maxTurns + 1)
                     .build();
         } catch (Exception e) {
-            throw new GameInternalError("An unexpected error occurred in a game\n\n" + output.toString(), e);
+            logsWriter.flush();
+            logsWriter.close();
+            throw new GameInternalError("An unexpected error occurred in a game", logsBuffers.toString(), e);
         } finally {
-            if (verbose) {
-                System.out.println(output.toString());
-                System.out.println();
+            // flush buffered logs into (real) output
+            if (out != null) {
+                logsWriter.flush();
+                logsWriter.close();
+                out.println(logsBuffers.toString());
+                out.println();
             }
         }
     }
@@ -303,11 +303,15 @@ public class GoldfishSimulator {
     public static class GameResult {
         public enum Outcome {WON, TIMEOUT}
 
-        final boolean onThePlay;
+        final Start start;
         final int mulligans;
         final Outcome outcome;
         final int endTurn;
         @Builder.Default
         final int count = 1;
+
+        public boolean isOnThePlay() {
+            return start == Start.OTP;
+        }
     }
 }
