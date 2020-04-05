@@ -18,6 +18,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
     private static final Mana G = Mana.of("G");
     private static final Mana G1 = Mana.of("1G");
+    private static final Mana G2 = Mana.of("2G");
     private static final Mana GG = Mana.of("GG");
     private static final Mana TWO = Mana.of("2");
 
@@ -29,6 +30,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
     private static final String ICHORCLAW_MYR = "ichorclaw myr";
     private static final String GLISTENER_ELF = "glistener elf";
     private static final String BLIGHT_MAMBA = "blight mamba";
+    private static final String ROT_WOLF = "rot wolf";
 
     // BOOSTS
     private static final String RANCOR = "rancor"; //
@@ -43,19 +45,19 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
     private static final String RANGER_S_GUILE = "ranger's guile"; // G: +1/+1
     private static final String MIGHT_OF_OLD_KROSA = "might of old krosa"; // G: +4/+4 on your turn
     private static final String BLOSSOMING_DEFENSE = "blossoming defense"; // G: +2/+2
+    private static final String LLANOWAR_AUGUR = "llanowar augur"; // G: sacrifice: +3/+3
 
     // FREE MANA
     private static final String LOTUS_PETAL = "lotus petal";
+    public static final String SIMIAN_SPIRIT_GUIDE = "simian spirit guide";
 
     // OTHERS
     private static final String GITAXIAN_PROBE = "gitaxian probe";
-    //    private static final String MENTAL_MISSTEP = "mental misstep";
-//    private static final String APOSTLE_S_BLESSING = "apostle's blessing";
     private static final String SCALE_UP_TAG = "*scale up";
 
-    private static String[] MANA_PRODUCERS = new String[]{LOTUS_PETAL, FOREST, PENDELHAVEN};
-    private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA};
-    private static String[] BOOSTS = new String[]{RANCOR, SEAL_OF_STRENGTH, SCALE_UP, VINES_OF_VASTWOOD, GIANT_GROWTH, LARGER_THAN_LIFE, INVIGORATE, MUTAGENIC_GROWTH, GROUNDSWELL, MIGHT_OF_OLD_KROSA, BLOSSOMING_DEFENSE, RANGER_S_GUILE};
+    private static String[] MANA_PRODUCERS = new String[]{LOTUS_PETAL, FOREST, PENDELHAVEN, SIMIAN_SPIRIT_GUIDE};
+    private static String[] CREATURES = new String[]{GLISTENER_ELF, ICHORCLAW_MYR, BLIGHT_MAMBA, ROT_WOLF};
+    private static String[] BOOSTS = new String[]{RANCOR, SEAL_OF_STRENGTH, SCALE_UP, VINES_OF_VASTWOOD, GIANT_GROWTH, LARGER_THAN_LIFE, INVIGORATE, MUTAGENIC_GROWTH, GROUNDSWELL, MIGHT_OF_OLD_KROSA, BLOSSOMING_DEFENSE, RANGER_S_GUILE, LLANOWAR_AUGUR};
 
     private static final String TEMP_BOOST = "*+1/+1";
 
@@ -113,8 +115,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
             return;
         }
         Collection<String> boostsToPlay = game.isLanded() ?
-                game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
-                : game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
+                game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, GROUNDSWELL, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, LLANOWAR_AUGUR, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, RANGER_S_GUILE)
+                : game.getHand().findAll(MUTAGENIC_GROWTH, INVIGORATE, SCALE_UP, RANCOR, MIGHT_OF_OLD_KROSA, GIANT_GROWTH, SEAL_OF_STRENGTH, LLANOWAR_AUGUR, BLOSSOMING_DEFENSE, LARGER_THAN_LIFE, VINES_OF_VASTWOOD, GROUNDSWELL, RANGER_S_GUILE);
         boostsToPlay.forEach(card -> {
             if (canPlay(card)) {
                 play(card);
@@ -135,8 +137,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
             creatures.get(0).addCounter(TEMP_BOOST, 1);
         });
 
-        // sacrifice all seals
-        game.getBattlefield().find(withName(SEAL_OF_STRENGTH)).forEach(card -> {
+        // sacrifice all seals & augurs
+        game.getBattlefield().find(withName(SEAL_OF_STRENGTH, LLANOWAR_AUGUR)).forEach(card -> {
             game.sacrifice(card);
             creatures.get(0).addCounter(TEMP_BOOST, 3);
         });
@@ -156,8 +158,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
             playOneOf(CREATURES);
         }
 
-        // play all rancors & seals
-        while (playOneOf(RANCOR, SEAL_OF_STRENGTH).isPresent()) {
+        // play all rancors & seals & augurs
+        while (playOneOf(RANCOR, SEAL_OF_STRENGTH, LLANOWAR_AUGUR).isPresent()) {
         }
 
         // cast extra creatures
@@ -175,7 +177,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
     boolean canPay(Mana cost) {
         // potential mana pool is current pool + untapped lands + petals on battlefield
         Mana potentialPool = game.getPool()
-                .plus(Mana.of(0, 0, game.getBattlefield().count(withName(MANA_PRODUCERS).and(untapped())), 0, 0, 0));
+                .plus(Mana.of(0, 0, game.getBattlefield().count(withName(MANA_PRODUCERS).and(untapped())), game.getHand().count(SIMIAN_SPIRIT_GUIDE), 0, 0));
         return potentialPool.contains(cost);
     }
 
@@ -191,8 +193,15 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                     game.tapLandForMana(producer.get(), G);
                 }
             } else {
-                // can't preparePool !!!
-                return;
+                // can I pay the rest with SSG ?
+                Mana.Extraction restToPay = cost.extract(game.getPool());
+                if (restToPay.getRest().getG() == 0 && restToPay.getRest().getX() > 0 && game.getHand().findFirst(SIMIAN_SPIRIT_GUIDE).isPresent()) {
+                    game.move(SIMIAN_SPIRIT_GUIDE, Game.Area.hand, Game.Area.exile, Game.CardType.creature);
+                    game.add(Mana.R());
+                } else {
+                    // can't produce !!!
+                    return;
+                }
             }
         }
     }
@@ -232,11 +241,14 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
 
             // creatures
             case GLISTENER_ELF:
+            case LLANOWAR_AUGUR:
                 return canPay(G);
             case ICHORCLAW_MYR:
                 return canPay(TWO);
             case BLIGHT_MAMBA:
                 return canPay(G1);
+            case ROT_WOLF:
+                return canPay(G2);
 
             // BOOSTS
             case MUTAGENIC_GROWTH: // (-2 life): +2/+2
@@ -303,6 +315,10 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                 produce(G1);
                 game.castCreature(card, G1);
                 return true;
+            case ROT_WOLF:
+                produce(G2);
+                game.castCreature(card, G2);
+                return true;
 
             // BOOSTS
             case MUTAGENIC_GROWTH: {
@@ -340,7 +356,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                 Permanent targetCreature = game.getBattlefield().findFirst(creaturesThatCanBeTapped()).get();
                 produce(G);
                 game.castInstant(card, G);
-                targetCreature.addCounter(TEMP_BOOST, game.isLanded() ? 4 : 3);
+                targetCreature.addCounter(TEMP_BOOST, game.isLanded() ? 4 : 2);
                 return true;
             }
             case RANGER_S_GUILE: {
@@ -394,6 +410,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                 targetCreature.incrCounter(RANCOR);
                 return true;
             }
+            case LLANOWAR_AUGUR: // play the augur as an enchantment
             case SEAL_OF_STRENGTH: {
                 produce(G);
                 game.castEnchantment(card, G);
@@ -417,7 +434,8 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
             case ICHORCLAW_MYR:
             case BLIGHT_MAMBA:
                 return creature.hasTag(SCALE_UP_TAG) ? 6 : 1;
-
+            case ROT_WOLF:
+                return creature.hasTag(SCALE_UP_TAG) ? 6 : 2;
             default:
                 return 0;
         }
@@ -439,7 +457,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                 continue;
             }
             // discard extra creatures
-            if (game.getHand().count(CREATURES) >= 2 && game.putOnBottomOfLibraryOneOf(BLIGHT_MAMBA, ICHORCLAW_MYR, GLISTENER_ELF).isPresent()) {
+            if (game.getHand().count(CREATURES) >= 2 && game.putOnBottomOfLibraryOneOf(ROT_WOLF, BLIGHT_MAMBA, ICHORCLAW_MYR, GLISTENER_ELF).isPresent()) {
                 continue;
             }
             // discard a boost
@@ -451,6 +469,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                     GIANT_GROWTH,
                     GROUNDSWELL,
                     MUTAGENIC_GROWTH,
+                    LLANOWAR_AUGUR,
                     SEAL_OF_STRENGTH,
                     MIGHT_OF_OLD_KROSA,
                     RANCOR,
@@ -479,7 +498,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                 continue;
             }
             // discard extra creatures
-            if (game.getBattlefield().count(withType(Game.CardType.creature)) + game.getHand().count(CREATURES) >= 2 && game.discardOneOf(BLIGHT_MAMBA, ICHORCLAW_MYR, GLISTENER_ELF).isPresent()) {
+            if (game.getBattlefield().count(withType(Game.CardType.creature)) + game.getHand().count(CREATURES) >= 2 && game.discardOneOf(ROT_WOLF, BLIGHT_MAMBA, ICHORCLAW_MYR, GLISTENER_ELF).isPresent()) {
                 continue;
             }
             // discard a boost
@@ -491,6 +510,7 @@ public class InfectDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlaye
                     GIANT_GROWTH,
                     GROUNDSWELL,
                     MUTAGENIC_GROWTH,
+                    LLANOWAR_AUGUR,
                     SEAL_OF_STRENGTH,
                     MIGHT_OF_OLD_KROSA,
                     RANCOR,

@@ -79,10 +79,13 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 game.damageOpponent(1, "keldon LTB trigger");
             }
         });
-        game.getBattlefield().find(withName(ORCISH_HELLRAISER)).forEach(card -> {
-            card.decrCounter("echo");
-            if (card.getCounter("echo") == 0) {
-                // TODO: pay echo or let die ?
+        game.getBattlefield().find(withName(ORCISH_HELLRAISER).and(withTag("echo"))).forEach(card -> {
+            // TODO: pay echo or let die ?
+            if (canPay(R)) {
+                // pay echo
+                produce(R);
+                card.removeTag("echo");
+            } else {
                 game.sacrifice(card);
                 game.damageOpponent(2, "orcish LTB trigger");
             }
@@ -240,6 +243,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         return playOneOf(
                 MOUNTAIN,
                 MONASTERY_SWIFTSPEAR,
+                ghituHasHaste ? GHITU_LAVARUNNER : "_",
                 FURNACE_SCAMP,
                 GITAXIAN_PROBE,
                 NEEDLE_DROP,
@@ -250,9 +254,8 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 ELECTROSTATIC_FIELD,
                 KELDON_MARAUDERS,
                 VIASHINO_PYROMANCER,
-                ORCISH_HELLRAISER,
                 CURSE_OF_THE_PIERCED_HEART,
-                ghituHasHaste ? GHITU_LAVARUNNER : "_",
+                ORCISH_HELLRAISER,
                 FLAME_RIFT,
                 game.isLanded() ? SEARING_BLAZE : "_",
                 game.getDamageDealtThisTurn() > 0 ? SKEWER_THE_CRITICS : "_",
@@ -511,9 +514,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return true;
             case ORCISH_HELLRAISER:
                 produce(R1);
-                game.castCreature(card, R1)
-                        // time counter for echo
-                        .addCounter("echo", 1);
+                game.castCreature(card, R1).tag("echo");
                 return true;
             case MAGMA_JET:
                 produce(R1);
@@ -652,7 +653,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         while (!cardsToScry.isEmpty()) {
             String card = cardsToScry.removeFirst();
             // remove if not managed
-            if(!managedCards.contains(card)) {
+            if (!managedCards.contains(card)) {
                 game.log(" - put [" + card + "] at bottom (not managed)");
                 game.getLibrary().addLast(card);
                 continue;
@@ -702,7 +703,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
         for (int i = 0; i < number; i++) {
             // look for an unmanaged card
             Optional<String> unmanagedCard = game.getHand().findFirstNotIn(managedCards);
-            if(unmanagedCard.isPresent()) {
+            if (unmanagedCard.isPresent()) {
                 game.putOnBottomOfLibrary(unmanagedCard.get());
                 continue;
             }

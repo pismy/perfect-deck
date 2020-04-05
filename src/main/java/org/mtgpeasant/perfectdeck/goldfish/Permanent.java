@@ -120,6 +120,14 @@ public class Permanent implements Cloneable {
     }
 
     /**
+     * Removes the given tag
+     */
+    public Permanent removeTag(String name) {
+        tags.remove(name);
+        return this;
+    }
+
+    /**
      * Sets the card tapped state
      */
     public Permanent setTapped(boolean tapped) {

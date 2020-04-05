@@ -17,3 +17,6 @@ Might of Old Krosa
 Blossoming Defense
 Lotus Petal
 Gitaxian Probe
+Llanowar Augur
+Rot Wolf
+Simian Spirit Guide
