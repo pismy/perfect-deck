@@ -181,11 +181,11 @@ public class ManaProductionPlannerTest {
     public void plan6_should_work() {
         // GIVEN
         Cards library = Cards.of();
-        Cards hand = Cards.of(SWAMP, DARK_RITUAL);
+        Cards hand = Cards.of(DARK_RITUAL);
         Game game = GameMock.mock(true, hand, library, Cards.empty(), Collections.emptyList(), Collections.emptyList());
         game.getBattlefield().add(permanent(SWAMP, land));
         game.getBattlefield().add(permanent(MOUNTAIN, land));
-        game.getBattlefield().add(permanent(PROPHETIC_PRISM, artifact));
+//        game.getBattlefield().add(permanent(PROPHETIC_PRISM, artifact));
 
         // define sources in order of preference
         List<ManaSource> sources = manaSources(game);

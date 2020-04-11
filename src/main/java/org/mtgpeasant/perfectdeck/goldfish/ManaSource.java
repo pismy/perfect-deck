@@ -222,7 +222,7 @@ public interface ManaSource {
 
             @Override
             public String toString() {
-                return "discard [" + card + "]";
+                return "cast [" + card + "]";
             }
         };
     }

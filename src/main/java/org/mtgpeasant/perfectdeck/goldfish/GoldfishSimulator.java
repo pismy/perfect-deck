@@ -50,6 +50,18 @@ public class GoldfishSimulator {
         final List<GameResult> results;
         final int iterations;
 
+        public static Predicate<GameResult> withStart(Start start) {
+            return result -> result.getStart() == start;
+        }
+
+        public static Predicate<GameResult> withMulligans(int mulligans, boolean orLower) {
+            return mulligans < 0 ? Predicates.alwaysTrue() : orLower ? result -> result.getMulligans() <= mulligans : result -> result.getMulligans() == mulligans;
+        }
+
+        public static Predicate<GameResult> withEndTurn(int turn, boolean orLower) {
+            return turn <= 0 ? Predicates.alwaysTrue() : orLower ? result -> result.getEndTurn() <= turn : result -> result.getEndTurn() == turn;
+        }
+
         /**
          * Lists all win turns matching the given predicate
          *
@@ -79,44 +91,43 @@ public class GoldfishSimulator {
         }
 
         /**
+         * Computes a percentage
+         *
+         * @param total   filter that count the total games
+         * @param partial sub-filter that counts selected games
+         * @return a percentage
+         */
+        public Percentage getPercentage(Predicate<GameResult> total, Predicate<GameResult> partial) {
+            return new Percentage(count(total.and(partial)), count(total));
+        }
+
+        /**
          * Computes average win turn among game results matching the given predicate
          *
          * @param filter predicate
          * @return average win turn
          */
-        public double getAverageWinTurn(Predicate<GameResult> filter) {
+        public Average getAverageWinTurn(Predicate<GameResult> filter) {
             long sum = results.stream()
                     .filter(filter)
                     .mapToLong(result -> result.getEndTurn() * result.getCount())
                     .sum();
             long count = count(filter);
-            return (double) sum / (double) count;
-        }
+            double avg = (double) sum / (double) count;
 
-        /**
-         * <a href="https://en.wikipedia.org/wiki/Average_absolute_deviation">Mean absolute deviation</a> around average win turn
-         */
-        public double getWinTurnMAD(Predicate<GameResult> filter) {
-            double avg = getAverageWinTurn(filter);
             double distanceSum = results.stream()
                     .filter(filter)
                     .mapToDouble(result -> Math.abs(avg - result.getEndTurn()) * result.getCount())
                     .sum();
-            long count = count(filter);
-            return distanceSum / (double) count;
-        }
+            double mad = distanceSum / (double) count;
 
-        /**
-         * <a href="https://en.wikipedia.org/wiki/Standard_deviation">Standard deviation</a> around average win turn
-         */
-        public double getWinTurnSD(Predicate<GameResult> filter) {
-            double avg = getAverageWinTurn(filter);
-            double distanceSum = results.stream()
-                    .filter(filter)
-                    .mapToDouble(result -> ((double) result.getEndTurn() - avg) * ((double) result.getEndTurn() - avg) * result.getCount())
-                    .sum();
-            long count = count(filter);
-            return Math.sqrt(distanceSum / (double) count);
+//            double distanceSqSum = results.stream()
+//                    .filter(filter)
+//                    .mapToDouble(result -> ((double) result.getEndTurn() - avg) * ((double) result.getEndTurn() - avg) * result.getCount())
+//                    .sum();
+//            double standardDeviation = Math.sqrt(distanceSum / (double) count);
+
+            return new Average(avg, mad);
         }
 
         /**
@@ -136,6 +147,44 @@ public class GoldfishSimulator {
 
         public List<Integer> getMulligans() {
             return getMulligans(Predicates.alwaysTrue());
+        }
+
+        @Value
+        public static class Percentage implements Comparable<Percentage> {
+            final long count;
+            final long total;
+
+            public String toString() {
+                //        return String.format("%.1f%% (%d/%d)", (100f * (float) count / (float) total), count, total);
+                return String.format("%.1f%%", getPercentage());
+            }
+
+            public double getPercentage() {
+                return 100d * (double) count / (double) total;
+            }
+
+            @Override
+            public int compareTo(Percentage other) {
+                return Double.compare(getPercentage(), other.getPercentage());
+            }
+        }
+
+        @Value
+        public static class Average implements Comparable<Average> {
+            final double average;
+            /**
+             * <a href="https://en.wikipedia.org/wiki/Average_absolute_deviation">Mean absolute deviation</a> around average win turn
+             */
+            final double mad; // mean absolute deviation
+
+            public String toString() {
+                return String.format("%.2f ±%.2f", average, mad);
+            }
+
+            @Override
+            public int compareTo(Average other) {
+                return Double.compare(average, other.average);
+            }
         }
     }
 

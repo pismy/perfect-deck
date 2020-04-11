@@ -15,3 +15,6 @@ Faithless Looting
 Reanimate
 Gitaxian Probe
 Dragon Breath
+Funeral Charm
+Raven's Crime
+Mind Rake

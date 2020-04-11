@@ -78,7 +78,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>org.mtgpeasant.perfectdeck.PerfectDeck</mainClass>
+                                    <mainClass>org.mtgpeasant.perfectdeck.gui.MainWindow</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -92,11 +92,6 @@
     </build>
 
     <distributionManagement>
-        <!--<snapshotRepository>-->
-            <!--<id>github</id>-->
-            <!--<name>GitHub pismy's repo</name>-->
-            <!--<url>https://maven.pkg.github.com/pismy/perfect-deck</url>-->
-        <!--</snapshotRepository>-->
         <repository>
             <id>github</id>
             <name>GitHub pismy's repo</name>
@@ -104,4 +99,10 @@
         </repository>
     </distributionManagement>
 
+    <scm>
+        <developerConnection>scm:git:git@github.com:pismy/perfect-deck.git</developerConnection>
+        <connection>scm:git:git@github.compismy/perfect-deck.git</connection>
+        <url>https://github.com/pismy/perfect-deck</url>
+        <tag>HEAD</tag>
+    </scm>
 </project>

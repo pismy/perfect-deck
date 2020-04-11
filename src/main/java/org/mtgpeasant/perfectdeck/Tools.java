@@ -32,15 +32,15 @@ public class Tools {
 
     //    @ShellMethod("Simulates hundreds of hand draws and computes statistics about mulligans criterion")
     public void mulligans(
-//            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
+//            @ShellOption(getPercentage = {"-D", "--deck"}, help = "the deck to test")
             InputStream deckFile,
-//            @ShellOption(value = {"-R", "--rules"}, help = "opening hand keeping rules")
+//            @ShellOption(getPercentage = {"-R", "--rules"}, help = "opening hand keeping rules")
             InputStream mulligansRules,
-//            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
+//            @ShellOption(getPercentage = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
             int iterations,
-//            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
+//            @ShellOption(getPercentage = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
             boolean noStats,
-//            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
+//            @ShellOption(getPercentage = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
             boolean verbose
 
     ) throws IOException {
@@ -95,19 +95,19 @@ public class Tools {
 
     //    @ShellMethod("Simulates hundreds of goldfish games and computes statistics")
     public void goldfish(
-//            @ShellOption(value = {"-D", "--deck"}, help = "the deck to test")
+//            @ShellOption(getPercentage = {"-D", "--deck"}, help = "the deck to test")
             InputStream deckFile,
-//            @ShellOption(value = {"-P", "--pilot"}, help = "Deck pilot class name")
+//            @ShellOption(getPercentage = {"-P", "--pilot"}, help = "Deck pilot class name")
             String pilotClassName,
-//            @ShellOption(value = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
+//            @ShellOption(getPercentage = {"-I", "--iterations"}, help = "number of simulated iterations", defaultValue = "1000")
             int iterations,
-//            @ShellOption(value = {"-s", "--start"}, help = "starting case (one of: OTP, OTD, BOTH)", defaultValue = "BOTH")
+//            @ShellOption(getPercentage = {"-s", "--start"}, help = "starting case (one of: OTP, OTD, BOTH)", defaultValue = "BOTH")
             GoldfishSimulator.Start start,
-//            @ShellOption(value = {"-M", "--maxturns"}, help = "maximum number of turn in a game before giving up the simulation", defaultValue = "15")
+//            @ShellOption(getPercentage = {"-M", "--maxturns"}, help = "maximum number of turn in a game before giving up the simulation", defaultValue = "15")
             int maxTurns,
-//            @ShellOption(value = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
+//            @ShellOption(getPercentage = {"-n", "--nostats"}, help = "disable statistics computation (logs only)", defaultValue = "false")
             boolean noStats,
-//            @ShellOption(value = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
+//            @ShellOption(getPercentage = {"-v", "--verbose"}, help = "produces verbose output", defaultValue = "false")
             boolean verbose
 
     ) throws IOException, ClassNotFoundException {
@@ -200,14 +200,14 @@ public class Tools {
         String avg = "";
         if (start != GoldfishSimulator.Start.OTD) {
             Predicate<GoldfishSimulator.GameResult> otpFilter = gamesFilter.and(result -> result.isOnThePlay());
-            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otpFilter)) + " ±" + f2d(stats.getWinTurnMAD(otpFilter)), 10, ' ');
+            avg += Strings.padStart(stats.getAverageWinTurn(otpFilter).toString(), 10, ' ');
         }
         if (start == GoldfishSimulator.Start.BOTH) {
             avg += " | ";
         }
         if (start != GoldfishSimulator.Start.OTP) {
             Predicate<GoldfishSimulator.GameResult> otdFilter = gamesFilter.and(result -> !result.isOnThePlay());
-            avg += Strings.padStart(f2d(stats.getAverageWinTurn(otdFilter)) + " ±" + f2d(stats.getWinTurnMAD(otdFilter)), 10, ' ');
+            avg += Strings.padStart(stats.getAverageWinTurn(otdFilter).toString(), 10, ' ');
         }
 //        if (start == GoldfishSimulator.Start.BOTH) {
 //            avg += " | ";

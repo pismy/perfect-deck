@@ -2,7 +2,6 @@ package org.mtgpeasant.decks.reanimator;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.mana.Mana;
-import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
 import org.mtgpeasant.perfectdeck.goldfish.*;
 
 import java.util.ArrayList;
@@ -16,6 +15,12 @@ import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.untapped;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
 
+/**
+ * TODO: manage "Ransack the Lab" ?
+ * TODO: manage "Demonic Consultation" ?
+ * TODO: manage "Cathartic Reunion" / "Tormenting Voice" ?
+ * TODO: change mulligans criteria (much more complex)
+ */
 public class ReanimatorDeckPilot extends DeckPilot<Game> {
     //    boolean firstCreaKilled = false;
 
@@ -24,6 +29,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     private static final Mana R = Mana.of("R");
     private static final Mana R2 = Mana.of("2R");
     private static final Mana X = Mana.of("1");
+    private static final Mana TWO = Mana.of("2");
 
     private static final String SWAMP = "swamp";
     private static final String MOUNTAIN = "mountain";
@@ -42,14 +48,17 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     private static final String REANIMATE = "reanimate";
     private static final String GITAXIAN_PROBE = "gitaxian probe";
     private static final String DRAGON_BREATH = "dragon breath";
-    public static final Mana TWO = Mana.of("2");
+    private static final String FUNERAL_CHARM = "funeral charm"; // B: discard 1
+    private static final String RAVEN_S_CRIME = "raven's crime"; // B: discard 1; wit retrace
+    private static final String MIND_RAKE = "mind rake"; // 1B: discard 2
+    public static final Mana BBB = Mana.of("BBB");
 
-    private static String[] REANIMATORS_1B = new String[]{EXHUME, ANIMATE_DEAD};
     // ordered by power / interest to discard
+//    private static String[] LANDS = new String[]{MOUNTAIN, SWAMP, CRUMBLING_VESTIGE};
+//    private static String[] MANA = new String[]{MOUNTAIN, SWAMP, CRUMBLING_VESTIGE, LOTUS_PETAL, SIMIAN_SPIRIT_GUIDE, DARK_RITUAL};
     private static String[] CREATURES = new String[]{PATHRAZER_OF_ULAMOG, ULAMOG_S_CRUSHER, HAND_OF_EMRAKUL, GREATER_SANDWURM};
 
     private static Cards managedCards = DeckPilot.loadManagedCards(ReanimatorDeckPilot.class);
-    private static MulliganRules rules = MulliganRules.load(ReanimatorDeckPilot.class);
 
     public ReanimatorDeckPilot(Game game) {
         super(game);
@@ -57,10 +66,44 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
 
     @Override
     public boolean keepHand(Cards hand) {
+        int reanimation = hand.count(ANIMATE_DEAD, REANIMATE, EXHUME);
+        int creatures = hand.count(CREATURES);
+        int blackMana = hand.count(SWAMP, LOTUS_PETAL, CRUMBLING_VESTIGE);
+        int redMana = hand.count(MOUNTAIN, LOTUS_PETAL, CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE);
+        int totalMana = hand.count(MOUNTAIN, SWAMP, LOTUS_PETAL, CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE);
+        if (blackMana > 0) {
+            // each dark ritual adds 2 mana
+            blackMana += hand.count(DARK_RITUAL) * 2;
+            totalMana += hand.count(DARK_RITUAL) * 2;
+        }
+        int discard = hand.count(PUTRID_IMP, FAITHLESS_LOOTING, FUNERAL_CHARM, MIND_RAKE, RAVEN_S_CRIME, GREATER_SANDWURM /* count sandwurm as a discard */);
+
         if (game.getMulligans() >= 3) {
+            // always keep (no more than 3 mulligans)
             return true;
         }
-        return rules.firstMatch(hand).isPresent();
+
+        if (game.getMulligans() == 0 && !game.isOnThePlay()) {
+            // specific case: I don't necessarily need a discard outlet (T1: draw / discard)
+            discard++;
+        }
+
+        // general case: I need at least B1
+        if (blackMana < 1 || totalMana < 2) {
+            return false;
+        }
+        // I need all 3 pieces of the combo or only 2 + something to draw
+        int piecesOfTheCombo = (creatures > 0 ? 1 : 0)
+                + (reanimation > 0 ? 1 : 0)
+                + (discard > 0 ? 1 : 0);
+        switch (piecesOfTheCombo) {
+            case 3:
+                return true;
+            case 2:
+                return hand.findFirst(GREATER_SANDWURM, GITAXIAN_PROBE).isPresent() || hand.findFirst(FAITHLESS_LOOTING).isPresent() && redMana >= 1;
+        }
+        game.log("rea " + reanimation + "; crea " + creatures + "; discard" + discard);
+        return false;
     }
 
     @Override
@@ -84,19 +127,18 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             return true;
         }
 
-        Cards monstersInGy = game.getGraveyard().findAll(CREATURES);
-        Cards monstersInHand = game.getHand().findAll(CREATURES);
-        if (!monstersInGy.isEmpty()) {
+        Optional<String> monsterInGy = game.getGraveyard().findFirst(CREATURES);
+        Optional<String> monsterInHand = game.getHand().findFirst(CREATURES);
+        if (monsterInGy.isPresent()) {
             // I have a monster in the graveyard: I must now reanimate
-            Cards reanimators = game.getHand().findAll(REANIMATORS_1B);
             if (game.getHand().contains(REANIMATE) && maybeProduce(B)) {
                 game.castSorcery(REANIMATE, B);
-                String monster = monstersInGy.getFirst();
+                String monster = monsterInGy.get();
                 game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
                 return true;
-            } else if (!reanimators.isEmpty() && maybeProduce(B1)) {
-                game.castSorcery(reanimators.getFirst(), B1);
-                String monster = monstersInGy.getFirst();
+            } else if (game.getHand().findFirst(EXHUME, ANIMATE_DEAD).isPresent() && maybeProduce(B1)) {
+                game.castSorcery(game.getHand().findFirst(EXHUME, ANIMATE_DEAD).get(), B1);
+                String monster = monsterInGy.get();
                 game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
@@ -118,36 +160,38 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 discard(2);
                 return true;
             }
-        } else if (monstersInHand.isEmpty()) {
-            // no monster in hand: can I look for one ?
-            if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
-                game.castSorcery(FAITHLESS_LOOTING, R);
-                game.draw(2);
-                // now discard 2 cards
-                discard(2);
-                return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
-                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
-                game.draw(2);
-                // then another card...
-                discard(2);
-                return true;
-            }
-        } else {
+        } else if (monsterInHand.isPresent()) {
             // I have a creature in hand
             if (game.getBattlefield().findFirst(withName(PUTRID_IMP)).isPresent()) {
                 // I can discard a monster (any)
-                game.discard(monstersInHand.getFirst());
+                game.discard(monsterInHand.get());
                 return true;
             } else if (game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
                 game.castCreature(PUTRID_IMP, B);
                 // discard a monster (any)
-                game.discard(monstersInHand.getFirst());
+                game.discard(monsterInHand.get());
                 return true;
             } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
                 game.castSorcery(FAITHLESS_LOOTING, R);
                 game.draw(2);
                 discard(2);
+                return true;
+            } else if (game.getHand().contains(RAVEN_S_CRIME) && maybeProduce(B)) { // no reason why I should play retrace in goldfish
+                game.castSorcery(RAVEN_S_CRIME, B);
+                // discard a monster (any)
+                game.discard(monsterInHand.get());
+                return true;
+            } else if (game.getHand().contains(FUNERAL_CHARM) && maybeProduce(B)) {
+                game.castInstant(FUNERAL_CHARM, B);
+                // discard a monster (any)
+                game.discard(monsterInHand.get());
+                return true;
+            } else if (game.getHand().contains(MIND_RAKE) && maybeProduce(B1)) {
+                game.castSorcery(MIND_RAKE, B1);
+                // discard a monster (any)
+                game.discard(monsterInHand.get());
+                // then discard something else
+                discard(1);
                 return true;
             } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
                 // cycle
@@ -165,6 +209,21 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             } else if (game.getHand().size() >= 7) {
                 // I have a monster in hand: I can discard it at the end of this turn or next one
                 return false;
+            }
+        } else {
+            // no monster in hand: can I look for one ?
+            if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
+                game.castSorcery(FAITHLESS_LOOTING, R);
+                game.draw(2);
+                // now discard 2 cards
+                discard(2);
+                return true;
+            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
+                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
+                game.draw(2);
+                // then another card...
+                discard(2);
+                return true;
             }
         }
 
@@ -224,7 +283,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 game.putOnBottomOfLibrary(redProducersInHand.getFirst());
                 continue;
             }
-            Cards blackProducersInHand = game.getHand().findAll(CRUMBLING_VESTIGE, SWAMP);
+            Cards blackProducersInHand = game.getHand().findAll(CRUMBLING_VESTIGE, DARK_RITUAL, SWAMP);
             if (blackProducersInHand.size() > 2) {
                 game.putOnBottomOfLibrary(blackProducersInHand.getFirst());
                 continue;
@@ -233,7 +292,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             if (game.putOnBottomOfLibraryOneOf(GITAXIAN_PROBE).isPresent()) {
                 continue;
             }
-            Cards discarders = game.getHand().findAll(PUTRID_IMP, FAITHLESS_LOOTING);
+            Cards discarders = game.getHand().findAll(RAVEN_S_CRIME, FUNERAL_CHARM, PUTRID_IMP, FAITHLESS_LOOTING);
             if (discarders.size() > 2) {
                 game.putOnBottomOfLibrary(discarders.getFirst());
                 continue;
@@ -282,10 +341,10 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
                 game.discardOneOf(CRUMBLING_VESTIGE, SIMIAN_SPIRIT_GUIDE, MOUNTAIN).isPresent();
                 continue;
             }
-            int blackProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, SWAMP);
+            int blackProducersInHand = game.getHand().count(CRUMBLING_VESTIGE, DARK_RITUAL, SWAMP);
             if (blackProducersInHand > 0 && landsProduction.getB() + blackProducersInHand > 1) {
                 // I can discard a black source
-                game.discardOneOf(CRUMBLING_VESTIGE, SWAMP).isPresent();
+                game.discardOneOf(CRUMBLING_VESTIGE, DARK_RITUAL, SWAMP).isPresent();
                 continue;
             }
 //            if (landsProduction.ccm() >= 3) {
@@ -308,13 +367,13 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             if (landsProduction.getR() == 0 && game.discardOneOf(FAITHLESS_LOOTING).isPresent()) {
                 continue;
             }
-            if (landsProduction.getB() == 0 && game.discardOneOf(PUTRID_IMP).isPresent()) {
+            if (landsProduction.getB() == 0 && game.discardOneOf(RAVEN_S_CRIME, FUNERAL_CHARM, PUTRID_IMP).isPresent()) {
                 continue;
             }
             if (game.discardOneOf(FAITHLESS_LOOTING).isPresent()) {
                 continue;
             }
-            if (game.discardOneOf(PUTRID_IMP).isPresent()) {
+            if (game.discardOneOf(RAVEN_S_CRIME, FUNERAL_CHARM, PUTRID_IMP).isPresent()) {
                 continue;
             }
 //            System.out.println("Didn't find any suitable card to discard");
@@ -329,10 +388,10 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     Mana landsProduction(boolean untapped) {
         if (untapped) {
             // untapped lands only
-            return Mana.of((int) game.getBattlefield().count(withName(SWAMP).and(untapped())), 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN).and(untapped())), 0, (int) game.getBattlefield().count(withName(CRUMBLING_VESTIGE).and(untapped())));
+            return Mana.of(game.getBattlefield().count(withName(SWAMP).and(untapped())), 0, 0, game.getBattlefield().count(withName(MOUNTAIN).and(untapped())), 0, game.getBattlefield().count(withName(CRUMBLING_VESTIGE).and(untapped())));
         } else {
             // total lands production
-            return Mana.of((int) game.getBattlefield().count(withName(SWAMP)), 0, 0, (int) game.getBattlefield().count(withName(MOUNTAIN)), 0, (int) game.getBattlefield().count(withName(CRUMBLING_VESTIGE)));
+            return Mana.of(game.getBattlefield().count(withName(SWAMP)), 0, 0, game.getBattlefield().count(withName(MOUNTAIN)), 0, game.getBattlefield().count(withName(CRUMBLING_VESTIGE)));
         }
     }
 
@@ -348,8 +407,16 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         ));
         sources.addAll(getDiscardSources(game, SIMIAN_SPIRIT_GUIDE, singleton(R)));
         sources.addAll(getDiscardSources(game, LOTUS_PETAL, oneOf(R, B)));
-
-        return ManaProductionPlanner.maybeProduce(game, sources, cost);
+        // dark ritual not yet managed by planner
+        if (ManaProductionPlanner.maybeProduce(game, sources, cost)) {
+            return true;
+        }
+        if (game.getHand().contains(DARK_RITUAL) && BBB.contains(cost) && ManaProductionPlanner.maybeProduce(game, sources, B)) {
+            game.castInstant(DARK_RITUAL, B);
+            game.add(BBB);
+            return true;
+        }
+        return false;
     }
 
 //    boolean canPay(Mana toPay) {

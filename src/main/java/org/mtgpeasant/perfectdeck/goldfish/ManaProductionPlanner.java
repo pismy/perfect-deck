@@ -135,8 +135,13 @@ public class ManaProductionPlanner {
          */
         public Mana produce() {
             Mana sum = Mana.zero();
+            // first add production
             for (Step step : this) {
-                sum = sum.minus(step.cost).plus(step.produce);
+                sum = sum.plus(step.produce);
+            }
+            // then remove costs
+            for (Step step : this) {
+                sum = sum.minus(step.cost);
             }
             return sum;
         }
