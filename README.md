@@ -2,7 +2,7 @@
 
 This project provides a set of tools for optimizing a [Magic: The Gathering](https://magic.wizards.com) deck.
 
-![screen shot](perfect-deck-1.png)
+![screen shot](snap-stats.png)
 
 ## About goldfishing
 
@@ -43,7 +43,7 @@ is making wise decisions (if not the case, you'll have either change the _deck p
 [pull request](https://github.com/pismy/perfect-deck/pulls), or create an [issue](https://github.com/pismy/perfect-deck/issues) 
 with all required details).
 
-![game logs](perfect-deck-2.png)
+![game logs](snap-logs.png)
 
 ### Compute statistics
 
@@ -52,7 +52,7 @@ You can also (and btw it's the very goal of Perfect Deck) simulate a large numbe
 At any time you can **mark the current statistics as a reference** (thus all other statistics will be compared to this one),
 and you can also **copy** the current deck list (create a cloned tab) to work on an alternate version of the list.
 
-![game logs](perfect-deck-1.png)
+![game logs](snap-stats.png)
 
 ## Deck editor
 
