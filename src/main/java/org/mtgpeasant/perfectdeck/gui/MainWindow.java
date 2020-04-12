@@ -1,6 +1,5 @@
 package org.mtgpeasant.perfectdeck.gui;
 
-import com.google.common.base.Joiner;
 import org.mtgpeasant.decks.PilotScanner;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
@@ -18,7 +17,7 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
     // stateful fields
     private final JComboBox pilotSelect;
     private final JCheckBox cumulatedStats;
-    private final JLabel managedCardsHyperlink;
+    private final JLabel pilotInfoHyperlink;
 
     public static void main(String[] args) {
         MainWindow window = new MainWindow();
@@ -36,33 +35,34 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
         // north panel: deck pilot combo selector
         JPanel northPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JLabel label = new JLabel("Deck Pilot: ");
-        managedCardsHyperlink = new JLabel("XX cards");
-        managedCardsHyperlink.setVisible(false);
-        managedCardsHyperlink.setToolTipText("Click to see managed cards");
-        managedCardsHyperlink.setForeground(UI.TEAL);
-        managedCardsHyperlink.setFont(managedCardsHyperlink.getFont().deriveFont(12));
-        managedCardsHyperlink.addMouseListener(new MouseAdapter() {
+        pilotInfoHyperlink = new JLabel("XX cards");
+        pilotInfoHyperlink.setVisible(false);
+        pilotInfoHyperlink.setToolTipText("Click to see pilot info");
+        pilotInfoHyperlink.setForeground(UI.TEAL);
+        pilotInfoHyperlink.setFont(pilotInfoHyperlink.getFont().deriveFont(12));
+        pilotInfoHyperlink.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (getManagedCards() != null) {
-                    // TODO: selectable
-                    JOptionPane.showMessageDialog(MainWindow.this, Joiner.on('\n').join(getManagedCards()), "Managed Cards", JOptionPane.PLAIN_MESSAGE);
-                }
+                // show pilot info dialog
+                JDialog dialog = new PilotInfoDialog(SwingUtilities.getWindowAncestor(MainWindow.this), getCurrentPilot());
+                dialog.setSize(450, 600);
+                dialog.setLocation(200, 200);
+                dialog.setVisible(true);
             }
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                managedCardsHyperlink.setForeground(UI.OLIVE);
+                pilotInfoHyperlink.setForeground(UI.OLIVE);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                managedCardsHyperlink.setForeground(UI.TEAL);
+                pilotInfoHyperlink.setForeground(UI.TEAL);
             }
         });
 
         pilotSelect = new JComboBox();
-        pilotSelect.addItem(new PilotScanner.PilotDescription("Choose...", null, null, null));
+        pilotSelect.addItem(new PilotScanner.PilotMetadata("Choose...", null, null, null));
         try {
             PilotScanner.scan().forEach(pd -> pilotSelect.addItem(pd));
         } catch (IOException e) {
@@ -73,7 +73,7 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
         northPanel.add(label);
         northPanel.add(pilotSelect);
         northPanel.add(Box.createHorizontalStrut(10));
-        northPanel.add(managedCardsHyperlink);
+        northPanel.add(pilotInfoHyperlink);
         northPanel.add(Box.createHorizontalStrut(20));
         cumulatedStats = new JCheckBox("cumulated stats", false);
         northPanel.add(cumulatedStats);
@@ -94,10 +94,10 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
 
     private void onPilotSelected() {
         // reset known cards
-        managedCardsHyperlink.setVisible(false);
+        pilotInfoHyperlink.setVisible(false);
         if (getManagedCards() != null) {
-            managedCardsHyperlink.setVisible(true);
-            managedCardsHyperlink.setText(getManagedCards().size() + " cards");
+            pilotInfoHyperlink.setVisible(true);
+            pilotInfoHyperlink.setText(getManagedCards().size() + " cards");
         }
         // TODO: parse and colorize every open deck
     }
@@ -127,8 +127,8 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
         return cumulatedStats.isSelected();
     }
 
-    PilotScanner.PilotDescription getCurrentPilot() {
-        return (PilotScanner.PilotDescription) pilotSelect.getSelectedItem();
+    PilotScanner.PilotMetadata getCurrentPilot() {
+        return (PilotScanner.PilotMetadata) pilotSelect.getSelectedItem();
     }
 
 }

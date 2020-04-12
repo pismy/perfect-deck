@@ -1,6 +1,6 @@
 # \[Peasant & Pauper\] Reanimator Pilot
 
-This is a [reanimator](https://mtg.gamepedia.com/Reanimator) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format\)) and [Pauper](https://mtg.gamepedia.com/Pauper).
+This is a [reanimator](https://mtg.gamepedia.com/Reanimator) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format)) and [Pauper](https://mtg.gamepedia.com/Pauper).
 
 Goldfish win conditions are reached when a creature is reanimated at EOT (which is not the end of the game in real life but which 
 is what we are optimizing here).

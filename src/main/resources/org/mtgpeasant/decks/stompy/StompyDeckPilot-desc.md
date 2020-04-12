@@ -1,6 +1,6 @@
 # \[Peasant & Pauper\] Stompy Pilot
 
-This is a [stompy](https://mtg.gamepedia.com/Stompy) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format\)) and [Pauper](https://mtg.gamepedia.com/Pauper).
+This is a [stompy](https://mtg.gamepedia.com/Stompy) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format)) and [Pauper](https://mtg.gamepedia.com/Pauper).
 
 ## Mulligan strategy
 

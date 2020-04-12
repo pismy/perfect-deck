@@ -11,16 +11,16 @@ This project provides a set of tools for optimizing a [Magic: The Gathering](htt
 Not the only one, not the best one, just one of the ways. 
 Quite relevant though with **aggro** or **combo** decks, where **speed** is a key factor.
 
-Perfect Deck is a tool (developed in Java) that helps you simulate hundreds of games in just milliseconds, accelerating
-the optimization process by more that a factor of magnitude.
+Perfect Deck is a tool (developed in Java) that helps you simulate hundreds of games in just milliseconds, tremendously
+accelerating the optimization process.
 
 Perfect Deck is intended for developers and non-developers, but with a different scope of use. Here is a table which 
 represents the 3 factors allowing to optimize a deck.
 
 | optimization factor | explanation             | in Perfect Deck           | scope           |
 | ------------------- | ----------------------- | ------------------------- | --------------- |
-| game strategy       | How do you play your cards? When do you land, which land first? How do you optimize your curve? Sometimes it's obvious, sometimes it's not (ex: how would you play Magma Jet in a burn deck? Some argue it's optimal on T3 upkeep to filter out lands for the next two turns) | This has to be developed (this is called the _deck pilot_) | For developers |
-| mulligans strategy  | What are the objective criteria to **keep** or **reject** a hand ?<br/>Too restrictive criteria will cause a large rate of mulligans, while too loose criteria will probably leave you with slow hands. | This has to be developed (in the _deck pilot_ too) | For developers |
+| game strategy       | How do you play your cards? When do you land, which land first? How do you optimize your curve? Sometimes it's obvious, sometimes it's not (ex: how would you play Magma Jet in a burn deck? Some argue it's optimal on T3 upkeep to filter out lands for the next two turns) | This has to be developed (this is called the _deck pilot_) | Requires developer skills |
+| mulligans strategy  | What are the objective criteria to **keep** or **reject** a hand ?<br/>Too restrictive criteria will cause a large rate of mulligans, while too loose criteria will probably leave you with slow hands. | This has to be developed (in the _deck pilot_ too) | Requires developer skills |
 | the list            | This is a very obvious optimization factor. Changing the cards, the number of mana sources, ... has a direct impact of your deck speed. | Deck editor in the tool | For everyone |
 
 ## How to run it?
@@ -28,7 +28,7 @@ represents the 3 factors allowing to optimize a deck.
 The tool is packaged in an auto executable jar, so all you need is:
 
 * Java installed (v>=8),
-* download the tool (jar) from the releases page,
+* download the tool (_jar with dependencies_) from the [releases page](https://github.com/pismy/perfect-deck/releases),
 * double click the jar file.
 
 

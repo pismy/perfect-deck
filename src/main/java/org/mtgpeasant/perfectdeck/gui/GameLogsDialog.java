@@ -37,7 +37,6 @@ public class GameLogsDialog extends JDialog {
 
     public GameLogsDialog(Window owner) {
         super(owner, "Game logs");
-        // TODO: colorize game logs
         gameLogs = new JTextPane();
         gameLogs.setAutoscrolls(true);
         gameLogs.setEditable(false);

@@ -1,6 +1,6 @@
 # \[Peasant & Pauper\] Infect Pilot
 
-This is an [infect](https://mtg.gamepedia.com/Infect) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format\)) and [Pauper](https://mtg.gamepedia.com/Pauper).
+This is an [infect](https://mtg.gamepedia.com/Infect) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format)) and [Pauper](https://mtg.gamepedia.com/Pauper).
 
 ## Mulligan strategy
 

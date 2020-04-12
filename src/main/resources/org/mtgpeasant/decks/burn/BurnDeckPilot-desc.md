@@ -1,6 +1,6 @@
 # \[Peasant & Pauper\] Burn Pilot
 
-This is a [burn](https://mtg.gamepedia.com/Burn) / [sligh](https://mtg.gamepedia.com/Sligh) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format\)) and [Pauper](https://mtg.gamepedia.com/Pauper).
+This is a [burn](https://mtg.gamepedia.com/Burn) / [sligh](https://mtg.gamepedia.com/Sligh) deck pilot for [Peasant](https://mtg.gamepedia.com/Peasant_(format)) and [Pauper](https://mtg.gamepedia.com/Pauper).
 
 ## Mulligan strategy
 

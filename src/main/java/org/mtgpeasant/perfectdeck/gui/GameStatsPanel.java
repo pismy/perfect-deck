@@ -96,8 +96,7 @@ public class GameStatsPanel extends JPanel {
 
         // one row per mulligans taken
         stats.getMulligans().forEach(mulligansTaken -> {
-            long totalGamesWithThisNumberOfMulligans = stats.count(result -> result.getMulligans() == mulligansTaken);
-            if (moreThanOnePercent(totalGamesWithThisNumberOfMulligans, stats.getIterations())) {
+            if(stats.getPercentage(withStart(start), withMulligans(mulligansTaken, false)).getPercentage() > 1d) {
                 rows.add(createStatsRow(stats, mulligansTaken, start, winTurns));
             }
         });
