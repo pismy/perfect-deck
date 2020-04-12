@@ -109,11 +109,11 @@ Syntax is quite straightforward:
 
 ## Inspiration
 
-I developed this tool in the first place because I wanted to optimize my [Peasant]([Peasant](https://mtg.gamepedia.com/Peasant_(format\)))
+I developed this tool in the first place because I wanted to optimize my [Peasant](https://mtg.gamepedia.com/Peasant_(format\))
 [reanimator](https://mtg.gamepedia.com/Reanimator) deck, with an _on the draw_ strategy, as explained in my 
 [Coupe de France 2019 report](https://docs.google.com/document/d/1NY2g_PZNKaWHhuu5rZUAbI8M3-YB8zLllvRWBG7eaVU) (fr).
 
-As a [Peasant]([Peasant](https://mtg.gamepedia.com/Peasant_(format\))) player, all _deck pilots_ developed so far
+As a [Peasant](https://mtg.gamepedia.com/Peasant_(format\)) player, all _deck pilots_ developed so far
 are for this format. But the good news is that they should be compatible for [Pauper](https://mtg.gamepedia.com/Pauper)
 format (as it is a subset of Peasant).
 
