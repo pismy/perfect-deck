@@ -15,7 +15,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.Game.Area.library;
  * <p>
  * https://pastebin.com/rXGLDind
  */
-public class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
+class KarstenAggroDeck1Pilot extends DeckPilot<Game> {
     public static final Mana ONE = Mana.of("1");
     public static final Mana TWO = Mana.of("2");
     private static String LIONS = "savannah lions";

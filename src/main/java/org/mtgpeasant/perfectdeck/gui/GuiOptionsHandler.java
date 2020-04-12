@@ -23,7 +23,7 @@ public interface GuiOptionsHandler {
     /**
      * Returns the list of cards managed by the current deck pilot
      */
-    Cards managedCards();
+    Cards getManagedCards();
 
     /**
      * Determines whether to compute cumulated stats

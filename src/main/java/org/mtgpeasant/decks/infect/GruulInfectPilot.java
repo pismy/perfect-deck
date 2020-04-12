@@ -17,7 +17,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.Landing.with;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.*;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
-public class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlayer {
+class GruulInfectPilot extends DeckPilot<Game> implements Seer.SpellsPlayer {
 
     private static final Mana G = Mana.G();
     private static final Mana R = Mana.R();

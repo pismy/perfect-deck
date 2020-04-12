@@ -1,11 +1,7 @@
 package org.mtgpeasant.perfectdeck.gui;
 
 import com.google.common.base.Joiner;
-import lombok.Value;
-import org.mtgpeasant.decks.burn.BurnDeckPilot;
-import org.mtgpeasant.decks.infect.InfectDeckPilot;
-import org.mtgpeasant.decks.reanimator.ReanimatorDeckPilot;
-import org.mtgpeasant.decks.stompy.StompyDeckPilot;
+import org.mtgpeasant.decks.PilotScanner;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
 import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
@@ -14,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 
 public class MainWindow extends JFrame implements GuiOptionsHandler {
     private GoldfishSimulator.DeckStats reference;
@@ -22,18 +19,6 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
     private final JComboBox pilotSelect;
     private final JCheckBox cumulatedStats;
     private final JLabel managedCardsHyperlink;
-    private Cards managedCards = null;
-
-    @Value
-    static class PilotItem {
-        final String text;
-        final Class<? extends DeckPilot> pilotClass;
-
-        @Override
-        public String toString() {
-            return text;
-        }
-    }
 
     public static void main(String[] args) {
         MainWindow window = new MainWindow();
@@ -59,9 +44,9 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
         managedCardsHyperlink.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (managedCards != null) {
+                if (getManagedCards() != null) {
                     // TODO: selectable
-                    JOptionPane.showMessageDialog(MainWindow.this, Joiner.on('\n').join(managedCards), "Managed Cards", JOptionPane.PLAIN_MESSAGE);
+                    JOptionPane.showMessageDialog(MainWindow.this, Joiner.on('\n').join(getManagedCards()), "Managed Cards", JOptionPane.PLAIN_MESSAGE);
                 }
             }
 
@@ -77,12 +62,12 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
         });
 
         pilotSelect = new JComboBox();
-        pilotSelect.addItem(new PilotItem("Choose...", null));
-        // TODO: auto discover all deck pilot classes
-        pilotSelect.addItem(new PilotItem("Burn", BurnDeckPilot.class));
-        pilotSelect.addItem(new PilotItem("Reanimator", ReanimatorDeckPilot.class));
-        pilotSelect.addItem(new PilotItem("Stompy", StompyDeckPilot.class));
-        pilotSelect.addItem(new PilotItem("Infect", InfectDeckPilot.class));
+        pilotSelect.addItem(new PilotScanner.PilotDescription("Choose...", null, null, null));
+        try {
+            PilotScanner.scan().forEach(pd -> pilotSelect.addItem(pd));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         pilotSelect.addActionListener(e -> onPilotSelected());
 
         northPanel.add(label);
@@ -109,15 +94,10 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
 
     private void onPilotSelected() {
         // reset known cards
-        managedCards = null;
         managedCardsHyperlink.setVisible(false);
-        Class<? extends DeckPilot> pilotClass = getPilotClass();
-        if (pilotClass != null) {
-            managedCards = DeckPilot.loadManagedCards(pilotClass);
-            if (managedCards != null) {
-                managedCardsHyperlink.setVisible(true);
-                managedCardsHyperlink.setText(managedCards.size() + " cards");
-            }
+        if (getManagedCards() != null) {
+            managedCardsHyperlink.setVisible(true);
+            managedCardsHyperlink.setText(getManagedCards().size() + " cards");
         }
         // TODO: parse and colorize every open deck
     }
@@ -134,18 +114,22 @@ public class MainWindow extends JFrame implements GuiOptionsHandler {
 
     @Override
     public Class<? extends DeckPilot> getPilotClass() {
-        PilotItem item = (PilotItem) pilotSelect.getSelectedItem();
-        return item.getPilotClass();
+        return getCurrentPilot().getPilotClass();
     }
 
     @Override
-    public Cards managedCards() {
-        return managedCards;
+    public Cards getManagedCards() {
+        return getCurrentPilot().getManagedCards();
     }
 
     @Override
     public boolean cumulated() {
         return cumulatedStats.isSelected();
     }
+
+    PilotScanner.PilotDescription getCurrentPilot() {
+        return (PilotScanner.PilotDescription) pilotSelect.getSelectedItem();
+    }
+
 }
 

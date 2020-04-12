@@ -101,7 +101,7 @@ public class DeckEditor extends JPanel {
     private void colorize() {
         try {
             String text = editor.getText();
-            java.util.List<Deck.ParsedDeck.Line> lines = Deck.parseLines(new StringReader(text), handler.managedCards());
+            java.util.List<Deck.ParsedDeck.Line> lines = Deck.parseLines(new StringReader(text), handler.getManagedCards());
             StyledDocument doc = editor.getStyledDocument();
             // reset style
             doc.setCharacterAttributes(0, doc.getLength(), CARD_STYLE, false);

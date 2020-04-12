@@ -14,7 +14,7 @@ import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.getTapSources;
 import static org.mtgpeasant.perfectdeck.goldfish.ManaSource.oneOf;
 import static org.mtgpeasant.perfectdeck.goldfish.Permanent.*;
 
-public class TronDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlayer {
+class TronDeckPilot extends DeckPilot<Game> implements Seer.SpellsPlayer {
 
     public static final Mana TWO = Mana.of("2");
     public static final Mana THREE = Mana.of("3");

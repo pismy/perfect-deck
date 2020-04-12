@@ -2,7 +2,28 @@
 
 This project provides a set of tools for optimizing a [Magic: The Gathering](https://magic.wizards.com) deck.
 
-## Usage
+![screen shot](perfect-deck-1.png)
+
+## About goldfishing
+
+[Goldfishing](https://mtg.gamepedia.com/Goldfishing) is one of the possible approaches to optimize a deck.
+
+Not the only one, not the best one, just one of the ways. 
+Quite relevant though with **aggro** or **combo** decks, where **speed** is a key factor.
+
+Perfect Deck is a tool (developed in Java) that helps you simulate hundreds of games in just milliseconds, accelerating
+the optimization process by more that a factor of magnitude.
+
+Perfect Deck is intended for developers and non-developers, but with a different scope of use. Here is a table which 
+represents the 3 factors allowing to optimize a deck.
+
+| optimization factor | explanation             | in Perfect Deck           | scope           |
+| ------------------- | ----------------------- | ------------------------- | --------------- |
+| game strategy       | How do you play your cards? When do you land, which land first? How do you optimize your curve? Sometimes it's obvious, sometimes it's not (ex: how would you play Magma Jet in a burn deck? Some argue it's optimal on T3 upkeep to filter out lands for the next two turns) | This has to be developed (this is called the _deck pilot_) | For developers |
+| mulligans strategy  | What are the objective criteria to **keep** or **reject** a hand ?<br/>Too restrictive criteria will cause a large rate of mulligans, while too loose criteria will probably leave you with slow hands. | This has to be developed (in the _deck pilot_ too) | For developers |
+| the list            | This is a very obvious optimization factor. Changing the cards, the number of mana sources, ... has a direct impact of your deck speed. | Deck editor in the tool | For everyone |
+
+## How to run it?
 
 The tool is packaged in an auto executable jar, so all you need is:
 
@@ -10,12 +31,32 @@ The tool is packaged in an auto executable jar, so all you need is:
 * download the tool (jar) from the releases page,
 * double click the jar file.
 
-![screen shot](perfect-deck-1.png)
 
+## Using Perfect Deck
 
-## Deck format
+Once started, select the _deck pilot_ you want to use, and type-in a deck list in the editor.
 
-This tools supports MWS, Apprentice and [Cockatrice](https://github.com/Cockatrice/Cockatrice/wiki/Deck-List-Import-Formats) deck file formats.
+### Observe games
+
+From that point you can **observe** some games (that is run some games and see the logs) in order to make sure the pilot
+is making wise decisions (if not the case, you'll have either change the _deck pilot_ code and propose me a 
+[pull request](https://github.com/pismy/perfect-deck/pulls), or create an [issue](https://github.com/pismy/perfect-deck/issues) 
+with all required details).
+
+![game logs](perfect-deck-2.png)
+
+### Compute statistics
+
+You can also (and btw it's the very goal of Perfect Deck) simulate a large number of games and **compute statistics**.
+
+At any time you can **mark the current statistics as a reference** (thus all other statistics will be compared to this one),
+and you can also **copy** the current deck list (create a cloned tab) to work on an alternate version of the list.
+
+![game logs](perfect-deck-1.png)
+
+## Deck editor
+
+This tool supports MWS, Apprentice and [Cockatrice](https://github.com/Cockatrice/Cockatrice/wiki/Deck-List-Import-Formats) deck file formats.
 
 Here is an example of a deck file:
 
@@ -59,68 +100,11 @@ Syntax is quite straightforward:
 
 * an empty line is ignored
 * a line starting with `#` or `//` is ignored (_comment_)
-* a line starting with `SB: ` is considered as a card from sideboard
+* a line starting with `SB: ` or `SB ` is considered as a card from sideboard
 * a card can be defined as:
     * `{number} {name}` (ex: `3 Swamp`)
     * `{number}x {name}` (ex: `3x Swamp`)
     * `{name}` (ex: `Swamp`); counts only one card
-
-## Rules definition
-
-Here is an example of rules:
-
-```
-// ============
-// === Matchers
-// ============
-<B>: [Swamp] | [Lotus Petal] | [Crumbling Vestige]
-<R>: [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
-<X>: [Swamp] | [Mountain] | [Lotus Petal] | [Crumbling Vestige] | [Simian Spirit Guide]
-<+1>: [Lotus Petal] | [Dark Ritual] | [Simian Spirit Guide]
-<creature>: [Hand of Emrakul] | [Greater Sandwurm] | [Pathrazer of Ulamog] | [Ulamog's Crusher]
-<rea>: [Exhume] | [Animate Dead] | [Reanimate]
-<cantrip>: [Gitaxian Probe]
-
-// ======================
-// === Hand keeping rules
-// ======================
-// I can reanimate turn 1
-<<turn 1 imp>>: <B> & [Dark Ritual] & [Putrid Imp] & <creature> & <rea>
-
-// I can reanimate turn 2
-<<turn 2 imp>>: <B> & <X> & [Putrid Imp] & <creature> & <rea>
-<<turn 2 looting>>: <B> & <R> & [Faithless Looting] & <creature> & <rea>
-
-// I can reanimate turn 2 by discarding a creature on 1st turn with a hand of 7 (OTD)
-<<turn 2 OTD>>: <B> & <+1> & <creature> & <rea>
-
-// I can reanimate turn 3 by discarding a creature on 1st turn with a hand of 7 (OTD)
-<<turn 3 OTD>>: <B> & <X> & <creature> & <rea>
-
-// one element of the combo is missing but I can play Faithless Looting turn 1
-<<looting to find last element>>: <R> & [Faithless Looting] & @atleast(2)( <B> <creature> <rea> )
-
-// I miss 1 mana source but I have a gitaxian probe: if I'm OTD, I have 4 draws to find my 2nd mana source
-<<probe to find mana source>>: <X> & <cantrip> & <creature> & <rea>
-```
-
-This files defines matchers (pretty similar to [Regular expressions](https://en.wikipedia.org/wiki/Regular_expression)).
-
-* an empty line is ignored
-* a line starting with `#` is ignored (_comment_)
-* a line starting with `<{name}>: {matcher}` declares a **named** matcher (that can be reused in other matchers or hand keeping rules)
-* a line starting with `<<{name}>>: {matcher}` is considered to declare a hand keeping rule
-
-Syntactically, a matcher and a rule are exactly the same. The only difference is that the tool will perform simulations
-against **hand keeping rules only**. Atomic matchers are just useful internally to simplify complex rules writing.
-
-A `{matcher}` can be of the following types:
-
-* `[{name}]`: basic card matcher; matches if the card is available in hand
-* `<{name}>`: references a declared named matcher or rule
-* `({matcher 1} & {matcher 2} & ...)`: compound matcher that matches if **all** matchers match
-* `({matcher 1} | {matcher 2} | ...)`: compound matcher that matches if **at least one** matcher matches
-* `@atleast({nb})({matcher 1} {matcher 2} ...)`: compound matcher that matches if **at least** `{nb}` of the matchers match
 
 
 ## License
