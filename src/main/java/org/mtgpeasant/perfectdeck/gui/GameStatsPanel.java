@@ -272,7 +272,7 @@ public class GameStatsPanel extends JPanel {
         final int winTurn;
 
         public GoldfishSimulator.DeckStats.Percentage value(GoldfishSimulator.DeckStats stats, boolean cumulated) {
-            return stats.getPercentage(withStart(start).and(withMulligans(mulligans, cumulated)), withEndTurn(winTurn, cumulated));
+            return stats.getPercentage(withStart(start), withEndTurn(winTurn, cumulated).and(withMulligans(mulligans, cumulated)));
         }
 
         @Override
