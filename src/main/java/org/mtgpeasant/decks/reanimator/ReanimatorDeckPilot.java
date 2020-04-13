@@ -18,8 +18,6 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withName;
 /**
  * TODO: manage "Ransack the Lab" ?
  * TODO: manage "Demonic Consultation" ?
- * TODO: manage "Cathartic Reunion" / "Tormenting Voice" ?
- * TODO: change mulligans criteria (much more complex)
  */
 public class ReanimatorDeckPilot extends DeckPilot<Game> {
     //    boolean firstCreaKilled = false;
@@ -27,6 +25,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     private static final Mana B = Mana.of("B");
     private static final Mana B1 = Mana.of("1B");
     private static final Mana R = Mana.of("R");
+    private static final Mana R1 = Mana.of("1R");
     private static final Mana R2 = Mana.of("2R");
     private static final Mana X = Mana.of("1");
     private static final Mana TWO = Mana.of("2");
@@ -41,16 +40,22 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
     private static final String ANIMATE_DEAD = "animate dead";
     private static final String HAND_OF_EMRAKUL = "hand of emrakul";
     private static final String GREATER_SANDWURM = "greater sandwurm";
+    private static final String GREATER_SANDWURM_CYCLE = "greater sandwurm (cycling)";
     private static final String PATHRAZER_OF_ULAMOG = "pathrazer of ulamog";
     private static final String ULAMOG_S_CRUSHER = "ulamog's crusher";
     private static final String PUTRID_IMP = "putrid imp";
     private static final String FAITHLESS_LOOTING = "faithless looting";
+    private static final String FAITHLESS_LOOTING_FB = "faithless looting (flashback)";
     private static final String REANIMATE = "reanimate";
     private static final String GITAXIAN_PROBE = "gitaxian probe";
     private static final String DRAGON_BREATH = "dragon breath";
     private static final String FUNERAL_CHARM = "funeral charm"; // B: discard 1
     private static final String RAVEN_S_CRIME = "raven's crime"; // B: discard 1; wit retrace
     private static final String MIND_RAKE = "mind rake"; // 1B: discard 2
+    private static final String CATHARTIC_REUNION = "cathartic reunion"; // 1R + discard 2: draw 3
+    private static final String TORMENTING_VOICE = "tormenting voice"; // 1R + discard 1: draw 2
+
+
     public static final Mana BBB = Mana.of("BBB");
 
     // ordered by power / interest to discard
@@ -76,7 +81,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
             blackMana += hand.count(DARK_RITUAL) * 2;
             totalMana += hand.count(DARK_RITUAL) * 2;
         }
-        int discard = hand.count(PUTRID_IMP, FAITHLESS_LOOTING, FUNERAL_CHARM, MIND_RAKE, RAVEN_S_CRIME, GREATER_SANDWURM /* count sandwurm as a discard */);
+        int discard = hand.count(PUTRID_IMP, FAITHLESS_LOOTING, FUNERAL_CHARM, MIND_RAKE, RAVEN_S_CRIME, GREATER_SANDWURM /* count sandwurm as a discard */, TORMENTING_VOICE, CATHARTIC_REUNION);
 
         if (game.getMulligans() >= 3) {
             // always keep (no more than 3 mulligans)
@@ -120,10 +125,7 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
 
     boolean play() {
         // whichever the situation, if I have a probe in hand: play it
-        if (game.getHand().contains(GITAXIAN_PROBE)) {
-            // play it: we'll maybe find what we miss
-            game.castSorcery(GITAXIAN_PROBE, Mana.zero());
-            game.draw(1);
+        if (maybePlay(GITAXIAN_PROBE)) {
             return true;
         }
 
@@ -131,98 +133,45 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         Optional<String> monsterInHand = game.getHand().findFirst(CREATURES);
         if (monsterInGy.isPresent()) {
             // I have a monster in the graveyard: I must now reanimate
-            if (game.getHand().contains(REANIMATE) && maybeProduce(B)) {
-                game.castSorcery(REANIMATE, B);
-                String monster = monsterInGy.get();
-                game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
-                return true;
-            } else if (game.getHand().findFirst(EXHUME, ANIMATE_DEAD).isPresent() && maybeProduce(B1)) {
-                game.castSorcery(game.getHand().findFirst(EXHUME, ANIMATE_DEAD).get(), B1);
-                String monster = monsterInGy.get();
-                game.move(monster, Game.Area.graveyard, Game.Area.battlefield);
-                return true;
-            } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
-                game.castSorcery(FAITHLESS_LOOTING, R);
-                game.draw(2);
-                discard(2);
-                return true;
-            } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
-                // cycle
-                game.log("cycle [" + GREATER_SANDWURM + "]");
-                game.pay(TWO);
-                game.discard(GREATER_SANDWURM);
-                game.draw(1);
-                return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
-                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
-                game.draw(2);
-                // then another card...
-                discard(2);
+            if (playOneOf(
+                    // first play a reanimation
+                    REANIMATE, EXHUME, ANIMATE_DEAD,
+                    // else draw as much as possible to find one
+                    game.getHand().size() > 1 ? FAITHLESS_LOOTING : "_",
+                    CATHARTIC_REUNION, TORMENTING_VOICE,
+                    GREATER_SANDWURM_CYCLE,
+                    game.getHand().size() > 1 ? FAITHLESS_LOOTING_FB : "_").isPresent()) {
                 return true;
             }
         } else if (monsterInHand.isPresent()) {
-            // I have a creature in hand
+            // No creature in GY but a creature in hand: how can I put into the GY ?
             if (game.getBattlefield().findFirst(withName(PUTRID_IMP)).isPresent()) {
                 // I can discard a monster (any)
+                game.log("trigger [" + PUTRID_IMP + "] ability)");
                 game.discard(monsterInHand.get());
                 return true;
-            } else if (game.getHand().contains(PUTRID_IMP) && maybeProduce(B)) {
-                game.castCreature(PUTRID_IMP, B);
-                // discard a monster (any)
-                game.discard(monsterInHand.get());
+            }
+            // play a discard spell/outlet
+            if (playOneOf(
+                    PUTRID_IMP,
+                    FAITHLESS_LOOTING,
+                    RAVEN_S_CRIME, FUNERAL_CHARM,
+                    GREATER_SANDWURM_CYCLE,
+                    MIND_RAKE,
+                    CATHARTIC_REUNION, TORMENTING_VOICE,
+                    FAITHLESS_LOOTING_FB).isPresent()) {
                 return true;
-            } else if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
-                game.castSorcery(FAITHLESS_LOOTING, R);
-                game.draw(2);
-                discard(2);
-                return true;
-            } else if (game.getHand().contains(RAVEN_S_CRIME) && maybeProduce(B)) { // no reason why I should play retrace in goldfish
-                game.castSorcery(RAVEN_S_CRIME, B);
-                // discard a monster (any)
-                game.discard(monsterInHand.get());
-                return true;
-            } else if (game.getHand().contains(FUNERAL_CHARM) && maybeProduce(B)) {
-                game.castInstant(FUNERAL_CHARM, B);
-                // discard a monster (any)
-                game.discard(monsterInHand.get());
-                return true;
-            } else if (game.getHand().contains(MIND_RAKE) && maybeProduce(B1)) {
-                game.castSorcery(MIND_RAKE, B1);
-                // discard a monster (any)
-                game.discard(monsterInHand.get());
-                // then discard something else
-                discard(1);
-                return true;
-            } else if (game.getHand().contains(GREATER_SANDWURM) && maybeProduce(TWO)) {
-                // cycle
-                game.log("cycle [" + GREATER_SANDWURM + "]");
-                game.pay(TWO);
-                game.discard(GREATER_SANDWURM);
-                game.draw(1);
-                return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
-                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
-                game.draw(2);
-                // then another card...
-                discard(2);
-                return true;
-            } else if (game.getHand().size() >= 7) {
-                // I have a monster in hand: I can discard it at the end of this turn or next one
+            }
+            if (game.getHand().size() >= 7) {
+                // I have a monster in hand and no easy way to put it into the graveyard, but I can discard it at the end of this turn or next one
                 return false;
             }
         } else {
-            // no monster in hand: can I look for one ?
-            if (game.getHand().contains(FAITHLESS_LOOTING) && maybeProduce(R)) {
-                game.castSorcery(FAITHLESS_LOOTING, R);
-                game.draw(2);
-                // now discard 2 cards
-                discard(2);
-                return true;
-            } else if (game.getGraveyard().contains(FAITHLESS_LOOTING) && maybeProduce(R2)) {
-                game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
-                game.draw(2);
-                // then another card...
-                discard(2);
+            // no monster in hand: now I need to draw as much as I can
+            if (playOneOf(
+                    game.getHand().size() > 1 ? FAITHLESS_LOOTING : "_",
+                    CATHARTIC_REUNION, TORMENTING_VOICE,
+                    game.getHand().size() > 1 ? FAITHLESS_LOOTING_FB : "_").isPresent()) {
                 return true;
             }
         }
@@ -419,183 +368,150 @@ public class ReanimatorDeckPilot extends DeckPilot<Game> {
         return false;
     }
 
-//    boolean canPay(Mana toPay) {
-//        // draw required X from Vestiges
-//        int untappedVestiges = game.count(withName(CRUMBLING_VESTIGE).and(untapped()));
-//        while (toPay.getX() > 0 && untappedVestiges > 0) {
-//            untappedVestiges--;
-//            toPay = toPay.minus(X);
-//        }
-//        // draw required B from Swamps
-//        int untappedSwamps = game.count(withName(SWAMP).and(untapped()));
-//        while (toPay.getB() > 0 && untappedSwamps > 0) {
-//            untappedSwamps--;
-//            toPay = toPay.minus(B);
-//        }
-//        // draw required R from Mountains
-//        int untappedMountains = game.count(withName(MOUNTAIN).and(untapped()));
-//        while (toPay.getR() > 0 && untappedMountains > 0) {
-//            untappedMountains--;
-//            toPay = toPay.minus(R);
-//        }
-//
-//        // pay remaining cost with: land drop + simian + petal
-//        boolean landed = game.isLanded();
-//        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
-//        int petalsInHand = game.getHand().count(LOTUS_PETAL);
-//
-//        while (!toPay.isEmpty()) {
-//            if (toPay.getB() > 0) {
-//                if (!landed && game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE).isPresent()) {
-//                    toPay = toPay.minus(B);
-//                    landed = true;
-//                } else if (petalsInHand > 0) {
-//                    petalsInHand--;
-//                    toPay = toPay.minus(B);
-//                } else {
-//                    // can't pay B :(
-//                    return false;
-//                }
-//            } else if (toPay.getR() > 0) {
-//                if (!landed && game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE).isPresent()) {
-//                    toPay = toPay.minus(R);
-//                    landed = true;
-//                } else if (simiansInHand > 0) {
-//                    simiansInHand--;
-//                    toPay = toPay.minus(R);
-//                } else if (petalsInHand > 0) {
-//                    petalsInHand--;
-//                    toPay = toPay.minus(R);
-//                } else {
-//                    // can't pay R :(
-//                    return false;
-//                }
-//            } else if (toPay.getX() > 0) {
-//                if (untappedMountains > 0) {
-//                    untappedMountains--;
-//                    toPay = toPay.minus(X);
-//                } else if (untappedSwamps > 0) {
-//                    untappedSwamps--;
-//                    toPay = toPay.minus(X);
-//                } else if (!landed && game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE).isPresent()) {
-//                    toPay = toPay.minus(X);
-//                    landed = true;
-//                } else if (simiansInHand > 0) {
-//                    simiansInHand--;
-//                    toPay = toPay.minus(X);
-//                } else if (petalsInHand > 0) {
-//                    petalsInHand--;
-//                    toPay = toPay.minus(X);
-//                } else {
-//                    // can't pay X :(
-//                    return false;
-//                }
-//            }
-//        }
-//        return true;
-//    }
-//
-//    boolean maybeProduce(String land, Mana mana) {
-//        Optional<Card> untappedLand = game.findFirst(withName(land).and(untapped()));
-//        if (untappedLand.isPresent()) {
-//            game.tapLandForMana(untappedLand.get(), mana);
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    }
-//
-//    void produce(Mana cost) {
-//        // draw required X from Vestiges
-//        while (cost.getX() > 0 && maybeProduce(CRUMBLING_VESTIGE, X)) {
-//            cost = cost.minus(X);
-//        }
-//        // draw required B from Swamps
-//        while (cost.getB() > 0 && maybeProduce(SWAMP, B)) {
-//            cost = cost.minus(B);
-//        }
-//        // draw required R from Mountains
-//        while (cost.getR() > 0 && maybeProduce(MOUNTAIN, R)) {
-//            cost = cost.minus(R);
-//        }
-//
-//        // pay remaining cost with: land drop + simian + petal
-//        boolean landed = game.isLanded();
-//        int simiansInHand = game.getHand().count(SIMIAN_SPIRIT_GUIDE);
-//        int petalsInHand = game.getHand().count(LOTUS_PETAL);
-//
-//        while (!cost.isEmpty()) {
-//            if (cost.getB() > 0) {
-//                Optional<String> blackProducer = game.getHand().findFirst(SWAMP, CRUMBLING_VESTIGE);
-//                if (!landed && blackProducer.isPresent()) {
-//                    Card land = game.land(blackProducer.get());
-//                    game.tapLandForMana(land, B);
-//                    cost = cost.minus(B);
-//                    landed = true;
-//                } else if (petalsInHand > 0) {
-//                    game.discard(LOTUS_PETAL);
-//                    game.add(B);
-//                    cost = cost.minus(B);
-//                    petalsInHand--;
-//                } else {
-//                    // can't pay B :(
-//                    throw new RuntimeException("Couldn't pay " + cost);
-//                }
-//            } else if (cost.getR() > 0) {
-//                Optional<String> redProducer = game.getHand().findFirst(MOUNTAIN, CRUMBLING_VESTIGE);
-//                if (!landed && redProducer.isPresent()) {
-//                    Card land = game.land(redProducer.get());
-//                    game.tapLandForMana(land, R);
-//                    cost = cost.minus(R);
-//                    landed = true;
-//                } else if (simiansInHand > 0) {
-//                    game.discard(SIMIAN_SPIRIT_GUIDE);
-//                    game.add(R);
-//                    cost = cost.minus(R);
-//                    simiansInHand--;
-//                } else if (petalsInHand > 0) {
-//                    game.discard(LOTUS_PETAL);
-//                    game.add(R);
-//                    cost = cost.minus(R);
-//                    petalsInHand--;
-//                } else {
-//                    // can't pay R :(
-//                    throw new RuntimeException("Couldn't pay " + cost);
-//                }
-//            } else if (cost.getX() > 0) {
-//                Optional<String> xProducer = game.getHand().findFirst(MOUNTAIN, SWAMP, CRUMBLING_VESTIGE);
-//                if (maybeProduce(MOUNTAIN, R)) {
-//                    cost = cost.minus(X);
-//                } else if (maybeProduce(SWAMP, B)) {
-//                    cost = cost.minus(X);
-//                } else if (!landed && xProducer.isPresent()) {
-//                    Card land = game.land(xProducer.get());
-//                    game.tapLandForMana(land, X);
-//                    cost = cost.minus(X);
-//                    landed = true;
-//                } else if (simiansInHand > 0) {
-//                    int nb = Math.min(cost.getX(), simiansInHand);
-//                    for (int i = 0; i < nb; i++) {
-//                        game.discard(SIMIAN_SPIRIT_GUIDE);
-//                        game.add(R);
-//                    }
-//                    simiansInHand -= nb;
-//                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
-//                } else if (petalsInHand > 0) {
-//                    int nb = Math.min(cost.getX(), petalsInHand);
-//                    for (int i = 0; i < nb; i++) {
-//                        game.discard(LOTUS_PETAL);
-//                        game.add(B);
-//                    }
-//                    petalsInHand -= nb;
-//                    cost = cost.minus(Mana.of(0, 0, 0, 0, 0, nb));
-//                } else {
-//                    // can't pay X :(
-//                    throw new RuntimeException("Couldn't pay " + cost);
-//                }
-//            }
-//        }
-//    }
+    Optional<String> playOneOf(String... cards) {
+        for (String card : cards) {
+            if (maybePlay(card)) {
+                return Optional.of(card);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public boolean maybePlay(String card) {
+        // first check has card
+        switch (card) {
+            case FAITHLESS_LOOTING_FB:
+                if (!game.getGraveyard().contains(FAITHLESS_LOOTING)) {
+                    return false;
+                }
+                break;
+            case GREATER_SANDWURM_CYCLE:
+                if (!game.getHand().contains(GREATER_SANDWURM)) {
+                    return false;
+                }
+                break;
+            default:
+                // for all other cards: must be in hand
+                if (!game.getHand().contains(card)) {
+                    return false;
+                }
+                break;
+        }
+        switch (card) {
+            case GITAXIAN_PROBE:
+                game.castSorcery(card, zero());
+                game.draw(1);
+                return true;
+            // reanimation spells
+            case REANIMATE: {
+                Optional<String> monster = game.getGraveyard().findFirst(CREATURES);
+                if (monster.isPresent() && maybeProduce(B)) {
+                    game.castSorcery(card, B);
+                    game.move(monster.get(), Game.Area.graveyard, Game.Area.battlefield);
+                    return true;
+                }
+                break;
+            }
+            case EXHUME: {
+                Optional<String> monster = game.getGraveyard().findFirst(CREATURES);
+                if (monster.isPresent() && maybeProduce(B1)) {
+                    game.castSorcery(card, B1);
+                    game.move(monster.get(), Game.Area.graveyard, Game.Area.battlefield);
+                    return true;
+                }
+                break;
+            }
+            case ANIMATE_DEAD: {
+                Optional<String> monster = game.getGraveyard().findFirst(CREATURES);
+                if (monster.isPresent() && maybeProduce(B1)) {
+                    game.castEnchantment(card, B1).tag("on:" + monster.get());
+                    game.move(monster.get(), Game.Area.graveyard, Game.Area.battlefield).tag("animated");
+                    return true;
+                }
+                break;
+            }
+            case FAITHLESS_LOOTING: {
+                if (maybeProduce(R)) {
+                    game.castSorcery(card, R);
+                    game.draw(2);
+                    discard(2);
+                    return true;
+                }
+                break;
+            }
+            case FAITHLESS_LOOTING_FB: {
+                if (maybeProduce(R2)) {
+                    game.cast(FAITHLESS_LOOTING, Game.Area.graveyard, Game.Area.exile, R2);
+                    game.draw(2);
+                    discard(2);
+                    return true;
+                }
+                break;
+            }
+            case GREATER_SANDWURM_CYCLE: {
+                if (maybeProduce(TWO)) {
+                    game.log("cycle [" + GREATER_SANDWURM + "]");
+                    game.pay(TWO);
+                    game.discard(GREATER_SANDWURM);
+                    game.draw(1);
+                    return true;
+                }
+                break;
+            }
+            case PUTRID_IMP: {
+                if (maybeProduce(B)) {
+                    game.castCreature(card, B);
+                    return true;
+                }
+                break;
+            }
+            case RAVEN_S_CRIME: {
+                if (maybeProduce(B)) {
+                    game.castSorcery(card, B);
+                    discard(1);
+                    return true;
+                }
+                break;
+            }
+            case FUNERAL_CHARM: {
+                if (maybeProduce(B)) {
+                    game.castInstant(card, B);
+                    discard(1);
+                    return true;
+                }
+                break;
+            }
+            case MIND_RAKE: {
+                if (maybeProduce(B1)) {
+                    game.castSorcery(card, B1);
+                    discard(2);
+                    return true;
+                }
+                break;
+            }
+            case TORMENTING_VOICE: {
+                // problem: maybeProduce() may lead to land or play spells from hand
+                if (game.getHand().size() >= 2 && maybeProduce(R1) && game.getHand().size() >= 2) {
+                    game.castSorcery(card, R1);
+                    discard(1);
+                    game.draw(2);
+                    return true;
+                }
+                break;
+            }
+            case CATHARTIC_REUNION: {
+                // problem: maybeProduce() may lead to land or play spells from hand
+                if (game.getHand().size() >= 3 && maybeProduce(R1) && game.getHand().size() >= 3) {
+                    game.castSorcery(card, R1);
+                    discard(2);
+                    game.draw(3);
+                    return true;
+                }
+                break;
+            }
+        }
+        return false;
+    }
 
     @Override
     public String checkWin() {

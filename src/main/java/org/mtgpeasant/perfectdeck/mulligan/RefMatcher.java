@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 
@@ -21,7 +21,7 @@ class RefMatcher extends Matcher {
     }
 
     @Override
-    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return context.findByName(name).matches(stream, context);
+    protected Stream<Match> matches(boolean onThePlay, int mulligans, Stream<Match> upStreamMatches, MatcherContext context) {
+        return context.findByName(name).matches(onThePlay, mulligans, upStreamMatches, context);
     }
 }

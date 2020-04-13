@@ -1,9 +1,9 @@
 package org.mtgpeasant.perfectdeck;
 
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
-import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
-import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
-import org.mtgpeasant.perfectdeck.common.matchers.Validation;
+import org.mtgpeasant.perfectdeck.mulligan.Matchers;
+import org.mtgpeasant.perfectdeck.mulligan.MulliganRules;
+import org.mtgpeasant.perfectdeck.mulligan.Validation;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 import org.mtgpeasant.perfectdeck.common.utils.TableFormatter;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;

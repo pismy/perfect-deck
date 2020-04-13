@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 
@@ -8,7 +8,7 @@ import java.util.stream.Stream;
 class NoopMatcher extends Matcher {
     @Override
     public String toString() {
-        return "$noop";
+        return "@noop";
     }
 
     @Override
@@ -16,7 +16,7 @@ class NoopMatcher extends Matcher {
     }
 
     @Override
-    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return stream;
+    protected Stream<Match> matches(boolean onThePlay, int mulligans, Stream<Match> upStreamMatches, MatcherContext context) {
+        return upStreamMatches;
     }
 }

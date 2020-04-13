@@ -2,13 +2,10 @@ package org.mtgpeasant.decks.stompy;
 
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.mana.Mana;
-import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
-import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
-import org.mtgpeasant.perfectdeck.goldfish.Game;
-import org.mtgpeasant.perfectdeck.goldfish.Permanent;
-import org.mtgpeasant.perfectdeck.goldfish.Seer;
+import org.mtgpeasant.perfectdeck.goldfish.*;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameEvent;
 import org.mtgpeasant.perfectdeck.goldfish.event.GameListener;
+import org.mtgpeasant.perfectdeck.mulligan.MulliganRules;
 
 import java.util.List;
 import java.util.Optional;
@@ -91,7 +88,7 @@ public class StompyDeckPilot extends DeckPilot<Game> implements GameListener, Se
         if (game.getMulligans() >= 3) {
             return true;
         }
-        return rules.firstMatch(hand).isPresent();
+        return rules.firstMatch(game.isOnThePlay(), game.getMulligans(), hand).isPresent();
     }
 
     @Override

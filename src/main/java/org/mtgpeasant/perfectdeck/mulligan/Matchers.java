@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 import org.mtgpeasant.perfectdeck.common.utils.ParseHelper;
+import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
 import java.io.StringReader;
 import java.util.*;
@@ -18,6 +19,14 @@ public class Matchers {
 
     public static Matcher card(String name) {
         return new CardMatcher(name.toLowerCase());
+    }
+
+    private static Matcher mulligans(CmpOp cmp, int nb) {
+        return new MulligansMatcher(cmp, nb);
+    }
+
+    private static Matcher start(boolean onThePlay) {
+        return new StartMatcher(onThePlay);
     }
 
     public static Matcher atleast(int nb, List<Matcher> matchers) {
@@ -92,6 +101,7 @@ public class Matchers {
 
     static final String SEPARATORS = "[]<>()";
     static final String WHITE = " \t";
+
     static final String DIGITS = "0123456789";
 
     @Builder
@@ -99,14 +109,23 @@ public class Matchers {
     public static class NamedMatcher {
         final String name;
         final boolean criterion;
+
         final Matcher matcher;
 
         @Override
         public String toString() {
             return (criterion ? "<<" : "<") + name + (criterion ? ">>" : ">") + ": " + matcher.toString();
         }
+
     }
 
+    /**
+     * Parses a matcher rule
+     *
+     * @param line rule line
+     * @return the parsed matcher
+     * @throws ParseError
+     */
     public static NamedMatcher parse(String line) throws ParseError {
         ParseHelper parser = new ParseHelper(new StringReader(line));
         parser.curChar();
@@ -267,6 +286,43 @@ public class Matchers {
                 }
                 List<Matcher> matchers = parseMatcherList(parser);
                 return atleast(nb, matchers);
+            }
+            case "otp":
+            case "ontheplay":
+            case "on_the_play": {
+                return start(true);
+            }
+            case "otd":
+            case "onthedraw":
+            case "on_the_draw": {
+                return start(false);
+            }
+            case "mull":
+            case "mulligans": {
+                String arg1 = parseFnArg(parser);
+                if (arg1.isEmpty()) {
+                    parser.error(ParseError.RC_SYNTAX_ERROR, "1st arg must be a comparision operator");
+                }
+                CmpOp cmp = null;
+                try {
+                    cmp = CmpOp.parse(arg1);
+                } catch (IllegalArgumentException iae) {
+                    parser.error(ParseError.RC_SYNTAX_ERROR, "1st arg must be a comparision operator");
+                }
+                String arg2 = parseFnArg(parser);
+                if (arg2.isEmpty()) {
+                    parser.error(ParseError.RC_SYNTAX_ERROR, "2nd arg must be a valid integer");
+                }
+                int nb = 0;
+                try {
+                    nb = Integer.parseInt(arg2);
+                } catch (NumberFormatException nfe) {
+                    parser.error(ParseError.RC_SYNTAX_ERROR, "2nd arg must be a valid integer");
+                }
+                if (nb < 0) {
+                    parser.error(ParseError.RC_SYNTAX_ERROR, "2nd arg must be a positive integer");
+                }
+                return mulligans(cmp, nb);
             }
             default: {
                 parser.error(ParseError.RC_SYNTAX_ERROR, "unknown function @" + name);

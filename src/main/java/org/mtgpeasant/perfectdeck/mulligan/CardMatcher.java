@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -22,8 +22,8 @@ class CardMatcher extends Matcher {
     }
 
     @Override
-    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        return stream
+    protected Stream<Match> matches(boolean onThePlay, int mulligans, Stream<Match> upStreamMatches, MatcherContext context) {
+        return upStreamMatches
                 .filter(match -> match.getRemaining().contains(card))
                 .map(match -> {
                     Cards newRemaining = match.getRemaining().clone();

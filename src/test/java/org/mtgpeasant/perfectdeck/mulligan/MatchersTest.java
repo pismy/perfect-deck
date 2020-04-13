@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Ignore;
@@ -9,8 +9,7 @@ import org.mtgpeasant.perfectdeck.common.utils.ParseError;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.mtgpeasant.perfectdeck.common.cards.Cards.of;
-import static org.mtgpeasant.perfectdeck.common.matchers.Matchers.*;
+import static org.mtgpeasant.perfectdeck.mulligan.Matchers.*;
 
 public class MatchersTest {
 
@@ -30,7 +29,7 @@ public class MatchersTest {
         Matcher matcher = not(card("reanimate"));
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(1);
@@ -55,7 +54,7 @@ public class MatchersTest {
         Matcher matcher = times(2, or(card("swamp"), card("mountain")));
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(1);
@@ -82,7 +81,7 @@ public class MatchersTest {
         );
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(2);
@@ -108,7 +107,7 @@ public class MatchersTest {
         Matcher matcher = or(card("swamp"), card("animate dead"), card("pathrazer of ulamog"));
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).isEmpty();
@@ -130,7 +129,7 @@ public class MatchersTest {
         Matcher matcher = and(card("swamp"), card("animate dead"), card("ulamog crusher"), card("putrid imp"), card("dark ritual"));
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).hasSize(1);
@@ -154,7 +153,7 @@ public class MatchersTest {
         Matcher matcher = and(card("swamp"), card("animate dead"), card("ulamog crusher"), card("putrid imp"), card("swamp"));
 
         // When
-        List<Match> matches = matcher.matches(cards, null).collect(Collectors.toList());
+        List<Match> matches = matcher.matches(true, 0, cards, null).collect(Collectors.toList());
 
         // Then
         Assertions.assertThat(matches).isEmpty();

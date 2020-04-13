@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 
@@ -21,8 +21,8 @@ class NotMatcher extends Matcher {
     }
 
     @Override
-    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
-        List<Match> upstreamMatches = stream.collect(Collectors.toList());
-        return upstreamMatches.stream().filter(match -> !matcher.matches(upstreamMatches.stream(), context).findFirst().isPresent());
+    protected Stream<Match> matches(boolean onThePlay, int mulligans, Stream<Match> upStreamMatches, MatcherContext context) {
+        List<Match> upstreamMatches = upStreamMatches.collect(Collectors.toList());
+        return upstreamMatches.stream().filter(match -> !matcher.matches(onThePlay, mulligans, upstreamMatches.stream(), context).findFirst().isPresent());
     }
 }

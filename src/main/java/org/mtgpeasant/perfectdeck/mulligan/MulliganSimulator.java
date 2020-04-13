@@ -5,8 +5,7 @@ import lombok.Getter;
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.common.cards.Deck;
-import org.mtgpeasant.perfectdeck.common.matchers.Matchers;
-import org.mtgpeasant.perfectdeck.common.matchers.MulliganRules;
+import org.mtgpeasant.perfectdeck.goldfish.GoldfishSimulator;
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,7 +81,8 @@ public class MulliganSimulator {
         // will not work with negative rules ?
         for (int it = 0; it < iterations; it++) {
             Cards hand = deck.getMain().shuffle().draw(draw);
-            Optional<Matchers.NamedMatcher> matching = rules.firstMatch(hand);
+            // TODO: simulate start and mulligans too
+            Optional<Matchers.NamedMatcher> matching = rules.firstMatch(true, 0, hand);
             if (matching.isPresent()) {
                 // increment match count
                 deckMatches.addMatch(matching.get());

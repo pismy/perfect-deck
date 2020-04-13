@@ -9,6 +9,8 @@ import static org.mtgpeasant.perfectdeck.goldfish.Permanent.withType;
 
 /**
  * A deck made of mountains and lava spikes
+ *
+ * See: <a href="https://www.magic-ville.com/fr/decks/showdeck.php?ref=676878">L'art d'optimiser son deck</a>
  */
 class SpikesDeckPilot extends DeckPilot<Game> {
     public static final Mana R = Mana.of("R");

@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 
@@ -31,10 +31,10 @@ class AndMatcher extends Matcher {
     }
 
     @Override
-    protected Stream<Match> matches(Stream<Match> stream, MatcherContext context) {
+    protected Stream<Match> matches(boolean onThePlay, int mulligans, Stream<Match> upStreamMatches, MatcherContext context) {
         for (Matcher matcher : matchers) {
-            stream = matcher.matches(stream, context);
+            upStreamMatches = matcher.matches(onThePlay, mulligans, upStreamMatches, context);
         }
-        return stream;
+        return upStreamMatches;
     }
 }

@@ -1,4 +1,4 @@
-package org.mtgpeasant.perfectdeck.common.matchers;
+package org.mtgpeasant.perfectdeck.mulligan;
 
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
@@ -14,6 +14,9 @@ public class MulliganRules implements MatcherContext {
     final List<ParseError> errors;
     final List<Matchers.NamedMatcher> criteria;
 
+    /**
+     * Loads the default mulligans rules of a deck pilot
+     */
     public static MulliganRules load(Class<? extends DeckPilot> pilotClass) {
         InputStream stream = pilotClass.getResourceAsStream(pilotClass.getSimpleName() + "-mull.txt");
         if (stream == null) {
@@ -71,9 +74,15 @@ public class MulliganRules implements MatcherContext {
         return validation;
     }
 
-    public Optional<Matchers.NamedMatcher> firstMatch(Cards hand) {
+    /**
+     * Tries sequentially all mulligans rules and looks for one that matches
+     *
+     * @param hand drawn cards
+     * @return first matching rule
+     */
+    public Optional<Matchers.NamedMatcher> firstMatch(boolean onThePlay, int mulligans, Cards hand) {
         return getCriteria().stream()
-                .filter(c -> c.getMatcher().matches(hand, this).findFirst().isPresent())
+                .filter(c -> c.getMatcher().matches(onThePlay, mulligans, hand, this).findFirst().isPresent())
                 .findFirst();
     }
 }
