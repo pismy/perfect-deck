@@ -6,9 +6,11 @@ Firebrand Archer
 Flame Rift
 Forgotten Cave
 Forked Bolt
+Furnace Scamp
 Ghitu Lavarunner
 Incinerate
 Keldon Marauders
+Kessig Flamebreather
 Kiln Fiend
 Lava Dart
 Lava Spike
@@ -18,6 +20,8 @@ Magma Jet
 Monastery Swiftspear
 Mountain
 Needle Drop
+Orcish Hellraiser
+Reckless Abandon
 Rift Bolt
 Seal of Fire
 Searing Blaze
@@ -26,6 +30,3 @@ Thermo-Alchemist
 Thunderous Wrath
 Viashino Pyromancer
 Volcanic Fallout
-Reckless Abandon
-Furnace Scamp
-Orcish Hellraiser

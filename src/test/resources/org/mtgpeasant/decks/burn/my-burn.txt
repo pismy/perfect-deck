@@ -1,0 +1,29 @@
+// 15 creatures
+4 Ghitu Lavarunner
+2 Kessig Flamebreather
+4 Monastery Swiftspear
+3 Thermo-Alchemist
+2 Viashino Pyromancer
+
+// lands
+18 Mountain
+
+// burn
+4 Chain Lightning
+3 Fireblast
+4 Lava Spike
+4 Lightning Bolt
+1 Price of Progress
+4 Rift Bolt
+3 Searing Blaze
+4 Skewer the Critics
+
+Sideboard:
+1 Electrickery
+2 Faerie Macabre
+1 Flame Jab
+2 Flaring Pain
+2 Forked Bolt
+3 Red Elemental Blast
+1 Searing Blaze
+3 Smash to Smithereens

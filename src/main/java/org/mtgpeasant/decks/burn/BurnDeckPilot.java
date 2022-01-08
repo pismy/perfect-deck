@@ -31,11 +31,11 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
     public static final Mana RR = Mana.of("RR");
     public static final Mana RR1 = Mana.of("1RR");
 
-    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER, FURNACE_SCAMP};
+    private static String[] CREATURES = {MONASTERY_SWIFTSPEAR, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KESSIG_FLAMEBREATHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, ORCISH_HELLRAISER, VIASHINO_PYROMANCER, FURNACE_SCAMP};
     private static String[] LANDS = {MOUNTAIN, FORGOTTEN_CAVE};
 
     // all cards that could contribute to a kill in the turn
-    private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
+    private static String[] RUSH = {MONASTERY_SWIFTSPEAR, FIREBRAND_ARCHER, KESSIG_FLAMEBREATHER, KELDON_MARAUDERS, GHITU_LAVARUNNER, VIASHINO_PYROMANCER, ELECTROSTATIC_FIELD,
             RIFT_BOLT, FIREBLAST, LAVA_SPIKE, LIGHTNING_BOLT, SKEWER_THE_CRITICS, LAVA_DART, LAVA_DART_FB, NEEDLE_DROP, CHAIN_LIGHTNING, FORKED_BOLT, SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, SEAL_OF_FIRE, FURNACE_SCAMP, RECKLESS_ABANDON};
 
     private transient Seer.VictoryRoute victoryRoute;
@@ -227,7 +227,10 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             // trigger non-creatures
             if (!spellEvent.hasType(Game.CardType.creature) && !spellEvent.hasType(Game.CardType.land)) {
                 // trigger all archer
-                game.getBattlefield().find(withName(FIREBRAND_ARCHER)).forEach(crea -> game.damageOpponent(1, "firebrand trigger"));
+                game.getBattlefield().find(withName(FIREBRAND_ARCHER)).forEach(crea -> game.damageOpponent(1, "firebrand archer trigger"));
+
+                // trigger all flamebreather
+                game.getBattlefield().find(withName(KESSIG_FLAMEBREATHER)).forEach(crea -> game.damageOpponent(1, "flamebreather trigger"));
 
                 // monastery prowess
                 game.getBattlefield().find(withName(MONASTERY_SWIFTSPEAR)).forEach(crea -> crea.addCounter(TURN_BOOST, 1));
@@ -250,6 +253,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 FORGOTTEN_CAVE,
                 KILN_FIEND,
                 FIREBRAND_ARCHER,
+                KESSIG_FLAMEBREATHER,
                 THERMO_ALCHEMIST,
                 ELECTROSTATIC_FIELD,
                 KELDON_MARAUDERS,
@@ -295,6 +299,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case MONASTERY_SWIFTSPEAR:
             case KILN_FIEND:
             case FURNACE_SCAMP:
+            case KESSIG_FLAMEBREATHER:
                 return 1;
             case VIASHINO_PYROMANCER:
             case FIREBRAND_ARCHER:
@@ -375,6 +380,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
             case ORCISH_HELLRAISER:
             case VIASHINO_PYROMANCER:
             case FIREBRAND_ARCHER:
+            case KESSIG_FLAMEBREATHER:
             case ELECTROSTATIC_FIELD:
             case KILN_FIEND:
             case MAGMA_JET:
@@ -483,6 +489,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 return true;
             // 1R permanents
             case FIREBRAND_ARCHER:
+            case KESSIG_FLAMEBREATHER:
             case KILN_FIEND:
                 produce(R1);
                 game.castCreature(card, R1);
@@ -682,6 +689,11 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 game.getLibrary().addLast(card);
                 continue;
             }
+            if (KESSIG_FLAMEBREATHER.equals(card) && (game.getHand().count(KESSIG_FLAMEBREATHER) + game.getBattlefield().count(withName(KESSIG_FLAMEBREATHER)) >= 2)) {
+                game.log(" - put [" + card + "] at bottom (already enough flamebreather)");
+                game.getLibrary().addLast(card);
+                continue;
+            }
             // remove fireblast if less than 2 mountains
             if (FIREBLAST.equals(card) && (replacedOnTop.count(MOUNTAIN) + game.getHand().count(MOUNTAIN) + game.getBattlefield().count(withName(MOUNTAIN)) < 2)) {
                 game.log(" - put [" + card + "] at bottom (more than I can cast)");
@@ -713,7 +725,7 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 continue;
             }
             // discard extra creatures
-            if (game.getHand().count(CREATURES) > 2 && game.putOnBottomOfLibraryOneOf(ORCISH_HELLRAISER, KELDON_MARAUDERS, VIASHINO_PYROMANCER, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, GHITU_LAVARUNNER, MONASTERY_SWIFTSPEAR).isPresent()) {
+            if (game.getHand().count(CREATURES) > 2 && game.putOnBottomOfLibraryOneOf(ORCISH_HELLRAISER, KELDON_MARAUDERS, VIASHINO_PYROMANCER, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KESSIG_FLAMEBREATHER, GHITU_LAVARUNNER, MONASTERY_SWIFTSPEAR).isPresent()) {
                 continue;
             }
             if (game.putOnBottomOfLibraryOneOf(SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, CURSE_OF_THE_PIERCED_HEART, GITAXIAN_PROBE, LIGHT_UP_THE_STAGE).isPresent()) {
@@ -733,11 +745,11 @@ public class BurnDeckPilot extends DeckPilot<Game> implements BurnCards, GameLis
                 continue;
             }
             // discard extra lands
-            if ((int) game.getBattlefield().count(withName(LANDS)) + game.getHand().count(LANDS) > 3 && game.discardOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
+            if (game.getBattlefield().count(withName(LANDS)) + game.getHand().count(LANDS) > 3 && game.discardOneOf(FORGOTTEN_CAVE, MOUNTAIN).isPresent()) {
                 continue;
             }
             // discard extra creatures
-            if (game.getHand().count(CREATURES) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(ORCISH_HELLRAISER, KELDON_MARAUDERS, VIASHINO_PYROMANCER, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, GHITU_LAVARUNNER, MONASTERY_SWIFTSPEAR).isPresent()) {
+            if (game.getHand().count(CREATURES) + game.getHand().count(CREATURES) > 2 && game.discardOneOf(ORCISH_HELLRAISER, KELDON_MARAUDERS, VIASHINO_PYROMANCER, THERMO_ALCHEMIST, ELECTROSTATIC_FIELD, FIREBRAND_ARCHER, KESSIG_FLAMEBREATHER, GHITU_LAVARUNNER, MONASTERY_SWIFTSPEAR).isPresent()) {
                 continue;
             }
             if (game.discardOneOf(SEARING_BLAZE, MAGMA_JET, VOLCANIC_FALLOUT, FLAME_RIFT, CURSE_OF_THE_PIERCED_HEART, GITAXIAN_PROBE, LIGHT_UP_THE_STAGE).isPresent()) {

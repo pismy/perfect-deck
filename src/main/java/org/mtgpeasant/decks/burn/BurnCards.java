@@ -21,6 +21,7 @@ public interface BurnCards {
     String ORCISH_HELLRAISER = "orcish hellraiser"; // 1R: 3/2; echo R; when dies: 2 damage to target player
     String VIASHINO_PYROMANCER = "viashino pyromancer"; // 1R: 2/1; 2 damage when enters the battlefield
     String FIREBRAND_ARCHER = "firebrand archer"; // 1R: 2/1; 1 damage for each non-crea spell
+    String KESSIG_FLAMEBREATHER = "kessig flamebreather"; // 1R: 1/3; 1 damage for each non-crea spell
     String ELECTROSTATIC_FIELD = "electrostatic field"; // 1R: 0/4 wall; 1 damage for each instant or sorcery spell
     String KILN_FIEND = "kiln fiend";
     String FURNACE_SCAMP = "furnace scamp"; // R: 1/1 sacrifice when it deals combat damage to deal 3 more damages
@@ -63,6 +64,7 @@ public interface BurnCards {
             case ORCISH_HELLRAISER:
             case VIASHINO_PYROMANCER:
             case FIREBRAND_ARCHER:
+            case KESSIG_FLAMEBREATHER:
             case KILN_FIEND:
             case FURNACE_SCAMP:
                 return Game.CardType.creature;

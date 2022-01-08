@@ -2,6 +2,8 @@ package org.mtgpeasant.decks;
 
 import com.google.common.io.CharStreams;
 import com.google.common.reflect.ClassPath;
+import com.google.common.reflect.ClassPath.ClassInfo;
+
 import lombok.Value;
 import org.mtgpeasant.perfectdeck.common.cards.Cards;
 import org.mtgpeasant.perfectdeck.goldfish.DeckPilot;
@@ -24,8 +26,8 @@ public class PilotScanner {
     public static List<PilotMetadata> scan(String basePackage) throws IOException {
         ClassPath cp = ClassPath.from(PilotScanner.class.getClassLoader());
         return cp.getTopLevelClassesRecursive(basePackage).stream()
-                .map(classInfo -> classInfo.load())
-                .filter(clazz -> DeckPilot.class.isAssignableFrom(clazz))
+                .map(ClassInfo::load)
+                .filter(DeckPilot.class::isAssignableFrom)
                 .filter(clazz -> Modifier.isPublic(clazz.getModifiers()))
                 .map(clazz -> PilotMetadata.load((Class<? extends DeckPilot>) clazz))
                 .sorted(Comparator.comparing(PilotMetadata::getName))
