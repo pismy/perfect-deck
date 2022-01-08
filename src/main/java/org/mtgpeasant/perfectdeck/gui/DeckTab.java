@@ -88,7 +88,7 @@ public class DeckTab extends JPanel {
         JButton duplicate = new JButton();
         duplicate.addActionListener(e -> cloneTab());
 //        duplicate.setIcon(new ImageIcon("New24"));
-        duplicate.setText("copy");
+        duplicate.setText("duplicate");
         duplicate.setToolTipText("Copies this deck into a new tab");
         toolBar.add(duplicate);
 
@@ -107,7 +107,7 @@ public class DeckTab extends JPanel {
         tabPanel.setOpaque(false);
         tabPanel.add(new JLabel(title));
         tabPanel.add(Box.createHorizontalStrut(5));
-        JLabel closeBtn = new JLabel("❎"); // ❎
+        JLabel closeBtn = new JLabel("✖"); // ❎❌✖✕
         closeBtn.setForeground(Color.BLACK);
 //            closeBtn.setBackground(Color.GRAY);
 //            closeBtn.setOpaque(true);
