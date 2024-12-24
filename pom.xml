@@ -9,7 +9,7 @@
     </parent>
     <groupId>org.mtgpeasant</groupId>
     <artifactId>perfect-deck</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Mtg Perfect Deck</name>
@@ -105,6 +105,6 @@
         <developerConnection>scm:git:git@github.com:pismy/perfect-deck.git</developerConnection>
         <connection>scm:git:git@github.compismy/perfect-deck.git</connection>
         <url>https://github.com/pismy/perfect-deck</url>
-        <tag>perfect-deck-1.0.2</tag>
+        <tag>HEAD</tag>
     </scm>
 </project>
